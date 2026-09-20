@@ -24,3 +24,12 @@
 ## Status
 
 🚧 In development
+
+## Участники
+
+| Имя | Роль | GitHub |
+|-----|------|--------|
+| Шевченко Егор | Капитан, Backend | [@BrainL4g](https://github.com/BrainL4g/) |
+| Шафоростов Олег | Backend | [@Elligarc](https://github.com/Elligarc) |
+| Мкртчян Марк | Frontend | [@rootmarkexe](https://github.com/rootmarkexe) |
+| Соколова Ана | UI/UX дизайнер | — |
