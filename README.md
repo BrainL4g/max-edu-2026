@@ -18,7 +18,7 @@
 
 - Frontend — React + TypeScript
 - Backend — Python + FastAPI
-- Database — PostgreSQL
+- Database — SQLite
 - Infrastructure — Docker
 
 ## Status
