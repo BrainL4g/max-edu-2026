@@ -1,8 +1,16 @@
-__pycache__/
+# SkillQuest .dockerignore — что НЕ попадает в образ
+.git
+.idea
+.vscode
+.venv
+venv
+__pycache__
 *.pyc
-.venv/
-venv/
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-requirements-dev.txt
+.pytest_cache
+.mypy_cache
+.ruff_cache
+tests
+.env
+.env.*
+*.db
+*.sqlite

@@ -1,1 +1,38 @@
-Generic single-database configuration.
+# Миграции SkillQuest (Alembic + SQLite)
+
+## Как работают миграции
+
+1. `alembic.ini` — конфигурация Alembic.
+2. `env.py` — подключает Alembic к `Base.metadata` из `app.database.models`
+   и берёт URL базы из настроек приложения.
+3. `versions/` — сами миграции, применяются по порядку.
+
+## Команды (запускать из `backend/`)
+
+```bash
+# Применить все миграции
+alembic upgrade head
+
+# Откатить на одну миграцию назад
+alembic downgrade -1
+
+# (необязательно) сгенерировать новую миграцию из изменений моделей
+alembic revision --autogenerate -m "message"
+
+# (необязательно) создать пустую миграцию вручную
+alembic revision -m "message"
+```
+
+## Список миграций
+
+| Ревизия | Описание |
+|---------|----------|
+| `001`   | Начальная схема: users, skills, user_skills, missions, mission_options, attempts, courses, course_skills, internships, internship_skills |
+| `002`   | Резюме: resumes, resume_analysis |
+
+## Важно
+
+- В `development` таблицы и демо-данные создаются автоматически при старте
+  (`auto_create_tables`, `seed_on_startup` в `.env`), поэтому миграции не
+  обязательны для прототипа.
+- Перед миграциями проверьте, что `.env` содержит корректный `DATABASE_URL`.

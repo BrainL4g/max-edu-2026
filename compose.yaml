@@ -1,0 +1,20 @@
+# SkillQuest: пока один сервис — backend.
+# SQLite хранится в volume, чтобы данные переживали перезапуск контейнера.
+
+services:
+  backend:
+    build: ./backend
+    container_name: skillquest-backend
+    ports:
+      - "8000:8000"
+    environment:
+      APP_NAME: SkillQuest
+      APP_ENV: production
+      DATABASE_URL: sqlite:////app/data/skillquest.db
+      # MAX_BOT_TOKEN: # передать через .env / команду запуска
+    volumes:
+      - skillquest_data:/app/data
+    restart: unless-stopped
+
+volumes:
+  skillquest_data:
