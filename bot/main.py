@@ -8,7 +8,7 @@ import os
 
 from dotenv import load_dotenv
 from maxapi import Bot, Dispatcher
-from maxapi.types import ErrorEvent
+from maxapi.types import BotCommand, ErrorEvent
 
 from handlers import (
     assessment,
@@ -53,7 +53,15 @@ async def on_event_error(event: ErrorEvent) -> None:
     )
 
 
+async def register_commands(bot: Bot) -> None:
+    """Зарегистрировать команды бота — так в чате появляется кнопка «Старт»."""
+    await bot.set_commands(
+        BotCommand(name="start", description="Открыть главное меню"),
+    )
+
+
 async def main() -> None:
+    await register_commands(bot)
     await dp.start_polling(bot)
 
 

@@ -28,9 +28,14 @@ def test_options_kb_without_back() -> None:
     assert _payloads(buttons) == ["p:1"]
 
 
-def test_options_kb_truncates_long_text() -> None:
+def test_options_kb_truncates_long_text_with_ellipsis() -> None:
     buttons = buttons_from([kbs.options_kb("p", [(1, "д" * 200)])])
-    assert len(buttons[0].text) == kbs.TEXT_LIMIT
+    assert buttons[0].text == "д" * (kbs.TEXT_LIMIT - 1) + "…"
+
+
+def test_options_kb_keeps_short_text() -> None:
+    buttons = buttons_from([kbs.options_kb("p", [(1, "Да"), (2, "Нет")])])
+    assert [b.text for b in buttons[:2]] == ["Да", "Нет"]
 
 
 def test_after_mission_kb() -> None:
@@ -45,3 +50,8 @@ def test_menu_with_links() -> None:
     buttons = buttons_from([kbs.menu_with_links([("Открыть курс", "https://x.ru")])])
     assert buttons[0].url == "https://x.ru"
     assert buttons[-1].payload == "menu:main"
+
+
+def test_menu_with_links_clips_long_title() -> None:
+    buttons = buttons_from([kbs.menu_with_links([("д" * 100, "https://x.ru")])])
+    assert buttons[0].text == "д" * (kbs.TEXT_LIMIT - 1) + "…"

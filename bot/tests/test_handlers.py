@@ -53,7 +53,14 @@ def _fake_user(monkeypatch, platform_id: int = 42) -> None:
 def test_on_bot_started_sends_greeting() -> None:
     event = FakeBotStartedEvent(USER_ID, "Аня")
     _run(start.on_bot_started(event))
-    assert event.bot.sent == [(USER_ID, "Привет, Аня! Я SkillQuest 🎮 Нажми /start")]
+    chat_id, text, attachments = event.bot.sent[0]
+    assert (chat_id, text) == (
+        USER_ID,
+        "Привет, Аня! Я SkillQuest 🎮 Выбирай, что делаем:",
+    )
+    payloads = _payloads(buttons_from(attachments))
+    assert "as:start" in payloads
+    assert "ms:next" in payloads
 
 
 def test_on_bot_started_skips_without_bot() -> None:

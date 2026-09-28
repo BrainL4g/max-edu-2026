@@ -6,7 +6,14 @@ from maxapi.types import CallbackButton, LinkButton
 from maxapi.types.attachments import AttachmentButton
 from maxapi.utils.inline_keyboard import InlineKeyboardBuilder
 
-TEXT_LIMIT = 64
+TEXT_LIMIT = 40
+
+
+def _clip(text: str) -> str:
+    """Обрезать текст кнопки до видимой ширины, добавляя многоточие."""
+    if len(text) <= TEXT_LIMIT:
+        return text
+    return text[: TEXT_LIMIT - 1] + "…"
 
 
 def main_menu() -> AttachmentButton:
@@ -34,9 +41,7 @@ def options_kb(
     """
     builder = InlineKeyboardBuilder()  # type: ignore[no-untyped-call]
     for option_id, text in options:
-        builder.row(
-            CallbackButton(text=text[:TEXT_LIMIT], payload=f"{prefix}:{option_id}")
-        )
+        builder.row(CallbackButton(text=_clip(text), payload=f"{prefix}:{option_id}"))
     if back:
         builder.row(CallbackButton(text="🏠 Меню", payload="menu:main"))
     return builder.as_markup()
@@ -57,6 +62,6 @@ def menu_with_links(links: list[tuple[str, str]]) -> AttachmentButton:
     """Кнопки-ссылки + кнопка «Меню». links — пары (текст, url)."""
     builder = InlineKeyboardBuilder()  # type: ignore[no-untyped-call]
     for title, url in links:
-        builder.row(LinkButton(text=title[:TEXT_LIMIT], url=url))
+        builder.row(LinkButton(text=_clip(title), url=url))
     builder.row(CallbackButton(text="🏠 Меню", payload="menu:main"))
     return builder.as_markup()

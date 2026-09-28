@@ -58,10 +58,16 @@ class FakeBot:
     """Мини-замена Bot: записывает отправленные сообщения."""
 
     def __init__(self) -> None:
-        self.sent: list[tuple[int, str]] = []
+        self.sent: list[tuple[int, str, list[Any] | None]] = []
 
-    async def send_message(self, chat_id: int, text: str, **_: Any) -> None:
-        self.sent.append((chat_id, text))
+    async def send_message(
+        self,
+        chat_id: int,
+        text: str,
+        attachments: list[Any] | None = None,
+        **_: Any,
+    ) -> None:
+        self.sent.append((chat_id, text, attachments))
 
 
 class FakeBotStartedEvent:

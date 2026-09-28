@@ -6,6 +6,7 @@ import asyncio
 import importlib
 import logging
 from types import SimpleNamespace
+from typing import Any
 
 import pytest
 
@@ -73,3 +74,20 @@ def test_routers_registered(monkeypatch) -> None:
     import main as bot_main
 
     assert len(bot_main.dp.routers) >= 6
+
+
+def test_register_commands_sets_start(monkeypatch) -> None:
+    """Кнопка «Старт»: регистрируем /start через set_commands."""
+    monkeypatch.setenv("MAX_BOT_TOKEN", "test-token")
+    import main as bot_main
+
+    class _FakeBot:
+        def __init__(self) -> None:
+            self.commands: list[Any] = []
+
+        async def set_commands(self, *commands: Any) -> None:
+            self.commands = list(commands)
+
+    fake = _FakeBot()
+    asyncio.run(bot_main.register_commands(fake))
+    assert [getattr(c, "name", None) for c in fake.commands] == ["start"]

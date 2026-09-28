@@ -13,14 +13,15 @@ router = Router()
 
 @router.bot_started()
 async def on_bot_started(event: BotStarted) -> None:
-    """Бот добавлен/запущен пользователем."""
+    """Бот добавлен пользователем: приветствие сразу с главным меню."""
     bot = event.bot
     if bot is None:
         return
     first_name = event.user.first_name or "друг"
     await bot.send_message(
         chat_id=event.chat_id,
-        text=f"Привет, {first_name}! Я SkillQuest 🎮 Нажми /start",
+        text=f"Привет, {first_name}! Я SkillQuest 🎮 Выбирай, что делаем:",
+        attachments=[kbs.main_menu()],  # type: ignore[arg-type]  # union-сигнатура maxapi
     )
 
 
