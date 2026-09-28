@@ -177,6 +177,11 @@ internships ── internship_skills ── skills
 (резюме и анализ), `003_add_max_user_id.py` (связка с пользователями MAX).
 Применение (из корня): `alembic -c backend/alembic.ini upgrade head`.
 
+> Если dev-база создана через `create_all` до введения Alembic (в ней нет
+> таблицы `alembic_version`), приведите её к актуальной схеме так:
+> `alembic -c backend/alembic.ini stamp 002 && alembic -c backend/alembic.ini upgrade head`
+> (команда выполняется из каталога, где лежит файл базы).
+
 ## 9. Интеграции
 
 - **CORS** — настроен (`CORS_ORIGINS`), чтобы фронтенд (React) мог обращаться
