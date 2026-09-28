@@ -2,10 +2,15 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from sqlalchemy import Boolean, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.app.domain import Base
+
+if TYPE_CHECKING:
+    from backend.app.domain.skill import Skill
 
 
 class Internship(Base):
@@ -34,14 +39,10 @@ class InternshipSkill(Base):
     """Связь стажировки с требуемыми навыками."""
 
     __tablename__ = "internship_skills"
-    __table_args__ = (
-        UniqueConstraint("internship_id", "skill_id", name="uq_internship_skill"),
-    )
+    __table_args__ = (UniqueConstraint("internship_id", "skill_id", name="uq_internship_skill"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     internship_id: Mapped[int] = mapped_column(
         ForeignKey("internships.id", ondelete="CASCADE"), index=True
     )
-    skill_id: Mapped[int] = mapped_column(
-        ForeignKey("skills.id", ondelete="CASCADE"), index=True
-    )
+    skill_id: Mapped[int] = mapped_column(ForeignKey("skills.id", ondelete="CASCADE"), index=True)

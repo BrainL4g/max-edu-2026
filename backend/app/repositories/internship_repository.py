@@ -2,16 +2,25 @@
 
 from __future__ import annotations
 
-from sqlalchemy import func, select
+from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session, selectinload
 
 from backend.app.core.exceptions import NotFoundError
 from backend.app.domain import Internship, InternshipSkill
 
 
-def _apply_filters(query, *, search=None, skill_ids=None, direction=None, level=None,
-                   city=None, remote=None, format_=None):
-    """Общие фильтры для стажировок."""
+def _apply_filters(
+    query: Select[tuple[Internship]],
+    *,
+    search: str | None = None,
+    skill_ids: list[int] | None = None,
+    direction: str | None = None,
+    level: str | None = None,
+    city: str | None = None,
+    remote: bool | None = None,
+    format_: str | None = None,
+) -> Select[tuple[Internship]]:
+    """Применить фильтры стажировок: поиск, навыки, направление, город и т.д."""
     if search:
         like = f"%{search.strip().lower()}%"
         query = query.where(
@@ -20,9 +29,9 @@ def _apply_filters(query, *, search=None, skill_ids=None, direction=None, level=
             | func.lower(Internship.description).like(like)
         )
     if skill_ids:
-        query = query.join(
-            InternshipSkill, InternshipSkill.internship_id == Internship.id
-        ).where(InternshipSkill.skill_id.in_(skill_ids))
+        query = query.join(InternshipSkill, InternshipSkill.internship_id == Internship.id).where(
+            InternshipSkill.skill_id.in_(skill_ids)
+        )
     if direction and direction != "any":
         query = query.where(func.lower(Internship.direction) == direction.strip().lower())
     if level and level != "any":
@@ -43,7 +52,7 @@ class InternshipRepository:
     def __init__(self, db: Session) -> None:
         self.db = db
 
-    def list(
+    def list_all(
         self,
         *,
         search: str | None = None,
@@ -54,6 +63,7 @@ class InternshipRepository:
         remote: bool | None = None,
         format_: str | None = None,
     ) -> list[Internship]:
+        """Стажировки с фильтрацией и поиском (с загруженными навыками)."""
         query = select(Internship).options(selectinload(Internship.skills))
         query = _apply_filters(
             query,

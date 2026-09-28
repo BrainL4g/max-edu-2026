@@ -7,7 +7,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from backend.app.database.session import get_db
-from backend.app.domain import Mission
+from backend.app.domain import Mission, User
 from backend.app.repositories.user_repository import UserRepository
 from backend.app.schemas.skill import AssessmentIn, AssessmentOut
 from backend.app.schemas.user import UserByMaxIn, UserCreate, UserOut, UserProgressOut, UserUpdate
@@ -18,7 +18,7 @@ router = APIRouter(tags=["users"])
 
 
 @router.post("/users", response_model=UserOut, status_code=201)
-def create_user(payload: UserCreate, db: Session = Depends(get_db)) -> UserOut:
+def create_user(payload: UserCreate, db: Session = Depends(get_db)) -> User:
     """Создание пользователя (студента)."""
     return UserRepository(db).create(
         name=payload.name,
@@ -29,25 +29,19 @@ def create_user(payload: UserCreate, db: Session = Depends(get_db)) -> UserOut:
 
 
 @router.post("/users/by-max", response_model=UserOut)
-def get_or_create_by_max(
-    payload: UserByMaxIn, db: Session = Depends(get_db)
-) -> UserOut:
+def get_or_create_by_max(payload: UserByMaxIn, db: Session = Depends(get_db)) -> User:
     """Связка пользователя MAX: get-or-create по max_user_id."""
-    return UserRepository(db).get_or_create_by_max(
-        payload.max_user_id, name=payload.name
-    )
+    return UserRepository(db).get_or_create_by_max(payload.max_user_id, name=payload.name)
 
 
 @router.get("/users/{user_id}", response_model=UserOut)
-def get_user(user_id: int, db: Session = Depends(get_db)) -> UserOut:
+def get_user(user_id: int, db: Session = Depends(get_db)) -> User:
     """Профиль пользователя."""
     return UserRepository(db).get(user_id)
 
 
 @router.patch("/users/{user_id}", response_model=UserOut)
-def update_user(
-    user_id: int, payload: UserUpdate, db: Session = Depends(get_db)
-) -> UserOut:
+def update_user(user_id: int, payload: UserUpdate, db: Session = Depends(get_db)) -> User:
     """Обновление профиля пользователя."""
     repo = UserRepository(db)
     user = repo.get(user_id)

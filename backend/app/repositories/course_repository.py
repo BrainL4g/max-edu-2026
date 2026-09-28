@@ -2,21 +2,29 @@
 
 from __future__ import annotations
 
-from sqlalchemy import func, select
+from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session, selectinload
 
 from backend.app.core.exceptions import NotFoundError
 from backend.app.domain import Course, CourseSkill
 
 
-def _apply_filters(query, *, search=None, skill_ids=None, category=None, level=None,
-                   price_max=None, format_=None, platform=None):
-    """Общие фильтры для курсов."""
+def _apply_filters(
+    query: Select[tuple[Course]],
+    *,
+    search: str | None = None,
+    skill_ids: list[int] | None = None,
+    category: str | None = None,
+    level: str | None = None,
+    price_max: float | None = None,
+    format_: str | None = None,
+    platform: str | None = None,
+) -> Select[tuple[Course]]:
+    """Применить фильтры курсов: поиск, навыки, категория, уровень, цена и т.д."""
     if search:
         like = f"%{search.strip().lower()}%"
         query = query.where(
-            func.lower(Course.title).like(like)
-            | func.lower(Course.description).like(like)
+            func.lower(Course.title).like(like) | func.lower(Course.description).like(like)
         )
     if skill_ids:
         query = query.join(CourseSkill, CourseSkill.course_id == Course.id).where(
@@ -41,7 +49,7 @@ class CourseRepository:
     def __init__(self, db: Session) -> None:
         self.db = db
 
-    def list(
+    def list_all(
         self,
         *,
         search: str | None = None,
@@ -52,10 +60,8 @@ class CourseRepository:
         format_: str | None = None,
         platform: str | None = None,
     ) -> list[Course]:
-        query = (
-            select(Course)
-            .options(selectinload(Course.skills))
-        )
+        """Курсы с фильтрацией и поиском (с загруженными навыками)."""
+        query = select(Course).options(selectinload(Course.skills))
         query = _apply_filters(
             query,
             search=search,
@@ -71,9 +77,7 @@ class CourseRepository:
 
     def get(self, course_id: int) -> Course:
         course = self.db.scalar(
-            select(Course)
-            .where(Course.id == course_id)
-            .options(selectinload(Course.skills))
+            select(Course).where(Course.id == course_id).options(selectinload(Course.skills))
         )
         if course is None:
             raise NotFoundError(f"Курс с id={course_id} не найден")

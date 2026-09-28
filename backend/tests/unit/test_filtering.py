@@ -53,31 +53,31 @@ def _seed_courses(db):
 
 def test_course_filter_by_category(db_session):
     _, _, _, courses = _seed_courses(db_session)
-    result = CourseRepository(db_session).list(category="Программирование")
+    result = CourseRepository(db_session).list_all(category="Программирование")
     assert [c.title for c in result] == ["Python с нуля"]
 
 
 def test_course_filter_by_platform(db_session):
     _seed_courses(db_session)
-    result = CourseRepository(db_session).list(platform="youtube")
+    result = CourseRepository(db_session).list_all(platform="youtube")
     assert [c.title for c in result] == ["Git за один день"]
 
 
 def test_course_filter_by_price(db_session):
     _seed_courses(db_session)
-    result = CourseRepository(db_session).list(price_max=100)
+    result = CourseRepository(db_session).list_all(price_max=100)
     assert {c.title for c in result} == {"Python с нуля", "Git за один день"}
 
 
 def test_course_search(db_session):
     _seed_courses(db_session)
-    result = CourseRepository(db_session).list(search="данных")
+    result = CourseRepository(db_session).list_all(search="данных")
     assert [c.title for c in result] == ["Анализ данных"]
 
 
 def test_course_filter_by_skill(db_session):
     _, sql, _, _ = _seed_courses(db_session)
-    result = CourseRepository(db_session).list(skill_ids=[sql.id])
+    result = CourseRepository(db_session).list_all(skill_ids=[sql.id])
     assert [c.title for c in result] == ["Анализ данных"]
 
 
@@ -127,29 +127,29 @@ def _seed_internships(db):
 
 def test_internship_filter_by_direction(db_session):
     _seed_internships(db_session)
-    result = InternshipRepository(db_session).list(direction="backend")
+    result = InternshipRepository(db_session).list_all(direction="backend")
     assert [i.company for i in result] == ["Яндекс"]
 
 
 def test_internship_filter_by_remote(db_session):
     _seed_internships(db_session)
-    result = InternshipRepository(db_session).list(remote=True)
+    result = InternshipRepository(db_session).list_all(remote=True)
     assert [i.company for i in result] == ["Т-Банк"]
 
 
 def test_internship_filter_by_city(db_session):
     _seed_internships(db_session)
-    result = InternshipRepository(db_session).list(city="Казань")
+    result = InternshipRepository(db_session).list_all(city="Казань")
     assert [i.company for i in result] == ["Ozon"]
 
 
 def test_internship_filter_by_skill(db_session):
     _, sql, _ = _seed_internships(db_session)
-    result = InternshipRepository(db_session).list(skill_ids=[sql.id])
+    result = InternshipRepository(db_session).list_all(skill_ids=[sql.id])
     assert {i.company for i in result} == {"Яндекс", "Т-Банк", "Ozon"}
 
 
 def test_internship_search(db_session):
     _seed_internships(db_session)
-    result = InternshipRepository(db_session).list(search="удалённо")
+    result = InternshipRepository(db_session).list_all(search="удалённо")
     assert [i.company for i in result] == ["Т-Банк"]

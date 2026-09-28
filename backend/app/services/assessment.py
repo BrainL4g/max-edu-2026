@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -131,7 +132,7 @@ class AssessmentService:
         self.db = db
         self.skill_service = SkillService(db)
 
-    def run(self, user: User, answers: list[dict]) -> dict:
+    def run(self, user: User, answers: list[dict[str, Any]]) -> dict[str, Any]:
         """Оценить ответы и сформировать начальный Skill Map.
 
         ``answers`` — список ``{"question_id": int, "option_index": int}``.
@@ -143,9 +144,7 @@ class AssessmentService:
         for answer in answers:
             question = _find_question(answer["question_id"])
             if question is None:
-                raise InvalidDataError(
-                    f"Вопрос {answer['question_id']} не найден в диагностике"
-                )
+                raise InvalidDataError(f"Вопрос {answer['question_id']} не найден в диагностике")
             option_index = answer["option_index"]
             if not 0 <= option_index < len(question.options):
                 raise InvalidDataError(
@@ -155,9 +154,7 @@ class AssessmentService:
             if skill is None:
                 # Навык не входит в базу — ответ пропускается.
                 continue
-            levels_by_skill.setdefault(skill.id, []).append(
-                question.options[option_index][1]
-            )
+            levels_by_skill.setdefault(skill.id, []).append(question.options[option_index][1])
 
         if not levels_by_skill:
             raise InvalidDataError("Нет ни одного ответа, который можно оценить")
@@ -176,9 +173,7 @@ class AssessmentService:
         ]
 
         average_level = (
-            sum(item["level"] for item in skill_map) / len(skill_map)
-            if skill_map
-            else 0
+            sum(item["level"] for item in skill_map) / len(skill_map) if skill_map else 0
         )
         return {
             "user_id": user.id,
@@ -200,8 +195,7 @@ class AssessmentService:
             )
         if average_level < 3:
             return (
-                "Ваш стартовый уровень — средний. "
-                "Готовьтесь к более сложным миссиям и стажировкам."
+                "Ваш стартовый уровень — средний. Готовьтесь к более сложным миссиям и стажировкам."
             )
         return (
             "Ваш стартовый уровень — высокий. "

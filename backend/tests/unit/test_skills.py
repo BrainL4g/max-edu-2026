@@ -37,14 +37,10 @@ def test_apply_mission_result_levels_up(db_session):
     db_session.add(user)
     db_session.commit()
 
-    db_session.add(
-        UserSkill(user_id=user.id, skill_id=skill.id, level=0, experience=80)
-    )
+    db_session.add(UserSkill(user_id=user.id, skill_id=skill.id, level=0, experience=80))
     db_session.commit()
 
-    mission = Mission(
-        skill_id=skill.id, difficulty="easy", scenario="Задание", reward_xp=40
-    )
+    mission = Mission(skill_id=skill.id, difficulty="easy", scenario="Задание", reward_xp=40)
     db_session.add(mission)
     db_session.commit()
 
@@ -64,9 +60,7 @@ def test_apply_mission_result_wrong_answer_gives_small_xp(db_session):
     user = User(name="Тест")
     db_session.add(user)
     db_session.commit()
-    mission = Mission(
-        skill_id=skill.id, difficulty="hard", scenario="Задание", reward_xp=50
-    )
+    mission = Mission(skill_id=skill.id, difficulty="hard", scenario="Задание", reward_xp=50)
     db_session.add(mission)
     db_session.commit()
 
@@ -81,9 +75,7 @@ def test_skill_map_shape(db_session):
     user = User(name="Тест")
     db_session.add(user)
     db_session.commit()
-    db_session.add(
-        UserSkill(user_id=user.id, skill_id=skill.id, level=0, experience=200)
-    )
+    db_session.add(UserSkill(user_id=user.id, skill_id=skill.id, level=0, experience=200))
     db_session.commit()
 
     skill_map = SkillService(db_session).get_skill_map(user.id)

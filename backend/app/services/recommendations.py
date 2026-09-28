@@ -5,10 +5,12 @@ Skill Map → пробелы в навыках → подходящие курс
 
 from __future__ import annotations
 
+from typing import Any
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from backend.app.domain import Skill, User, UserSkill
+from backend.app.domain import Course, Internship, Skill, User, UserSkill
 from backend.app.repositories.course_repository import CourseRepository
 from backend.app.repositories.internship_repository import InternshipRepository
 from backend.app.repositories.skill_repository import SkillRepository
@@ -36,9 +38,10 @@ class RecommendationService:
         self.internships = InternshipRepository(db)
         self.skills = SkillRepository(db)
 
-    def _gaps(self, user: User) -> list[dict]:
+    def _gaps(self, user: User) -> list[dict[str, Any]]:
         """Пробелы: навыки ниже целевого уровня + недостающие по направлению."""
-        gap_map: dict[int, dict] = {}
+        gap_map: dict[int, dict[str, Any]] = {}
+        known_skill_ids: set[int] = set()
 
         for row in self.db.execute(
             select(UserSkill, Skill)
@@ -46,6 +49,7 @@ class RecommendationService:
             .where(UserSkill.user_id == user.id)
         ).all():
             user_skill, skill = row
+            known_skill_ids.add(skill.id)
             level = level_from_xp(user_skill.experience)
             if level < TARGET_LEVEL:
                 gap_map[skill.id] = {
@@ -61,7 +65,7 @@ class RecommendationService:
             skill = self.skills.get_by_name(name)
             if skill is None:
                 continue
-            if skill.id not in gap_map:
+            if skill.id not in gap_map and skill.id not in known_skill_ids:
                 gap_map[skill.id] = {
                     "skill_id": skill.id,
                     "name": skill.name,
@@ -70,34 +74,30 @@ class RecommendationService:
                     "target_level": TARGET_LEVEL,
                 }
 
-        return sorted(
-            gap_map.values(), key=lambda g: (g["current_level"], g["name"])
-        )
+        return sorted(gap_map.values(), key=lambda g: (g["current_level"], g["name"]))
 
-    def recommend_courses(self, user_id: int, **filters) -> list:
+    def recommend_courses(self, user_id: int, **filters: Any) -> list[Course]:
         """Курсы, закрывающие пробелы в навыках (с учётом фильтров)."""
         user = self.users.get(user_id)
         gap_ids = [gap["skill_id"] for gap in self._gaps(user)]
         if not gap_ids:
-            return self.courses.list(**filters)
+            return self.courses.list_all(**filters)
 
         gap_set = set(gap_ids)
-        courses = self.courses.list(skill_ids=gap_ids, **filters)
+        courses = self.courses.list_all(skill_ids=gap_ids, **filters)
         courses.sort(key=lambda c: c.cost)
-        courses.sort(
-            key=lambda c: len({s.id for s in c.skills} & gap_set), reverse=True
-        )
+        courses.sort(key=lambda c: len({s.id for s in c.skills} & gap_set), reverse=True)
         return courses
 
-    def recommend_internships(self, user_id: int, **filters) -> list:
+    def recommend_internships(self, user_id: int, **filters: Any) -> list[Internship]:
         """Стажировки: совпадение направления и закрытие пробелов в навыках."""
         user = self.users.get(user_id)
         gap_set = {gap["skill_id"] for gap in self._gaps(user)}
         direction = (user.direction or "").strip().lower()
 
-        internships = self.internships.list(**filters)
+        internships = self.internships.list_all(**filters)
 
-        def score(internship) -> int:
+        def score(internship: Internship) -> int:
             overlap = len({s.id for s in internship.skills} & gap_set)
             direction_bonus = (
                 3
@@ -114,9 +114,9 @@ class RecommendationService:
     def recommend(
         self,
         user_id: int,
-        course_filters: dict | None = None,
-        internship_filters: dict | None = None,
-    ) -> dict:
+        course_filters: dict[str, Any] | None = None,
+        internship_filters: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Полный ответ: пробелы + курсы + стажировки + резюме."""
         user = self.users.get(user_id)
         gaps = self._gaps(user)

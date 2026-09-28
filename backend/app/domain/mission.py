@@ -3,11 +3,16 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.app.domain import Base
+
+if TYPE_CHECKING:
+    from backend.app.domain.skill import Skill
+    from backend.app.domain.user import User
 
 
 class Mission(Base):
@@ -16,9 +21,7 @@ class Mission(Base):
     __tablename__ = "missions"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    skill_id: Mapped[int] = mapped_column(
-        ForeignKey("skills.id", ondelete="CASCADE"), index=True
-    )
+    skill_id: Mapped[int] = mapped_column(ForeignKey("skills.id", ondelete="CASCADE"), index=True)
     difficulty: Mapped[str] = mapped_column(String(20), default="easy")
     scenario: Mapped[str] = mapped_column(Text)
     explanation: Mapped[str | None] = mapped_column(Text)
@@ -59,9 +62,7 @@ class Attempt(Base):
     __tablename__ = "attempts"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"), index=True
-    )
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     mission_id: Mapped[int] = mapped_column(
         ForeignKey("missions.id", ondelete="CASCADE"), index=True
     )

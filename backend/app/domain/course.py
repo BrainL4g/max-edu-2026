@@ -2,10 +2,15 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from sqlalchemy import Float, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.app.domain import Base
+
+if TYPE_CHECKING:
+    from backend.app.domain.skill import Skill
 
 
 class Course(Base):
@@ -23,9 +28,7 @@ class Course(Base):
     cost: Mapped[float] = mapped_column(Float, default=0.0)
     format: Mapped[str] = mapped_column(String(30), default="online")
 
-    skills: Mapped[list[Skill]] = relationship(
-        secondary="course_skills", back_populates="courses"
-    )
+    skills: Mapped[list[Skill]] = relationship(secondary="course_skills", back_populates="courses")
 
 
 class CourseSkill(Base):
@@ -35,9 +38,5 @@ class CourseSkill(Base):
     __table_args__ = (UniqueConstraint("course_id", "skill_id", name="uq_course_skill"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    course_id: Mapped[int] = mapped_column(
-        ForeignKey("courses.id", ondelete="CASCADE"), index=True
-    )
-    skill_id: Mapped[int] = mapped_column(
-        ForeignKey("skills.id", ondelete="CASCADE"), index=True
-    )
+    course_id: Mapped[int] = mapped_column(ForeignKey("courses.id", ondelete="CASCADE"), index=True)
+    skill_id: Mapped[int] = mapped_column(ForeignKey("skills.id", ondelete="CASCADE"), index=True)

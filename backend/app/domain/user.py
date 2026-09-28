@@ -3,11 +3,17 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import BigInteger, DateTime, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.app.domain import Base
+
+if TYPE_CHECKING:
+    from backend.app.domain.mission import Attempt
+    from backend.app.domain.resume import Resume
+    from backend.app.domain.skill import UserSkill
 
 
 class User(Base):
@@ -16,9 +22,7 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    max_user_id: Mapped[int | None] = mapped_column(
-        BigInteger, unique=True, index=True
-    )
+    max_user_id: Mapped[int | None] = mapped_column(BigInteger, unique=True, index=True)
     name: Mapped[str | None] = mapped_column(String(120))
     education: Mapped[str | None] = mapped_column(String(200))
     direction: Mapped[str | None] = mapped_column(String(100), index=True)

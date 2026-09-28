@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import JSON, DateTime, ForeignKey, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.app.domain import Base
+
+if TYPE_CHECKING:
+    from backend.app.domain.user import User
 
 
 class Resume(Base):
@@ -16,17 +20,13 @@ class Resume(Base):
     __tablename__ = "resumes"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"), index=True
-    )
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     filename: Mapped[str | None] = mapped_column(String(255))
     text: Mapped[str] = mapped_column(Text)
     uploaded_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     user: Mapped[User] = relationship(back_populates="resumes")
-    analysis: Mapped[ResumeAnalysis | None] = relationship(
-        back_populates="resume", uselist=False
-    )
+    analysis: Mapped[ResumeAnalysis | None] = relationship(back_populates="resume", uselist=False)
 
 
 class ResumeAnalysis(Base):
@@ -38,7 +38,7 @@ class ResumeAnalysis(Base):
     resume_id: Mapped[int] = mapped_column(
         ForeignKey("resumes.id", ondelete="CASCADE"), index=True, unique=True
     )
-    result: Mapped[dict] = mapped_column(JSON)
+    result: Mapped[dict[str, Any]] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     resume: Mapped[Resume] = relationship(back_populates="analysis")

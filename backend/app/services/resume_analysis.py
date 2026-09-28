@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import re
+from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -58,7 +59,7 @@ class ResumeAnalysisService:
         self.resumes = ResumeRepository(db)
         self.users = UserRepository(db)
 
-    def analyze(self, resume_id: int) -> dict:
+    def analyze(self, resume_id: int) -> dict[str, Any]:
         """Проанализировать резюме и сохранить результат."""
         resume = self.resumes.get(resume_id)
         user = self.users.get(resume.user_id)
@@ -73,9 +74,7 @@ class ResumeAnalysisService:
         missing = [name for name in required if name not in found]
 
         issues = self._collect_issues(text, text_lower, found, direction, required)
-        recommendations = self._build_recommendations(
-            missing, issues, direction, required
-        )
+        recommendations = self._build_recommendations(missing, issues, direction, required)
         direction_match = (
             round(len([name for name in required if name in found]) / len(required) * 100, 1)
             if required
@@ -115,13 +114,11 @@ class ResumeAnalysisService:
         if not LINK_RE.search(text_lower):
             issues.append("Нет ссылок на GitHub/LinkedIn/портфолио/Telegram")
         if not any(
-            keyword in text_lower
-            for keyword in ("образован", "учеб", "вуз", "университет")
+            keyword in text_lower for keyword in ("образован", "учеб", "вуз", "университет")
         ):
             issues.append("Не указано образование")
         if direction and not (
-            direction in text_lower
-            or (required and required[0].lower() in text_lower)
+            direction in text_lower or (required and required[0].lower() in text_lower)
         ):
             issues.append(f"Резюме слабо связано с направлением «{direction}»")
         if not found:

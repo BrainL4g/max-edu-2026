@@ -15,7 +15,8 @@ class MissionRepository:
     def __init__(self, db: Session) -> None:
         self.db = db
 
-    def list(self) -> list[Mission]:
+    def list_all(self) -> list[Mission]:
+        """Все миссии с загруженным навыком, отсортированные по сложности."""
         return list(
             self.db.scalars(
                 select(Mission)
@@ -25,6 +26,7 @@ class MissionRepository:
         )
 
     def get(self, mission_id: int) -> Mission:
+        """Миссия по id (без вариантов ответов)."""
         mission = self.db.get(Mission, mission_id)
         if mission is None:
             raise NotFoundError(f"Миссия с id={mission_id} не найдена")
@@ -71,6 +73,7 @@ class MissionRepository:
         return attempt
 
     def get_attempt(self, attempt_id: int) -> Attempt:
+        """Попытка по id."""
         attempt = self.db.get(Attempt, attempt_id)
         if attempt is None:
             raise NotFoundError(f"Попытка с id={attempt_id} не найдена")

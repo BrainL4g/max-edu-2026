@@ -6,12 +6,14 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from backend.app.database.session import get_db
+from backend.app.domain import Course
 from backend.app.repositories.course_repository import CourseRepository
 from backend.app.schemas.course import CourseOut
 from backend.app.services.recommendations import RecommendationService
 
 
 def _parse_skill_ids(raw: str | None) -> list[int] | None:
+    """Разобрать список id навыков из query-параметра (через запятую)."""
     if not raw:
         return None
     return [int(part) for part in raw.split(",") if part.strip().isdigit()]
@@ -30,9 +32,9 @@ def list_courses(
     format: str | None = Query(None, alias="format"),
     platform: str | None = None,
     db: Session = Depends(get_db),
-) -> list[CourseOut]:
+) -> list[Course]:
     """Список курсов с фильтрацией и поиском."""
-    return CourseRepository(db).list(
+    return CourseRepository(db).list_all(
         search=search,
         skill_ids=_parse_skill_ids(skills),
         category=category,
@@ -53,7 +55,7 @@ def recommended_courses(
     format: str | None = Query(None, alias="format"),
     platform: str | None = None,
     db: Session = Depends(get_db),
-) -> list[CourseOut]:
+) -> list[Course]:
     """Рекомендации курсов на основе пробелов в навыках пользователя."""
     return RecommendationService(db).recommend_courses(
         user_id,
@@ -67,6 +69,6 @@ def recommended_courses(
 
 
 @router.get("/courses/{course_id}", response_model=CourseOut)
-def get_course(course_id: int, db: Session = Depends(get_db)) -> CourseOut:
+def get_course(course_id: int, db: Session = Depends(get_db)) -> Course:
     """Курс по id."""
     return CourseRepository(db).get(course_id)

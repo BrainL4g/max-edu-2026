@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -31,13 +33,11 @@ class ResumeRepository:
     def list_by_user(self, user_id: int) -> list[Resume]:
         return list(
             self.db.scalars(
-                select(Resume)
-                .where(Resume.user_id == user_id)
-                .order_by(Resume.uploaded_at.desc())
+                select(Resume).where(Resume.user_id == user_id).order_by(Resume.uploaded_at.desc())
             )
         )
 
-    def save_analysis(self, resume_id: int, result: dict) -> ResumeAnalysis:
+    def save_analysis(self, resume_id: int, result: dict[str, Any]) -> ResumeAnalysis:
         """Сохранить (или обновить) результат анализа резюме."""
         analysis = self.get_analysis(resume_id)
         if analysis is None:
@@ -50,6 +50,4 @@ class ResumeRepository:
         return analysis
 
     def get_analysis(self, resume_id: int) -> ResumeAnalysis | None:
-        return self.db.scalar(
-            select(ResumeAnalysis).where(ResumeAnalysis.resume_id == resume_id)
-        )
+        return self.db.scalar(select(ResumeAnalysis).where(ResumeAnalysis.resume_id == resume_id))

@@ -23,6 +23,7 @@ class UserRepository:
         return user
 
     def list(self) -> list[User]:
+        """Все пользователи, упорядоченные по id."""
         return list(self.db.scalars(select(User).order_by(User.id)))
 
     def create(
@@ -38,9 +39,7 @@ class UserRepository:
         self.db.refresh(user)
         return user
 
-    def get_or_create_by_max(
-        self, max_user_id: int, name: str | None = None
-    ) -> User:
+    def get_or_create_by_max(self, max_user_id: int, name: str | None = None) -> User:
         """Найти пользователя по max_user_id или создать нового.
 
         Повторный вызов с тем же max_user_id возвращает существующего
@@ -71,21 +70,17 @@ class UserRepository:
         self.db.refresh(user)
         return user
 
-    def get_progress(self, user_id: int) -> dict:
+    def get_progress(self, user_id: int) -> dict[str, int | float]:
         """Агрегированный прогресс пользователя (XP, миссии, уровень)."""
         total_xp = self.db.scalar(
-            select(func.coalesce(func.sum(Attempt.xp_earned), 0)).where(
-                Attempt.user_id == user_id
-            )
+            select(func.coalesce(func.sum(Attempt.xp_earned), 0)).where(Attempt.user_id == user_id)
         )
         completed = self.db.scalar(
             select(func.count(Attempt.id)).where(
                 Attempt.user_id == user_id, Attempt.is_correct.is_(True)
             )
         )
-        skills = list(
-            self.db.scalars(select(UserSkill).where(UserSkill.user_id == user_id))
-        )
+        skills = list(self.db.scalars(select(UserSkill).where(UserSkill.user_id == user_id)))
         average_level = round(sum(s.level for s in skills) / len(skills), 2) if skills else 0.0
         return {
             "total_xp": int(total_xp or 0),

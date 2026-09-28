@@ -15,7 +15,8 @@ class SkillRepository:
     def __init__(self, db: Session) -> None:
         self.db = db
 
-    def list(self) -> list[Skill]:
+    def list_all(self) -> list[Skill]:
+        """Все навыки, отсортированные по категории и имени."""
         return list(self.db.scalars(select(Skill).order_by(Skill.category, Skill.name)))
 
     def get(self, skill_id: int) -> Skill:
@@ -33,9 +34,7 @@ class SkillRepository:
 
     def get_user_skill(self, user_id: int, skill_id: int) -> UserSkill | None:
         return self.db.scalar(
-            select(UserSkill).where(
-                UserSkill.user_id == user_id, UserSkill.skill_id == skill_id
-            )
+            select(UserSkill).where(UserSkill.user_id == user_id, UserSkill.skill_id == skill_id)
         )
 
     def get_user_skills(self, user_id: int) -> list[UserSkill]:

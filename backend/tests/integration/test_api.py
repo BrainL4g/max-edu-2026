@@ -96,9 +96,7 @@ def test_full_user_journey(client, db_session):
     assert isinstance(internships, list)
 
     # 10. Рекомендации целиком (пробелы + курсы + стажировки).
-    response = client.get(
-        "/courses/recommended", params={"user_id": user_id}
-    )
+    response = client.get("/courses/recommended", params={"user_id": user_id})
     assert response.status_code == 200
 
     # 11. Загрузка резюме текстом.

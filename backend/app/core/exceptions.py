@@ -27,9 +27,7 @@ def register_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(NotFoundError)
     async def not_found_handler(request: Request, exc: NotFoundError) -> JSONResponse:
-        return JSONResponse(
-            status_code=status.HTTP_404_NOT_FOUND, content={"detail": str(exc)}
-        )
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"detail": str(exc)})
 
     @app.exception_handler(InvalidDataError)
     async def invalid_data_handler(request: Request, exc: InvalidDataError) -> JSONResponse:
@@ -40,6 +38,4 @@ def register_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(ConflictError)
     async def conflict_handler(request: Request, exc: ConflictError) -> JSONResponse:
-        return JSONResponse(
-            status_code=status.HTTP_409_CONFLICT, content={"detail": str(exc)}
-        )
+        return JSONResponse(status_code=status.HTTP_409_CONFLICT, content={"detail": str(exc)})

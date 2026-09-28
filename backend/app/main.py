@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -15,7 +16,7 @@ from backend.app.domain import Base
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Старт: создание таблиц и демо-данных для быстрого прототипа."""
     if settings.auto_create_tables:
         Base.metadata.create_all(bind=engine)

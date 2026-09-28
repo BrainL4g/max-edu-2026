@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -16,7 +18,7 @@ MAX_LEVEL = len(LEVEL_THRESHOLDS) - 1
 TARGET_LEVEL = 3
 
 # Бонус к опыту за сложность миссии.
-DIFFICULTY_BONUS = {"easy": 0, "medium": 10, "hard": 20}
+DIFFICULTY_BONUS: dict[str, int] = {"easy": 0, "medium": 10, "hard": 20}
 
 
 def level_from_xp(xp: int) -> int:
@@ -50,14 +52,10 @@ class SkillService:
 
     def _get_or_create_user_skill(self, user_id: int, skill_id: int) -> UserSkill:
         user_skill = self.db.scalar(
-            select(UserSkill).where(
-                UserSkill.user_id == user_id, UserSkill.skill_id == skill_id
-            )
+            select(UserSkill).where(UserSkill.user_id == user_id, UserSkill.skill_id == skill_id)
         )
         if user_skill is None:
-            user_skill = UserSkill(
-                user_id=user_id, skill_id=skill_id, level=0, experience=0
-            )
+            user_skill = UserSkill(user_id=user_id, skill_id=skill_id, level=0, experience=0)
             self.db.add(user_skill)
         return user_skill
 
@@ -91,7 +89,7 @@ class SkillService:
         self.db.commit()
         return user_skill
 
-    def get_skill_map(self, user_id: int) -> list[dict]:
+    def get_skill_map(self, user_id: int) -> list[dict[str, Any]]:
         """Skill Map пользователя: уровень и прогресс по каждому навыку."""
         rows = self.db.execute(
             select(UserSkill, Skill)
@@ -100,7 +98,7 @@ class SkillService:
             .order_by(Skill.category, Skill.name)
         ).all()
 
-        items = []
+        items: list[dict[str, Any]] = []
         for user_skill, skill in rows:
             level = level_from_xp(user_skill.experience)
             items.append(

@@ -51,9 +51,7 @@ def test_user_by_max_path_compatible_with_plain_creation(client):
 
 def test_user_by_max_can_run_assessment(client, db_session):
     seed_database(db_session)
-    created = client.post(
-        "/users/by-max", json={"max_user_id": 555, "name": "Новичок"}
-    ).json()
+    created = client.post("/users/by-max", json={"max_user_id": 555, "name": "Новичок"}).json()
     response = client.post(
         f"/users/{created['id']}/assessment",
         json={"answers": [{"question_id": 1, "option_index": 1}]},

@@ -6,12 +6,14 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from backend.app.database.session import get_db
+from backend.app.domain import Internship
 from backend.app.repositories.internship_repository import InternshipRepository
 from backend.app.schemas.internship import InternshipOut
 from backend.app.services.recommendations import RecommendationService
 
 
 def _parse_skill_ids(raw: str | None) -> list[int] | None:
+    """Разобрать список id навыков из query-параметра (через запятую)."""
     if not raw:
         return None
     return [int(part) for part in raw.split(",") if part.strip().isdigit()]
@@ -30,9 +32,9 @@ def list_internships(
     remote: bool | None = None,
     format: str | None = Query(None, alias="format"),
     db: Session = Depends(get_db),
-) -> list[InternshipOut]:
+) -> list[Internship]:
     """Список стажировок с фильтрацией и поиском."""
-    return InternshipRepository(db).list(
+    return InternshipRepository(db).list_all(
         search=search,
         direction=direction,
         skill_ids=_parse_skill_ids(skills),
@@ -53,7 +55,7 @@ def recommended_internships(
     remote: bool | None = None,
     format: str | None = Query(None, alias="format"),
     db: Session = Depends(get_db),
-) -> list[InternshipOut]:
+) -> list[Internship]:
     """Рекомендации стажировок: совпадение направления и навыков."""
     return RecommendationService(db).recommend_internships(
         user_id,
@@ -67,8 +69,6 @@ def recommended_internships(
 
 
 @router.get("/internships/{internship_id}", response_model=InternshipOut)
-def get_internship(
-    internship_id: int, db: Session = Depends(get_db)
-) -> InternshipOut:
+def get_internship(internship_id: int, db: Session = Depends(get_db)) -> Internship:
     """Стажировка по id."""
     return InternshipRepository(db).get(internship_id)

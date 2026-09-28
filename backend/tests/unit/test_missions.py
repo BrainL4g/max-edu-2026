@@ -60,9 +60,7 @@ def test_submit_correct_answer(db_session):
     user = _user(db_session)
     correct_option = mission_a.options[0]
 
-    result = MissionService(db_session).submit_answer(
-        user.id, mission_a.id, correct_option.id
-    )
+    result = MissionService(db_session).submit_answer(user.id, mission_a.id, correct_option.id)
 
     assert result["is_correct"] is True
     assert result["xp_earned"] == 40  # easy без бонуса
@@ -77,9 +75,7 @@ def test_submit_wrong_answer(db_session):
     user = _user(db_session)
     wrong_option = mission_a.options[1]
 
-    result = MissionService(db_session).submit_answer(
-        user.id, mission_a.id, wrong_option.id
-    )
+    result = MissionService(db_session).submit_answer(user.id, mission_a.id, wrong_option.id)
 
     assert result["is_correct"] is False
     assert result["xp_earned"] == max(3, 40 // 5) == 8

@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import sys
+from typing import Any
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -33,7 +34,7 @@ SEED_SKILLS: list[tuple[str, str, str]] = [
 ]
 
 # Каждая миссия: skill, difficulty, scenario, options [(text, is_correct)], explanation, reward_xp
-SEED_MISSIONS: list[dict] = [
+SEED_MISSIONS: list[dict[str, Any]] = [
     {
         "skill": "Python",
         "difficulty": "easy",
@@ -271,172 +272,268 @@ SEED_MISSIONS: list[dict] = [
 ]
 
 # Курсы: title, description, platform, url, level, category, cost, format, skills
-SEED_COURSES: list[dict] = [
+SEED_COURSES: list[dict[str, Any]] = [
     {
         "title": "Поколение Python: курс для начинающих",
         "description": "Базовый курс по Python: синтаксис, циклы, функции, ООП.",
-        "platform": "Stepik", "url": "https://stepik.org/course/58852",
-        "level": "beginner", "category": "Программирование", "cost": 0.0, "format": "online",
+        "platform": "Stepik",
+        "url": "https://stepik.org/course/58852",
+        "level": "beginner",
+        "category": "Программирование",
+        "cost": 0.0,
+        "format": "online",
         "skills": ["Python"],
     },
     {
         "title": "Python: основы и применение",
         "description": "Углублённый Python: стандартная библиотека, тесты, типизация.",
-        "platform": "Stepik", "url": "https://stepik.org/course/512",
-        "level": "intermediate", "category": "Программирование", "cost": 0.0, "format": "online",
+        "platform": "Stepik",
+        "url": "https://stepik.org/course/512",
+        "level": "intermediate",
+        "category": "Программирование",
+        "cost": 0.0,
+        "format": "online",
         "skills": ["Python", "Git"],
     },
     {
         "title": "Интерактивный тренажёр по SQL",
         "description": "SQL с нуля: запросы, JOIN, агрегации прямо в браузере.",
-        "platform": "Stepik", "url": "https://stepik.org/course/63054",
-        "level": "beginner", "category": "Данные", "cost": 0.0, "format": "online",
+        "platform": "Stepik",
+        "url": "https://stepik.org/course/63054",
+        "level": "beginner",
+        "category": "Данные",
+        "cost": 0.0,
+        "format": "online",
         "skills": ["SQL"],
     },
     {
         "title": "Основы Git",
         "description": "Git для начинающих: commit, ветки, GitHub.",
-        "platform": "YouTube", "url": "https://www.youtube.com/results?search_query=git+для+начинающих",
-        "level": "beginner", "category": "Инструменты", "cost": 0.0, "format": "online",
+        "platform": "YouTube",
+        "url": "https://www.youtube.com/results?search_query=git+для+начинающих",
+        "level": "beginner",
+        "category": "Инструменты",
+        "cost": 0.0,
+        "format": "online",
         "skills": ["Git"],
     },
     {
         "title": "Алгоритмы и структуры данных",
         "description": "Сортировки, деревья, графы, сложность алгоритмов.",
-        "platform": "Яндекс Практикум", "url": "https://practicum.yandex.ru/algorithms/",
-        "level": "intermediate", "category": "Программирование", "cost": 1990.0, "format": "online",
+        "platform": "Яндекс Практикум",
+        "url": "https://practicum.yandex.ru/algorithms/",
+        "level": "intermediate",
+        "category": "Программирование",
+        "cost": 1990.0,
+        "format": "online",
         "skills": ["Алгоритмы и структуры данных", "Python"],
     },
     {
         "title": "React для начинающих",
         "description": "Компоненты, props, state, хуки и сборка проекта.",
-        "platform": "Skillbox", "url": "https://skillbox.ru/course/react/",
-        "level": "intermediate", "category": "Программирование", "cost": 2500.0, "format": "online",
+        "platform": "Skillbox",
+        "url": "https://skillbox.ru/course/react/",
+        "level": "intermediate",
+        "category": "Программирование",
+        "cost": 2500.0,
+        "format": "online",
         "skills": ["React", "JavaScript"],
     },
     {
         "title": "Docker и контейнеризация",
         "description": "Образы, контейнеры, docker-compose, деплой.",
-        "platform": "OTUS", "url": "https://otus.ru/lessons/docker/",
-        "level": "advanced", "category": "Инструменты", "cost": 3000.0, "format": "online",
+        "platform": "OTUS",
+        "url": "https://otus.ru/lessons/docker/",
+        "level": "advanced",
+        "category": "Инструменты",
+        "cost": 3000.0,
+        "format": "online",
         "skills": ["Docker"],
     },
     {
         "title": "Анализ данных на Python",
         "description": "Pandas, визуализация, очистка данных и отчёты.",
-        "platform": "Яндекс Практикум", "url": "https://practicum.yandex.ru/data-analysis/",
-        "level": "intermediate", "category": "Данные", "cost": 2490.0, "format": "online",
+        "platform": "Яндекс Практикум",
+        "url": "https://practicum.yandex.ru/data-analysis/",
+        "level": "intermediate",
+        "category": "Данные",
+        "cost": 2490.0,
+        "format": "online",
         "skills": ["Pandas", "Python"],
     },
     {
         "title": "Machine Learning: введение",
         "description": "Линейные модели, метрики, переобучение, базовые пайплайны.",
-        "platform": "Coursera", "url": "https://www.coursera.org/specializations/machine-learning-introduction",
-        "level": "advanced", "category": "Данные", "cost": 1500.0, "format": "online",
+        "platform": "Coursera",
+        "url": "https://www.coursera.org/specializations/machine-learning-introduction",
+        "level": "advanced",
+        "category": "Данные",
+        "cost": 1500.0,
+        "format": "online",
         "skills": ["Machine Learning", "Python"],
     },
     {
         "title": "Тестирование ПО для начинающих",
         "description": "Виды тестирования, тест-кейсы, основы автоматизации.",
-        "platform": "Stepik", "url": "https://stepik.org/course/118786",
-        "level": "beginner", "category": "QA", "cost": 0.0, "format": "online",
+        "platform": "Stepik",
+        "url": "https://stepik.org/course/118786",
+        "level": "beginner",
+        "category": "QA",
+        "cost": 0.0,
+        "format": "online",
         "skills": ["Testing"],
     },
     {
         "title": "Figma: с нуля до макетов",
         "description": "Инструменты Figma, компоненты, автолейаут, экспорт.",
-        "platform": "Skillbox", "url": "https://skillbox.ru/course/figma/",
-        "level": "beginner", "category": "Дизайн", "cost": 1500.0, "format": "online",
+        "platform": "Skillbox",
+        "url": "https://skillbox.ru/course/figma/",
+        "level": "beginner",
+        "category": "Дизайн",
+        "cost": 1500.0,
+        "format": "online",
         "skills": ["Figma", "UI/UX"],
     },
     {
         "title": "UI/UX-дизайнер",
         "description": "Исследования, прототипирование, дизайн-системы.",
-        "platform": "Яндекс Практикум", "url": "https://practicum.yandex.ru/ui-design/",
-        "level": "intermediate", "category": "Дизайн", "cost": 2990.0, "format": "online",
+        "platform": "Яндекс Практикум",
+        "url": "https://practicum.yandex.ru/ui-design/",
+        "level": "intermediate",
+        "category": "Дизайн",
+        "cost": 2990.0,
+        "format": "online",
         "skills": ["UI/UX", "Figma"],
     },
     {
         "title": "Frontend-разработчик",
         "description": "HTML/CSS, JavaScript, React и сборка фронтенд-проекта.",
-        "platform": "Яндекс Практикум", "url": "https://practicum.yandex.ru/frontend-developer/",
-        "level": "intermediate", "category": "Программирование", "cost": 2900.0, "format": "online",
+        "platform": "Яндекс Практикум",
+        "url": "https://practicum.yandex.ru/frontend-developer/",
+        "level": "intermediate",
+        "category": "Программирование",
+        "cost": 2900.0,
+        "format": "online",
         "skills": ["JavaScript", "React", "HTML/CSS"],
     },
     {
         "title": "FastAPI: современный бэкенд",
         "description": "REST API на FastAPI: роуты, валидация, SQLAlchemy, документация.",
-        "platform": "YouTube", "url": "https://www.youtube.com/results?search_query=fastapi+курс",
-        "level": "intermediate", "category": "Программирование", "cost": 0.0, "format": "online",
+        "platform": "YouTube",
+        "url": "https://www.youtube.com/results?search_query=fastapi+курс",
+        "level": "intermediate",
+        "category": "Программирование",
+        "cost": 0.0,
+        "format": "online",
         "skills": ["FastAPI", "Python"],
     },
 ]
 
 # Стажировки: title, company, description, url, level, city, remote, format, requirements, direction, skills
-SEED_INTERNSHIPS: list[dict] = [
+SEED_INTERNSHIPS: list[dict[str, Any]] = [
     {
         "title": "Стажировка Python-разработчик",
-        "company": "Яндекс", "description": "Полгода практики в бэкенд-командах с ментором.",
+        "company": "Яндекс",
+        "description": "Полгода практики в бэкенд-командах с ментором.",
         "url": "https://yandex.ru/jobs/internships",
-        "level": "beginner", "city": "Москва", "remote": False, "format": "office",
+        "level": "beginner",
+        "city": "Москва",
+        "remote": False,
+        "format": "office",
         "requirements": "Базовый Python, желательно SQL и Git",
-        "direction": "backend", "skills": ["Python", "SQL", "Git"],
+        "direction": "backend",
+        "skills": ["Python", "SQL", "Git"],
     },
     {
         "title": "Веб-разработчик (React)",
-        "company": "VK", "description": "Практика в веб-команде над продуктовыми интерфейсами.",
+        "company": "VK",
+        "description": "Практика в веб-команде над продуктовыми интерфейсами.",
         "url": "https://vk.company/career/",
-        "level": "beginner", "city": "Санкт-Петербург", "remote": False, "format": "office",
+        "level": "beginner",
+        "city": "Санкт-Петербург",
+        "remote": False,
+        "format": "office",
         "requirements": "JavaScript, HTML/CSS, базовый React",
-        "direction": "frontend", "skills": ["JavaScript", "React", "HTML/CSS"],
+        "direction": "frontend",
+        "skills": ["JavaScript", "React", "HTML/CSS"],
     },
     {
         "title": "Аналитик данных",
-        "company": "Т-Банк", "description": "Удалённая работа с данными: отчёты, метрики, исследования.",
+        "company": "Т-Банк",
+        "description": "Удалённая работа с данными: отчёты, метрики, исследования.",
         "url": "https://www.tbank.ru/career/",
-        "level": "intermediate", "city": "Москва", "remote": True, "format": "remote",
+        "level": "intermediate",
+        "city": "Москва",
+        "remote": True,
+        "format": "remote",
         "requirements": "SQL, Pandas, Python",
-        "direction": "data", "skills": ["SQL", "Pandas", "Python"],
+        "direction": "data",
+        "skills": ["SQL", "Pandas", "Python"],
     },
     {
         "title": "QA-инженер",
-        "company": "Ozon", "description": "Ручное и автоматизированное тестирование сервисов.",
+        "company": "Ozon",
+        "description": "Ручное и автоматизированное тестирование сервисов.",
         "url": "https://job.ozon.ru/",
-        "level": "beginner", "city": "Казань", "remote": False, "format": "office",
+        "level": "beginner",
+        "city": "Казань",
+        "remote": False,
+        "format": "office",
         "requirements": "Внимательность, базовые SQL и тестирование",
-        "direction": "qa", "skills": ["Testing", "SQL"],
+        "direction": "qa",
+        "skills": ["Testing", "SQL"],
     },
     {
         "title": "UI/UX-дизайнер",
-        "company": "Сбер", "description": "Стажировка в продуктовом дизайне с наставником.",
+        "company": "Сбер",
+        "description": "Стажировка в продуктовом дизайне с наставником.",
         "url": "https://www.sberbank.ru/career",
-        "level": "beginner", "city": "Москва", "remote": False, "format": "office",
+        "level": "beginner",
+        "city": "Москва",
+        "remote": False,
+        "format": "office",
         "requirements": "Figma, понимание UX",
-        "direction": "design", "skills": ["Figma", "UI/UX"],
+        "direction": "design",
+        "skills": ["Figma", "UI/UX"],
     },
     {
         "title": "Backend-стажировка Python",
-        "company": "СКБ Контур", "description": "Удалённая стажировка с реальными задачами бэкенда.",
+        "company": "СКБ Контур",
+        "description": "Удалённая стажировка с реальными задачами бэкенда.",
         "url": "https://kontur.ru/career",
-        "level": "intermediate", "city": "Екатеринбург", "remote": True, "format": "remote",
+        "level": "intermediate",
+        "city": "Екатеринбург",
+        "remote": True,
+        "format": "remote",
         "requirements": "Python, SQL, Git; Docker — плюс",
-        "direction": "backend", "skills": ["Python", "SQL", "Git", "Docker"],
+        "direction": "backend",
+        "skills": ["Python", "SQL", "Git", "Docker"],
     },
     {
         "title": "ML-стажёр",
-        "company": "SberDevices", "description": "Работа над ML-пайплайнами и моделями.",
+        "company": "SberDevices",
+        "description": "Работа над ML-пайплайнами и моделями.",
         "url": "https://sberdevices.ru/career",
-        "level": "advanced", "city": "Москва", "remote": True, "format": "remote",
+        "level": "advanced",
+        "city": "Москва",
+        "remote": True,
+        "format": "remote",
         "requirements": "Python, ML, Pandas",
-        "direction": "data", "skills": ["Machine Learning", "Python", "Pandas"],
+        "direction": "data",
+        "skills": ["Machine Learning", "Python", "Pandas"],
     },
     {
         "title": "Frontend-практика",
-        "company": "Avito", "description": "Практика в команде интерфейсов маркетплейса.",
+        "company": "Avito",
+        "description": "Практика в команде интерфейсов маркетплейса.",
         "url": "https://career.avito.ru/",
-        "level": "beginner", "city": "Москва", "remote": False, "format": "office",
+        "level": "beginner",
+        "city": "Москва",
+        "remote": False,
+        "format": "office",
         "requirements": "JavaScript, React",
-        "direction": "frontend", "skills": ["JavaScript", "React"],
+        "direction": "frontend",
+        "skills": ["JavaScript", "React"],
     },
 ]
 
@@ -497,12 +594,7 @@ def seed_database(db: Session) -> int:
         db.add(internship)
 
     db.commit()
-    return (
-        len(SEED_SKILLS)
-        + len(SEED_MISSIONS)
-        + len(SEED_COURSES)
-        + len(SEED_INTERNSHIPS)
-    )
+    return len(SEED_SKILLS) + len(SEED_MISSIONS) + len(SEED_COURSES) + len(SEED_INTERNSHIPS)
 
 
 def seed_if_empty() -> int:
@@ -513,7 +605,7 @@ def seed_if_empty() -> int:
         return seed_database(db)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover (entry point, покрывается e2e-запуском)
     # python -m backend.app.seed
     added = seed_if_empty()
     print(f"Seed завершён: добавлено записей: {added}" if added else "База уже наполнена")
