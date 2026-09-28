@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     app_env: Literal["development", "testing", "production"] = "development"
     database_url: str = "sqlite:///./skillquest.db"
 
+    max_bot_token: str = ""
+
     auto_create_tables: bool = True
     seed_on_startup: bool = True
 

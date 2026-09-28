@@ -138,6 +138,7 @@ Dev:
 APP_NAME=SkillQuest
 APP_ENV=development
 DATABASE_URL=sqlite:///./skillquest.db
+MAX_BOT_TOKEN=
 ```
 
 | Переменная | Значение | По умолчанию |
@@ -145,6 +146,7 @@ DATABASE_URL=sqlite:///./skillquest.db
 | `APP_NAME` | Название приложения | `SkillQuest` |
 | `APP_ENV` | `development` / `testing` / `production` | `development` |
 | `DATABASE_URL` | URL SQLite (или другой БД через SQLAlchemy) | `sqlite:///./skillquest.db` |
+| `MAX_BOT_TOKEN` | Токен бота (для внешней интеграции) | пусто |
 | `AUTO_CREATE_TABLES` | Создавать таблицы при старте (прототип) | `true` |
 | `SEED_ON_STARTUP` | Наполнять базу демо-данными при старте | `true` |
 | `CORS_ORIGINS` | Разрешённые origins через запятую | `*` |
