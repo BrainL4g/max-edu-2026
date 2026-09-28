@@ -37,6 +37,48 @@ def skill_map_text(items: list[dict[str, Any]]) -> str:
     return "\n".join(lines)
 
 
+def roles_question_text() -> str:
+    """Текст экрана выбора целевой роли."""
+    return (
+        "🎯 Какую цель выбираешь?\n\n"
+        "Выбери роль — я покажу, чего не хватает до неё, "
+        "и подберу шаги для подготовки."
+    )
+
+
+def gap_analysis_text(analysis: dict[str, Any]) -> str:
+    """Gap-анализ: цель, процент соответствия и чего не хватает."""
+    role = analysis.get("role")
+    if not role:
+        return (
+            "🎯 Целевая роль ещё не выбрана.\n\n"
+            "Выбери роль в меню ниже — я покажу, чего не хватает до неё."
+        )
+
+    match = analysis.get("match_percent")
+    lines = [f"🎯 Цель: {role['name']}", f"Совпадение с ролью: {match}%\n"]
+
+    gaps = [item for item in analysis["items"] if item["gap"] > 0]
+    closed = [item for item in analysis["items"] if item["gap"] == 0]
+    if gaps:
+        lines.append("🚧 Не хватает:")
+        for item in gaps[:6]:
+            mark = "❗" if item["is_mandatory"] else "·"
+            lines.append(
+                f"{mark} {item['name']} — {item['current_level']} из "
+                f"{item['required_level']}"
+            )
+    else:
+        lines.append("Всё закрыто — можно откликаться! 🎉")
+    if closed:
+        lines.append("\n✅ Уже в норме:")
+        lines += [
+            f"· {item['name']} — {item['current_level']} из {item['required_level']}"
+            for item in closed
+        ]
+    return "\n".join(lines)
+
+
 def course_card(course: dict[str, Any], index: int = 0) -> str:
     """Карточка курса."""
     skills = ", ".join(s["name"] for s in course.get("skills", [])) or "—"

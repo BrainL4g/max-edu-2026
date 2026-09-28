@@ -110,3 +110,24 @@ async def upload_resume(user_id: int, text: str) -> dict[str, Any]:
 async def analyze_resume(resume_id: int) -> dict[str, Any]:
     """Запуск анализа резюме."""
     return _obj(await _req("POST", f"/resumes/{resume_id}/analyze"))
+
+
+async def list_roles() -> list[dict[str, Any]]:
+    """Все целевые карьерные роли."""
+    return _list(await _req("GET", "/roles"))
+
+
+async def set_goal(user_id: int, target_role_id: int) -> dict[str, Any]:
+    """Выбрать целевую роль пользователя."""
+    return _obj(
+        await _req(
+            "PUT",
+            f"/users/{user_id}/goal",
+            json={"target_role_id": target_role_id},
+        )
+    )
+
+
+async def gap_analysis(user_id: int) -> dict[str, Any]:
+    """Что не хватает до целевой роли и процент соответствия."""
+    return _obj(await _req("GET", f"/users/{user_id}/gap-analysis"))

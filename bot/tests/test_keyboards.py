@@ -26,9 +26,28 @@ def _rows(attachments: list[Any] | None) -> list[list[Any]]:
 def test_main_menu_payloads() -> None:
     buttons = buttons_from([kbs.main_menu()])
     payloads = _payloads(buttons)
-    for expected in ("as:start", "ms:next", "sm:show", "cr:rec", "in:rec", "rs:start"):
+    for expected in (
+        "goal:show",
+        "as:start",
+        "ms:next",
+        "sm:show",
+        "cr:rec",
+        "in:rec",
+        "rs:start",
+    ):
         assert expected in payloads, payloads
     assert "menu:main" not in payloads
+
+
+def test_roles_kb_payloads_and_names() -> None:
+    roles = [
+        {"id": 1, "name": "Backend Junior"},
+        {"id": 2, "name": "Data Analyst Junior"},
+    ]
+    buttons = buttons_from([kbs.roles_kb(roles)])
+    assert [b.text for b in buttons[:2]] == ["Backend Junior", "Data Analyst Junior"]
+    assert [b.payload for b in buttons[:2]] == ["goal:pick:1", "goal:pick:2"]
+    assert buttons[-1].payload == "menu:main"
 
 
 def test_options_kb_payloads_and_back() -> None:

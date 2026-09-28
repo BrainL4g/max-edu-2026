@@ -12,6 +12,7 @@ from maxapi.types import BotCommand, ErrorEvent
 
 from handlers import (
     assessment,
+    goal,
     missions,
     recommend,
     resume,
@@ -30,6 +31,7 @@ bot = Bot(TOKEN)
 dp = Dispatcher()
 dp.include_routers(
     start.router,
+    goal.router,
     missions.router,
     assessment.router,
     skillmap.router,

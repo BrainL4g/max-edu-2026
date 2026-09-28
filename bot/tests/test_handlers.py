@@ -8,7 +8,7 @@ from typing import Any
 
 import api
 import sessions
-from handlers import assessment, missions, recommend, resume, skillmap, start
+from handlers import assessment, goal, missions, recommend, resume, skillmap, start
 from tests.fakes import (
     FakeBotStartedEvent,
     FakeCallbackEvent,
@@ -361,3 +361,87 @@ def test_capture_resume_text_skips_without_sender() -> None:
     event.message.sender = None
     _run(resume.capture_resume_text(event))
     assert event.answers == []
+
+
+def _roles() -> list[dict[str, Any]]:
+    return [
+        {"id": 1, "name": "Backend Junior"},
+        {"id": 2, "name": "Data Analyst Junior"},
+    ]
+
+
+def _gap_analysis() -> dict[str, Any]:
+    return {
+        "role": {"id": 1, "name": "Backend Junior"},
+        "match_percent": 43,
+        "items": [
+            {
+                "name": "SQL",
+                "current_level": 2,
+                "required_level": 3,
+                "gap": 1,
+                "is_mandatory": True,
+            },
+            {
+                "name": "Python",
+                "current_level": 3,
+                "required_level": 3,
+                "gap": 0,
+                "is_mandatory": True,
+            },
+        ],
+        "summary": "Соответствие 43%",
+    }
+
+
+def test_goal_show_lists_roles(monkeypatch) -> None:
+    monkeypatch.setattr(api, "list_roles", _async_result(_roles()))
+
+    event = FakeCallbackEvent("goal:show")
+    _run(goal.goal_show(event))
+    text, attachments = event.edits[0]
+    assert "Какую цель выбираешь?" in text
+    buttons = buttons_from(attachments)
+    assert [getattr(b, "text", None) for b in buttons[:2]] == [
+        "Backend Junior",
+        "Data Analyst Junior",
+    ]
+    assert [b.payload for b in buttons[:2]] == ["goal:pick:1", "goal:pick:2"]
+    assert buttons[-1].payload == "menu:main"
+
+
+def test_goal_show_empty(monkeypatch) -> None:
+    monkeypatch.setattr(api, "list_roles", _async_result([]))
+
+    event = FakeCallbackEvent("goal:show")
+    _run(goal.goal_show(event))
+    assert "Ролей пока нет" in event.edits[0][0]
+
+
+def test_goal_pick_sets_goal_and_shows_gap(monkeypatch) -> None:
+    _fake_user(monkeypatch)
+    calls: list[tuple[int, int]] = []
+    monkeypatch.setattr(api, "gap_analysis", _async_result(_gap_analysis()))
+
+    async def fake_set_goal(user_id: int, target_role_id: int) -> dict[str, Any]:
+        calls.append((user_id, target_role_id))
+        return {"id": user_id, "target_role_id": target_role_id}
+
+    monkeypatch.setattr(api, "set_goal", fake_set_goal)
+
+    event = FakeCallbackEvent("goal:pick:1")
+    _run(goal.goal_pick(event))
+    assert calls == [(42, 1)]
+    text, attachments = event.edits[0]
+    assert "Цель: Backend Junior" in text
+    assert "43%" in text
+    assert "SQL" in text
+    payloads = _payloads(buttons_from(attachments))
+    assert "goal:show" in payloads  # показано главное меню
+
+
+def test_goal_pick_ignores_other_payloads(monkeypatch) -> None:
+    _fake_user(monkeypatch)
+    event = FakeCallbackEvent("goal:wrong")
+    _run(goal.goal_pick(event))
+    assert event.edits == []

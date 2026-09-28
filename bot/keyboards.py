@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from maxapi.types import CallbackButton, LinkButton
 from maxapi.types.attachments import AttachmentButton
 from maxapi.utils.inline_keyboard import InlineKeyboardBuilder
@@ -19,6 +21,7 @@ def _clip(text: str) -> str:
 def main_menu() -> AttachmentButton:
     """Главное меню."""
     builder = InlineKeyboardBuilder()  # type: ignore[no-untyped-call]
+    builder.row(CallbackButton(text="🎯 Цель", payload="goal:show"))
     builder.row(CallbackButton(text="🧠 Диагностика", payload="as:start"))
     builder.row(
         CallbackButton(text="🎮 Миссия", payload="ms:next"),
@@ -29,6 +32,17 @@ def main_menu() -> AttachmentButton:
         CallbackButton(text="💼 Стажировки", payload="in:rec"),
     )
     builder.row(CallbackButton(text="📄 Резюме", payload="rs:start"))
+    return builder.as_markup()
+
+
+def roles_kb(roles: list[dict[str, Any]]) -> AttachmentButton:
+    """Кнопки выбора целевой роли: payload = "goal:pick:{id}"."""
+    builder = InlineKeyboardBuilder()  # type: ignore[no-untyped-call]
+    for role in roles:
+        builder.row(
+            CallbackButton(text=role["name"], payload=f"goal:pick:{role['id']}")
+        )
+    builder.row(CallbackButton(text="🏠 Меню", payload="menu:main"))
     return builder.as_markup()
 
 

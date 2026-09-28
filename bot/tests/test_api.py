@@ -103,6 +103,56 @@ def test_resume_upload_and_analyze(monkeypatch) -> None:
     assert analysis["direction_match"] == 80
 
 
+def test_roles_and_goal_api(monkeypatch) -> None:
+    roles = [
+        {
+            "id": 1,
+            "name": "Backend Junior",
+            "direction": "backend",
+            "level": "junior",
+            "requirements": [],
+        },
+    ]
+    routes = {
+        ("GET", "/roles"): Response(200, json=roles),
+        ("PUT", "/users/5/goal"): Response(
+            200, json={"id": 5, "name": "Маша", "target_role_id": 1}
+        ),
+        ("GET", "/users/5/gap-analysis"): Response(
+            200,
+            json={
+                "user_id": 5,
+                "role": roles[0],
+                "match_percent": 43,
+                "items": [],
+                "summary": "Соответствие 43%",
+            },
+        ),
+    }
+    client = _client(routes)
+    monkeypatch.setattr(api, "_get_client", lambda: client)
+
+    assert asyncio.run(api.list_roles())[0]["name"] == "Backend Junior"
+    assert asyncio.run(api.set_goal(5, 1))["target_role_id"] == 1
+    analysis = asyncio.run(api.gap_analysis(5))
+    assert analysis["match_percent"] == 43
+    assert analysis["role"]["name"] == "Backend Junior"
+
+
+def test_set_goal_sends_payload(monkeypatch) -> None:
+    captured: dict[str, str] = {}
+
+    def handler(request: httpx.Request) -> Response:
+        captured["body"] = request.content.decode()
+        return Response(200, json={"id": 5, "target_role_id": 2})
+
+    client = httpx.AsyncClient(transport=MockTransport(handler), base_url="http://test")
+    monkeypatch.setattr(api, "_get_client", lambda: client)
+
+    asyncio.run(api.set_goal(5, 2))
+    assert "target_role_id" in captured["body"]
+
+
 def test_http_error_raises_api_error(monkeypatch) -> None:
     client = _client({("GET", "/boom"): Response(500, json={"detail": "x"})})
     monkeypatch.setattr(api, "_get_client", lambda: client)

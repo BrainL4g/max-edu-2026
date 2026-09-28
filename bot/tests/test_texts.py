@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import texts
 
 
@@ -124,3 +126,64 @@ def test_resume_report_empty() -> None:
     assert "0%" in report
     assert "Найдено: —" in report
     assert "Не хватает: —" in report
+
+
+def test_roles_question_text() -> None:
+    assert "Какую цель выбираешь?" in texts.roles_question_text()
+
+
+def _gap_analysis() -> dict[str, Any]:
+    return {
+        "role": {"id": 1, "name": "Backend Junior"},
+        "match_percent": 43,
+        "items": [
+            {
+                "name": "SQL",
+                "current_level": 2,
+                "required_level": 3,
+                "gap": 1,
+                "is_mandatory": True,
+            },
+            {
+                "name": "Python",
+                "current_level": 3,
+                "required_level": 3,
+                "gap": 0,
+                "is_mandatory": True,
+            },
+        ],
+        "summary": "Соответствие 43%",
+    }
+
+
+def test_gap_analysis_text_with_gaps() -> None:
+    text = texts.gap_analysis_text(_gap_analysis())
+    assert "Цель: Backend Junior" in text
+    assert "43%" in text
+    assert "SQL" in text and "2 из 3" in text
+    assert "❗ SQL" in text
+    assert "Python" in text and "3 из 3" in text
+
+
+def test_gap_analysis_text_full_match() -> None:
+    analysis = {
+        "role": {"id": 1, "name": "QA Junior"},
+        "match_percent": 100,
+        "items": [
+            {
+                "name": "Testing",
+                "current_level": 3,
+                "required_level": 3,
+                "gap": 0,
+                "is_mandatory": True,
+            }
+        ],
+    }
+    text = texts.gap_analysis_text(analysis)
+    assert "100%" in text
+    assert "Всё закрыто" in text
+
+
+def test_gap_analysis_text_without_role() -> None:
+    text = texts.gap_analysis_text({"user_id": 1, "role": None, "items": []})
+    assert "не выбрана" in text
