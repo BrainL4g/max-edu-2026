@@ -34,8 +34,8 @@
 - проверять и улучшать резюме.
 
 Backend реализован на **Python + FastAPI + SQLAlchemy + SQLite**, разворачивается
-в **Docker**. MAX выступает интерфейсом/средой взаимодействия: основной сценарий
-доступен для проверки через HTTP API внутри MAX.
+в **Docker**. Весь функционал доступен через HTTP API
+(см. [пошаговую проверку](#13-пошаговая-проверка-сценария)).
 
 ## 2. Проблема
 
@@ -77,7 +77,6 @@ SkillQuest превращает этот процесс в игру: диагн�
 - 📄 **Резюме** — загрузка (текст/файл), анализ, отчёт с проблемами и советами.
 - 🏷️ **Фильтрация** курсов: `skill`, `category`, `level`, `price`, `format`, `platform`.
 - 🏷️ **Фильтрация** стажировок: `direction`, `skills`, `level`, `city`, `remote`, `format`.
-- 🤖 **MAX** — интерфейс взаимодействия (см. [Интеграции](#9-интеграции)).
 
 ## 5. Архитектура
 
@@ -139,7 +138,6 @@ Dev:
 APP_NAME=SkillQuest
 APP_ENV=development
 DATABASE_URL=sqlite:///./skillquest.db
-MAX_BOT_TOKEN=
 ```
 
 | Переменная | Значение | По умолчанию |
@@ -147,7 +145,6 @@ MAX_BOT_TOKEN=
 | `APP_NAME` | Название приложения | `SkillQuest` |
 | `APP_ENV` | `development` / `testing` / `production` | `development` |
 | `DATABASE_URL` | URL SQLite (или другой БД через SQLAlchemy) | `sqlite:///./skillquest.db` |
-| `MAX_BOT_TOKEN` | Токен MAX-бота для интеграции | пусто |
 | `AUTO_CREATE_TABLES` | Создавать таблицы при старте (прототип) | `true` |
 | `SEED_ON_STARTUP` | Наполнять базу демо-данными при старте | `true` |
 | `CORS_ORIGINS` | Разрешённые origins через запятую | `*` |
@@ -185,22 +182,36 @@ internships ── internship_skills ── skills
 
 **Демо-данные.** При `SEED_ON_STARTUP=true` база наполняется 16 навыками,
 18 миссиями, 14 курсами и 8 стажировками. Повторный запуск идемпотентен.
-Ручной запуск: `python -m app.seed` (из `backend/`).
+Ручной запуск (из корня): `python -m backend.app.seed`.
 
 **Миграции.** Схема управляется Alembic (`backend/alembic/`):
 `001_initial_schema.py` (основные таблицы), `002_add_resume_analysis.py`
-(резюме и анализ). Применение: `alembic upgrade head` (из `backend/`).
+(резюме и анализ). Применение (из корня):
+`alembic -c backend/alembic.ini upgrade head`.
 
 ## 9. Интеграции
 
-- **MAX** — интерфейс/среда взаимодействия. Backend выступает бизнес-логикой:
-  MAX отправляет HTTP-запросы к API (`http://localhost:8000`) и выводит ответы
-  пользователю. Для «официального» подключения используется `MAX_BOT_TOKEN`.
-  Проверка сценария внутри MAX возможна через любой HTTP-клиент/навык MAX,
-  вызывающий эндпоинты из раздела [13](#13-пошаговая-проверка-сценария).
 - **CORS** — настроен (`CORS_ORIGINS`), чтобы фронтенд (React) мог обращаться
   к API из браузера.
 - **Swagger UI** — встроенная документация API на `/docs`.
+- **OpenAPI** — спецификация на `/openapi.json` (для генерации клиентов).
+
+### Использование API из кода (Python)
+
+Роутеры вынесены в пакет `backend.app.api.routes` и подключаются единым
+`api_router` (см. `backend/app/api/router.py`). Пример:
+
+```python
+from backend.app.api.routes import courses, internships, missions, resumes, skills, users
+from fastapi import FastAPI
+
+app = FastAPI()
+for module in (users, skills, missions, courses, internships, resumes):
+    app.include_router(module.router)
+```
+
+Каждый модуль экспонирует объект `fastapi.APIRouter` в `module.router`,
+поэтому роутеры можно подключать выборочно.
 
 ## 10. Установка
 
@@ -208,21 +219,20 @@ internships ── internship_skills ── skills
 # 1. Клонировать репозиторий
 git clone <repo-url> && cd max-edu-2026
 
-# 2. Создать окружение
+# 2. Создать окружение и установить зависимости
 cd backend
 python -m venv .venv
 .venv\Scripts\activate            # Windows
 # source .venv/bin/activate       # Linux/macOS
-
-# 3. Установить зависимости (runtime + dev)
 pip install -r requirements.txt
 pip install pytest httpx pytest-cov ruff
 
-# 4. Настроить окружение
-copy ..\.env.example ..\.env      # Windows, затем заполнить при необходимости
+# 3. Настроить окружение (корень репозитория)
+copy ..\.env.example ..\.env
+cd ..
 
-# 5. Запустить API
-uvicorn app.main:app --reload
+# 4. Запустить API (из корня репозитория)
+uvicorn backend.app.main:app --reload
 ```
 
 API будет доступен на `http://localhost:8000`, документация — `/docs`,
@@ -242,11 +252,11 @@ docker compose up --build
 ## 12. Запуск тестов
 
 ```bash
-cd backend
-pytest                                   # все тесты
-pytest tests/unit -q                     # только unit-тесты
-pytest tests/integration/test_api.py     # интеграционный сценарий
-pytest --cov=app --cov-report=term-missing
+# из корня репозитория (или из backend/: pytest — рабочая)
+python -m pytest -c backend/pyproject.toml
+pytest backend/tests/unit -q                     # только unit-тесты
+pytest backend/tests/integration/test_api.py     # интеграционный сценарий
+pytest -c backend/pyproject.toml --cov=backend.app --cov-report=term-missing
 ```
 
 Unit-тесты покрывают: диагностику, расчёт навыков, игровые задания, фильтрацию,
@@ -255,7 +265,7 @@ Unit-тесты покрывают: диагностику, расчёт нав�
 
 ## 13. Пошаговая проверка сценария
 
-Полный пользовательский сценарий можно проверить вручную (curl/Swagger/MAX):
+Полный пользовательский сценарий можно проверить вручную (curl/Swagger):
 
 ```bash
 BASE=http://localhost:8000
