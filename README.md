@@ -221,7 +221,7 @@ for module in (users, skills, missions, courses, internships, resumes):
 # 1. Клонировать репозиторий
 git clone <repo-url> && cd max-edu-2026
 
-# 2. Создать окружение и установить зависимости
+# 2. Создать окружение и установить зависимости (из папки backend/)
 cd backend
 python -m venv .venv
 .venv\Scripts\activate            # Windows
@@ -229,11 +229,14 @@ python -m venv .venv
 pip install -r requirements.txt
 pip install pytest httpx pytest-cov ruff
 
-# 3. Настроить окружение (корень репозитория)
-copy ..\.env.example ..\.env
-cd ..
+# 3. Установить пакет в режиме разработки — `backend.app.*` импортируется из любой папки
+pip install -e .
 
-# 4. Запустить API (из корня репозитория)
+# 4. Настроить окружение (корень репозитория)
+copy ..\.env.example ..\.env
+
+# 5. Запустить API (из корня или из backend/ — работает в обоих случаях)
+cd ..
 uvicorn backend.app.main:app --reload
 ```
 
