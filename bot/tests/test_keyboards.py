@@ -28,14 +28,11 @@ def test_options_kb_without_back() -> None:
     assert _payloads(buttons) == ["p:1"]
 
 
-def test_options_kb_truncates_long_text_with_ellipsis() -> None:
-    buttons = buttons_from([kbs.options_kb("p", [(1, "д" * 200)])])
-    assert buttons[0].text == "д" * (kbs.TEXT_LIMIT - 1) + "…"
-
-
-def test_options_kb_keeps_short_text() -> None:
-    buttons = buttons_from([kbs.options_kb("p", [(1, "Да"), (2, "Нет")])])
-    assert [b.text for b in buttons[:2]] == ["Да", "Нет"]
+def test_options_kb_numbered_short_buttons() -> None:
+    """Длинные тексты ответов не уходят в кнопки — там только номера."""
+    buttons = buttons_from([kbs.options_kb("p", [(10, "д" * 200), (11, "кот")])])
+    assert [b.text for b in buttons] == ["1", "2", "🏠 Меню"]
+    assert [b.payload for b in buttons[:-1]] == ["p:10", "p:11"]
 
 
 def test_after_mission_kb() -> None:

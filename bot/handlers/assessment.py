@@ -8,6 +8,7 @@ from maxapi.types import MessageCallback
 import api
 import keyboards as kbs
 import sessions
+import texts
 
 router = Router()
 
@@ -25,11 +26,14 @@ async def _ask(event: MessageCallback, index: int) -> None:
     """Показать вопрос под номером index (0-based)."""
     questions = await api.assessment_questions()
     question = questions[index]
-    kb = kbs.options_kb(f"asq:{question['id']}", list(enumerate(question["options"])))
-    await event.edit(
-        f"Вопрос {index + 1}/{len(questions)}\n{question['text']}",
-        attachments=[kb],
+    options = question["options"]
+    kb = kbs.options_kb(f"asq:{question['id']}", list(enumerate(options)))
+    body = (
+        f"Вопрос {index + 1}/{len(questions)}\n\n"
+        f"{question['text']}\n\n"
+        f"{texts.numbered_options(options)}"
     )
+    await event.edit(body, attachments=[kb])
 
 
 @router.message_callback(F.callback.payload.startswith("asq:"))

@@ -124,9 +124,12 @@ def test_mission_next_shows_question(monkeypatch) -> None:
     text, attachments = event.edits[0]
     assert "Python" in text
     assert "+25 XP" in text
+    assert "1. продолжить" in text
+    assert "2. прервать" in text
     payloads = _payloads(buttons_from(attachments))
     assert "ms:ans:3:10" in payloads
     assert "ms:ans:3:11" in payloads
+    assert [b.text for b in buttons_from(attachments)[:-1]] == ["1", "2"]
 
 
 def test_mission_next_all_done(monkeypatch) -> None:
@@ -187,6 +190,8 @@ def test_start_assessment_shows_first_question(monkeypatch) -> None:
     _run(assessment.start_assessment(event))
     text, attachments = event.edits[0]
     assert "Вопрос 1/2" in text
+    assert "1. Нет" in text
+    assert "2. Да" in text
     assert "asq:1:0" in _payloads(buttons_from(attachments))
     assert "asq:1:1" in _payloads(buttons_from(attachments))
     assert sessions.session_for(USER_ID)["answers"] == []

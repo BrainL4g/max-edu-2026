@@ -8,6 +8,7 @@ from maxapi.types import MessageCallback
 import api
 import keyboards as kbs
 import sessions
+import texts
 
 router = Router()
 
@@ -23,7 +24,8 @@ async def mission_next(event: MessageCallback) -> None:
 
     text = (
         f"🎮 {mission['skill_name']} · {mission['difficulty']} · "
-        f"+{mission['reward_xp']} XP\n\n{mission['scenario']}"
+        f"+{mission['reward_xp']} XP\n\n{mission['scenario']}\n\n"
+        f"{texts.numbered_options([option['text'] for option in mission['options']])}"
     )
     options = [(option["id"], option["text"]) for option in mission["options"]]
     kb = kbs.options_kb(f"ms:ans:{mission['id']}", options)

@@ -35,13 +35,16 @@ def main_menu() -> AttachmentButton:
 def options_kb(
     prefix: str, options: list[tuple[int, str]], back: bool = True
 ) -> AttachmentButton:
-    """Варианты ответа по одному на строку: payload = "{prefix}:{id}".
+    """Кнопки-номера вариантов ответа: payload = "{prefix}:{id}".
 
-    options — список пар (id/индекс, текст).
+    Полный текст вариантов выводится в сообщении (texts.numbered_options),
+    поэтому кнопки короткие: номер на кнопке — позиция варианта (1..N).
     """
     builder = InlineKeyboardBuilder()  # type: ignore[no-untyped-call]
-    for option_id, text in options:
-        builder.row(CallbackButton(text=_clip(text), payload=f"{prefix}:{option_id}"))
+    for index, (option_id, _text) in enumerate(options):
+        builder.row(
+            CallbackButton(text=str(index + 1), payload=f"{prefix}:{option_id}")
+        )
     if back:
         builder.row(CallbackButton(text="🏠 Меню", payload="menu:main"))
     return builder.as_markup()

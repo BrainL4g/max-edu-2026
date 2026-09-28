@@ -13,6 +13,11 @@ def progress_bar(percent: float, width: int = 10) -> str:
     return "▓" * filled + "░" * (width - filled)
 
 
+def numbered_options(options: list[str]) -> str:
+    """Нумерованный список вариантов ответа (1..N) для текста вопроса."""
+    return "\n".join(f"{i + 1}. {text}" for i, text in enumerate(options))
+
+
 def skill_map_text(items: list[dict[str, Any]]) -> str:
     """Skill Map пользователя текстом."""
     if not items:

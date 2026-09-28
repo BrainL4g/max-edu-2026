@@ -11,6 +11,14 @@ def test_progress_bar() -> None:
     assert texts.progress_bar(100, 5) == "▓" * 5
 
 
+def test_numbered_options() -> None:
+    assert texts.numbered_options(["Нет", "Да"]) == "1. Нет\n2. Да"
+
+
+def test_numbered_options_empty() -> None:
+    assert texts.numbered_options([]) == ""
+
+
 def test_skill_map_text_empty() -> None:
     assert "не оценены" in texts.skill_map_text([])
 
