@@ -8,7 +8,7 @@ from __future__ import annotations
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.domain import Mission, Skill, User, UserSkill
+from backend.app.domain import Mission, Skill, User, UserSkill
 
 # Кумулятивный опыт, необходимый для ДОСТИЖЕНИЯ каждого уровня (0..5).
 LEVEL_THRESHOLDS: tuple[int, ...] = (0, 100, 250, 450, 700, 1000)

@@ -1,7 +1,7 @@
 """Демо-данные SkillQuest.
 
 Наполняет базу навыками, игровыми миссиями, курсами и стажировками.
-Вызов: ``python -m app.seed`` или автоматически при старте (см. config).
+Вызов: ``python -m backend.app.seed`` или автоматически при старте (см. config).
 """
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ import sys
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.domain import Course, Internship, Mission, MissionOption, Skill
+from backend.app.domain import Course, Internship, Mission, MissionOption, Skill
 
 SEED_SKILLS: list[tuple[str, str, str]] = [
     ("Python", "Программирование", "Язык программирования для backend, data и не только"),
@@ -507,14 +507,14 @@ def seed_database(db: Session) -> int:
 
 def seed_if_empty() -> int:
     """Наполнить базу, если она пуста. Возвращает число добавленных записей."""
-    from app.database.session import SessionLocal
+    from backend.app.database.session import SessionLocal
 
     with SessionLocal() as db:
         return seed_database(db)
 
 
 if __name__ == "__main__":
-    # python -m app.seed
+    # python -m backend.app.seed
     added = seed_if_empty()
     print(f"Seed завершён: добавлено записей: {added}" if added else "База уже наполнена")
     sys.exit(0)

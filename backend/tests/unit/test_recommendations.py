@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from app.domain import Course, Internship, Skill, User, UserSkill
-from app.services.recommendations import RecommendationService
+from backend.app.domain import Course, Internship, Skill, User, UserSkill
+from backend.app.services.recommendations import RecommendationService
 
 
 def _seed(db):

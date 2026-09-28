@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-from app.domain import (  # noqa: F401
+from backend.app.domain import (  # noqa: F401
     Attempt,
     Base,
     Course,

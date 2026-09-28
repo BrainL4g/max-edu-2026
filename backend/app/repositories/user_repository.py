@@ -5,8 +5,8 @@ from __future__ import annotations
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.core.exceptions import NotFoundError
-from app.domain import Attempt, Mission, User, UserSkill
+from backend.app.core.exceptions import NotFoundError
+from backend.app.domain import Attempt, User, UserSkill
 
 
 class UserRepository:

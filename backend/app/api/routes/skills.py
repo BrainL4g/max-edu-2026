@@ -5,10 +5,10 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.database.session import get_db
-from app.repositories.skill_repository import SkillRepository
-from app.schemas.skill import SkillMapItem, SkillOut
-from app.services.skills import SkillService
+from backend.app.database.session import get_db
+from backend.app.repositories.skill_repository import SkillRepository
+from backend.app.schemas.skill import SkillMapItem, SkillOut
+from backend.app.services.skills import SkillService
 
 router = APIRouter(tags=["skills"])
 

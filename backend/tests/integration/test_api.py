@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-from app.seed import seed_database
+from backend.app.seed import seed_database
 
 
 def test_health(client, db_session):

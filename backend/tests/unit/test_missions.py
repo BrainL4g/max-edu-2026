@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from app.domain import Mission, MissionOption, Skill, User
-from app.services.missions import MissionService
+from backend.app.domain import Mission, MissionOption, Skill, User
+from backend.app.services.missions import MissionService
 
 
 def _seed(db, skill_names=("Python", "SQL")):

@@ -8,12 +8,12 @@ from __future__ import annotations
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.domain import Skill, User, UserSkill
-from app.repositories.course_repository import CourseRepository
-from app.repositories.internship_repository import InternshipRepository
-from app.repositories.skill_repository import SkillRepository
-from app.repositories.user_repository import UserRepository
-from app.services.skills import TARGET_LEVEL, level_from_xp
+from backend.app.domain import Skill, User, UserSkill
+from backend.app.repositories.course_repository import CourseRepository
+from backend.app.repositories.internship_repository import InternshipRepository
+from backend.app.repositories.skill_repository import SkillRepository
+from backend.app.repositories.user_repository import UserRepository
+from backend.app.services.skills import TARGET_LEVEL, level_from_xp
 
 # Необходимые навыки по направлениям (используется и при анализе резюме).
 DIRECTION_REQUIRED_SKILLS: dict[str, list[str]] = {
@@ -36,15 +36,8 @@ class RecommendationService:
         self.internships = InternshipRepository(db)
         self.skills = SkillRepository(db)
 
-    def _user_skill_levels(self, user_id: int) -> dict[int, int]:
-        rows = self.db.scalars(
-            select(UserSkill).where(UserSkill.user_id == user_id)
-        )
-        return {row.skill_id: level_from_xp(row.experience) for row in rows}
-
     def _gaps(self, user: User) -> list[dict]:
         """Пробелы: навыки ниже целевого уровня + недостающие по направлению."""
-        levels = self._user_skill_levels(user.id)
         gap_map: dict[int, dict] = {}
 
         for row in self.db.execute(

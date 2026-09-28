@@ -5,8 +5,8 @@ from __future__ import annotations
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
-from app.core.exceptions import NotFoundError
-from app.domain import Internship, InternshipSkill
+from backend.app.core.exceptions import NotFoundError
+from backend.app.domain import Internship, InternshipSkill
 
 
 def _apply_filters(query, *, search=None, skill_ids=None, direction=None, level=None,

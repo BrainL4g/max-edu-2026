@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from app.domain import Course, Internship, Skill
-from app.repositories.course_repository import CourseRepository
-from app.repositories.internship_repository import InternshipRepository
+from backend.app.domain import Course, Internship, Skill
+from backend.app.repositories.course_repository import CourseRepository
+from backend.app.repositories.internship_repository import InternshipRepository
 
 
 def _seed_courses(db):

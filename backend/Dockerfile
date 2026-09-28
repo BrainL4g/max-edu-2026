@@ -9,15 +9,15 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 # Сначала зависимости — для кэширования слоёв.
-COPY requirements.txt ./
-RUN pip install --upgrade pip && pip install -r requirements.txt
+COPY requirements.txt ./backend/requirements.txt
+RUN pip install --upgrade pip && pip install -r backend/requirements.txt
 
-# Код приложения, миграции и конфигурация.
-COPY . .
+# Код приложения, миграции и конфигурация (пакет backend/ внутри /app).
+COPY . ./backend
 
 # По умолчанию база лежит в /app/data (volume из compose.yaml).
 ENV DATABASE_URL=sqlite:////app/data/skillquest.db
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000"]

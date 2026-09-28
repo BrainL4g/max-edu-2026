@@ -5,11 +5,11 @@ from __future__ import annotations
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.exceptions import InvalidDataError
-from app.domain import Mission, UserSkill
-from app.repositories.mission_repository import MissionRepository
-from app.repositories.user_repository import UserRepository
-from app.services.skills import SkillService
+from backend.app.core.exceptions import InvalidDataError
+from backend.app.domain import Mission, UserSkill
+from backend.app.repositories.mission_repository import MissionRepository
+from backend.app.repositories.user_repository import UserRepository
+from backend.app.services.skills import SkillService
 
 
 class MissionService:

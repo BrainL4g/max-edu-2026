@@ -12,12 +12,12 @@ class Base(DeclarativeBase):
     """Базовый класс всех ORM-моделей SkillQuest."""
 
 
-from app.domain.user import User  # noqa: E402
-from app.domain.skill import Skill, UserSkill  # noqa: E402
-from app.domain.mission import Attempt, Mission, MissionOption  # noqa: E402
-from app.domain.course import Course, CourseSkill  # noqa: E402
-from app.domain.internship import Internship, InternshipSkill  # noqa: E402
-from app.domain.resume import Resume, ResumeAnalysis  # noqa: E402
+from backend.app.domain.course import Course, CourseSkill  # noqa: E402
+from backend.app.domain.internship import Internship, InternshipSkill  # noqa: E402
+from backend.app.domain.mission import Attempt, Mission, MissionOption  # noqa: E402
+from backend.app.domain.resume import Resume, ResumeAnalysis  # noqa: E402
+from backend.app.domain.skill import Skill, UserSkill  # noqa: E402
+from backend.app.domain.user import User  # noqa: E402
 
 __all__ = [
     "Base",

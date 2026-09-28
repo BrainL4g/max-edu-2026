@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from app.api.routes import courses, internships, missions, resumes, skills, users
+from backend.app.api.routes import courses, internships, missions, resumes, skills, users
 
 api_router = APIRouter()
 api_router.include_router(users.router)

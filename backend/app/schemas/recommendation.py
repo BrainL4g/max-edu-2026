@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
-from app.schemas.course import CourseOut
-from app.schemas.internship import InternshipOut
+from backend.app.schemas.course import CourseOut
+from backend.app.schemas.internship import InternshipOut
 
 
 class SkillGap(BaseModel):

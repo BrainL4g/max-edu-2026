@@ -5,14 +5,14 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
-from app.database.session import get_db
-from app.schemas.mission import (
+from backend.app.database.session import get_db
+from backend.app.schemas.mission import (
     AttemptHistoryItem,
     AttemptResultOut,
     MissionAnswerIn,
     MissionOut,
 )
-from app.services.missions import MissionService
+from backend.app.services.missions import MissionService
 
 router = APIRouter(tags=["missions"])
 

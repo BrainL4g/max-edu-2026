@@ -33,5 +33,17 @@ target-version = "py311"
 [tool.ruff.lint]
 select = ["E", "F", "I", "W", "UP"]
 
+[tool.ruff.lint.per-file-ignores]
+# ассоциации SQLAlchemy объявлены строковыми аннотациями (future annotations)
+"app/domain/*.py" = ["F821"]
+# models импортируется ради регистрации в metadata (side effect)
+"app/database/session.py" = ["F401"]
+# длинные строки в автогенерируемых миграциях
+"alembic/versions/*.py" = ["E501"]
+# длинные строки в демо-данных (сценарии, описания)
+"app/seed.py" = ["E501"]
+# bootstrap sys.path до импортов приложения
+"tests/conftest.py" = ["E402"]
+
 [tool.ruff.format]
 quote-style = "double"

@@ -5,12 +5,12 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, File, UploadFile
 from sqlalchemy.orm import Session
 
-from app.core.exceptions import NotFoundError
-from app.database.session import get_db
-from app.repositories.resume_repository import ResumeRepository
-from app.repositories.user_repository import UserRepository
-from app.schemas.resume import ResumeAnalysisOut, ResumeCreate, ResumeOut
-from app.services.resume_analysis import ResumeAnalysisService
+from backend.app.core.exceptions import NotFoundError
+from backend.app.database.session import get_db
+from backend.app.repositories.resume_repository import ResumeRepository
+from backend.app.repositories.user_repository import UserRepository
+from backend.app.schemas.resume import ResumeAnalysisOut, ResumeCreate, ResumeOut
+from backend.app.services.resume_analysis import ResumeAnalysisService
 
 router = APIRouter(tags=["resumes"])
 

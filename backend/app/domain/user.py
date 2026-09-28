@@ -2,14 +2,12 @@
 
 from __future__ import annotations
 
-from __future__ import annotations
-
 from datetime import datetime
 
 from sqlalchemy import DateTime, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.domain import Base
+from backend.app.domain import Base
 
 
 class User(Base):

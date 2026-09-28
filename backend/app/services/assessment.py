@@ -7,9 +7,9 @@ from dataclasses import dataclass
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.exceptions import InvalidDataError
-from app.domain import Skill, User
-from app.services.skills import SkillService
+from backend.app.core.exceptions import InvalidDataError
+from backend.app.domain import Skill, User
+from backend.app.services.skills import SkillService
 
 VALID_ASSESSMENT_LEVELS = (0, 1, 2, 3)
 

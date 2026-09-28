@@ -5,8 +5,8 @@ from __future__ import annotations
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.exceptions import NotFoundError
-from app.domain import Resume, ResumeAnalysis
+from backend.app.core.exceptions import NotFoundError
+from backend.app.domain import Resume, ResumeAnalysis
 
 
 class ResumeRepository:

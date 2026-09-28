@@ -11,10 +11,10 @@ import re
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.domain import Skill
-from app.repositories.resume_repository import ResumeRepository
-from app.repositories.user_repository import UserRepository
-from app.services.recommendations import DIRECTION_REQUIRED_SKILLS
+from backend.app.domain import Skill
+from backend.app.repositories.resume_repository import ResumeRepository
+from backend.app.repositories.user_repository import UserRepository
+from backend.app.services.recommendations import DIRECTION_REQUIRED_SKILLS
 
 # Алиасы для поиска навыков в тексте резюме (нижний регистр).
 SKILL_ALIASES: dict[str, list[str]] = {
@@ -114,7 +114,10 @@ class ResumeAnalysisService:
             issues.append("Резюме слишком короткое — добавьте больше деталей")
         if not LINK_RE.search(text_lower):
             issues.append("Нет ссылок на GitHub/LinkedIn/портфолио/Telegram")
-        if not any(keyword in text_lower for keyword in ("образован", "учеб", "вуз", "университет")):
+        if not any(
+            keyword in text_lower
+            for keyword in ("образован", "учеб", "вуз", "университет")
+        ):
             issues.append("Не указано образование")
         if direction and not (
             direction in text_lower

@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from app.domain import Resume, Skill, User
-from app.services.resume_analysis import ResumeAnalysisService
+from backend.app.domain import Resume, Skill, User
+from backend.app.services.resume_analysis import ResumeAnalysisService
 
 
 def _seed(db):

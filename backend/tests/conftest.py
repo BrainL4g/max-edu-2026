@@ -18,9 +18,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.core.config import settings
-from app.database.session import get_db
-from app.domain import Base
+from backend.app.core.config import settings
+from backend.app.database.session import get_db
+from backend.app.domain import Base
 
 # Тесты никогда не трогают реальную БД и не сидируют её при старте app.
 settings.auto_create_tables = False
@@ -51,7 +51,7 @@ def db_session():
 @pytest.fixture()
 def client(db_session):
     """TestClient с переопределённой зависимостью get_db на тестовую сессию."""
-    from app.main import app
+    from backend.app.main import app
 
     def override_get_db():
         try:

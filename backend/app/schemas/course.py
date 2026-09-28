@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict
 
-from app.schemas.skill import SkillOut
+from backend.app.schemas.skill import SkillOut
 
 
 class CourseOut(BaseModel):

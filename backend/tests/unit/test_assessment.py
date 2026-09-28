@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from app.domain import Skill, User
-from app.services.assessment import AssessmentService
+from backend.app.domain import Skill, User
+from backend.app.services.assessment import AssessmentService
 
 
 def _user(db, direction: str = "backend") -> User:

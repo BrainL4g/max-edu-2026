@@ -6,7 +6,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
-from app.schemas.skill import SkillMapItem
+from backend.app.schemas.skill import SkillMapItem
 
 
 class UserBase(BaseModel):

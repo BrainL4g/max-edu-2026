@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from app.domain import Mission, Skill, User, UserSkill
-from app.services.skills import (
+from backend.app.domain import Mission, Skill, User, UserSkill
+from backend.app.services.skills import (
     LEVEL_THRESHOLDS,
     SkillService,
     level_from_xp,

@@ -6,13 +6,13 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.database.session import get_db
-from app.domain import Mission
-from app.repositories.user_repository import UserRepository
-from app.schemas.skill import AssessmentIn, AssessmentOut
-from app.schemas.user import UserCreate, UserOut, UserProgressOut, UserUpdate
-from app.services.assessment import AssessmentService
-from app.services.skills import SkillService
+from backend.app.database.session import get_db
+from backend.app.domain import Mission
+from backend.app.repositories.user_repository import UserRepository
+from backend.app.schemas.skill import AssessmentIn, AssessmentOut
+from backend.app.schemas.user import UserCreate, UserOut, UserProgressOut, UserUpdate
+from backend.app.services.assessment import AssessmentService
+from backend.app.services.skills import SkillService
 
 router = APIRouter(tags=["users"])
 

@@ -4,12 +4,11 @@ from __future__ import annotations
 
 from logging.config import fileConfig
 
+from backend.app.core.config import settings
+from backend.app.database.models import Base  # noqa: F401  (регистрирует все модели)
 from sqlalchemy import engine_from_config, pool
 
 from alembic import context
-
-from app.core.config import settings
-from app.database.models import Base  # noqa: F401  (регистрирует все модели)
 
 config = context.config
 

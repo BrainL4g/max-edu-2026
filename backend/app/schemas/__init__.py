@@ -2,19 +2,19 @@
 
 from __future__ import annotations
 
-from app.schemas.user import UserCreate, UserOut, UserProgressOut, UserUpdate
-from app.schemas.skill import AssessmentIn, AssessmentOut, SkillMapItem, SkillOut
-from app.schemas.mission import (
+from backend.app.schemas.course import CourseOut
+from backend.app.schemas.internship import InternshipOut
+from backend.app.schemas.mission import (
     AttemptHistoryItem,
     AttemptResultOut,
     MissionAnswerIn,
     MissionOptionOut,
     MissionOut,
 )
-from app.schemas.course import CourseOut
-from app.schemas.internship import InternshipOut
-from app.schemas.recommendation import RecommendationOut, SkillGap
-from app.schemas.resume import ResumeAnalysisOut, ResumeCreate, ResumeOut
+from backend.app.schemas.recommendation import RecommendationOut, SkillGap
+from backend.app.schemas.resume import ResumeAnalysisOut, ResumeCreate, ResumeOut
+from backend.app.schemas.skill import AssessmentIn, AssessmentOut, SkillMapItem, SkillOut
+from backend.app.schemas.user import UserCreate, UserOut, UserProgressOut, UserUpdate
 
 __all__ = [
     "UserCreate",

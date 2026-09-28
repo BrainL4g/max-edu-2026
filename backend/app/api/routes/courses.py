@@ -5,10 +5,10 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
-from app.database.session import get_db
-from app.repositories.course_repository import CourseRepository
-from app.schemas.course import CourseOut
-from app.services.recommendations import RecommendationService
+from backend.app.database.session import get_db
+from backend.app.repositories.course_repository import CourseRepository
+from backend.app.schemas.course import CourseOut
+from backend.app.services.recommendations import RecommendationService
 
 
 def _parse_skill_ids(raw: str | None) -> list[int] | None:

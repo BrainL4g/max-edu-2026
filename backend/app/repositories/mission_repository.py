@@ -5,8 +5,8 @@ from __future__ import annotations
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from app.core.exceptions import NotFoundError
-from app.domain import Attempt, Mission
+from backend.app.core.exceptions import NotFoundError
+from backend.app.domain import Attempt, Mission
 
 
 class MissionRepository:

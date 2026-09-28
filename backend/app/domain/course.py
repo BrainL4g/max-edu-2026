@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-from __future__ import annotations
-
 from sqlalchemy import Float, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.domain import Base
+from backend.app.domain import Base
 
 
 class Course(Base):

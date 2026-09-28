@@ -7,11 +7,11 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.router import api_router
-from app.core.config import settings
-from app.core.exceptions import register_exception_handlers
-from app.database.session import engine
-from app.domain import Base
+from backend.app.api.router import api_router
+from backend.app.core.config import settings
+from backend.app.core.exceptions import register_exception_handlers
+from backend.app.database.session import engine
+from backend.app.domain import Base
 
 
 @asynccontextmanager
@@ -20,7 +20,7 @@ async def lifespan(app: FastAPI):
     if settings.auto_create_tables:
         Base.metadata.create_all(bind=engine)
     if settings.seed_on_startup:
-        from app.seed import seed_if_empty
+        from backend.app.seed import seed_if_empty
 
         seed_if_empty()
     yield
