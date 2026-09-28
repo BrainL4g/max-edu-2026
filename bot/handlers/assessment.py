@@ -15,7 +15,6 @@ router = Router()
 @router.message_callback(F.callback.payload == "as:start")
 async def start_assessment(event: MessageCallback) -> None:
     """Начало диагностики: сброс ответов и первый вопрос."""
-    await event.ack()
     await sessions.ensure_user_from(event.callback.user)
     item = sessions.session_for(event.callback.user.user_id)
     item["answers"] = []
@@ -29,7 +28,7 @@ async def _ask(event: MessageCallback, index: int) -> None:
     kb = kbs.options_kb(
         f"asq:{question['id']}", list(enumerate(question["options"]))
     )
-    await event.message.answer(
+    await event.edit(
         f"Вопрос {index + 1}/{len(questions)}\n{question['text']}",
         attachments=[kb],
     )
@@ -38,7 +37,6 @@ async def _ask(event: MessageCallback, index: int) -> None:
 @router.message_callback(F.callback.payload.startswith("asq:"))
 async def assessment_answer(event: MessageCallback) -> None:
     """Сохранение ответа и переход к следующему вопросу либо итог."""
-    await event.ack()
     _, question_id, option_index = event.callback.payload.split(":")
     item = sessions.session_for(event.callback.user.user_id)
     item["answers"].append(
@@ -53,4 +51,4 @@ async def assessment_answer(event: MessageCallback) -> None:
     result = await api.submit_assessment(item["uid"], item["answers"])
     item["answers"] = []
     text = f"Диагностика завершена 🎉\n\n{result.get('summary') or ''}".strip()
-    await event.message.answer(text, attachments=[kbs.main_menu()])
+    await event.edit(text, attachments=[kbs.main_menu()])

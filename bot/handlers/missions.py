@@ -15,13 +15,10 @@ router = Router()
 @router.message_callback(F.callback.payload == "ms:next")
 async def mission_next(event: MessageCallback) -> None:
     """Следующая миссия для пользователя."""
-    await event.ack()
     user_id = await sessions.ensure_user_from(event.callback.user)
     mission = await api.next_mission(user_id)
     if not mission:
-        await event.message.answer(
-            "Все миссии пройдены! 🏆", attachments=[kbs.main_menu()]
-        )
+        await event.edit("Все миссии пройдены! 🏆", attachments=[kbs.main_menu()])
         return
 
     text = (
@@ -30,13 +27,12 @@ async def mission_next(event: MessageCallback) -> None:
     )
     options = [(option["id"], option["text"]) for option in mission["options"]]
     kb = kbs.options_kb(f"ms:ans:{mission['id']}", options)
-    await event.message.answer(text, attachments=[kb])
+    await event.edit(text, attachments=[kb])
 
 
 @router.message_callback(F.callback.payload.startswith("ms:ans:"))
 async def mission_answer(event: MessageCallback) -> None:
     """Проверка ответа: XP, уровень навыка, объяснение."""
-    await event.ack()
     _, _, mission_id, option_id = event.callback.payload.split(":")
     user_id = await sessions.ensure_user_from(event.callback.user)
     result = await api.answer_mission(user_id, int(mission_id), int(option_id))
@@ -49,4 +45,4 @@ async def mission_answer(event: MessageCallback) -> None:
     )
     if result.get("explanation"):
         text += f"\n\n{result['explanation']}"
-    await event.message.answer(text, attachments=[kbs.after_mission_kb()])
+    await event.edit(text, attachments=[kbs.after_mission_kb()])

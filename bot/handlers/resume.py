@@ -16,10 +16,9 @@ router = Router()
 @router.message_callback(F.callback.payload == "rs:start")
 async def ask_resume(event: MessageCallback) -> None:
     """Пользователь нажал «Резюме» — ждём текст следующим сообщением."""
-    await event.ack()
     item = sessions.session_for(event.callback.user.user_id)
     item["resume"] = True
-    await event.message.answer("Пришли текст резюме одним сообщением 📄")
+    await event.edit("Пришли текст резюме одним сообщением 📄", attachments=[])
 
 
 @router.message_created(F.message.body.text)

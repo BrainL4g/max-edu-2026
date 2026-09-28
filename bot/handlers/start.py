@@ -32,5 +32,4 @@ async def cmd_start(event: MessageCreated) -> None:
 @router.message_callback(F.callback.payload == "menu:main")
 async def back_to_menu(event: MessageCallback) -> None:
     """Кнопка «Меню»: возврат в главное меню."""
-    await event.ack()
-    await event.message.answer("Главное меню 🎮", attachments=[kbs.main_menu()])
+    await event.edit("Главное меню 🎮", attachments=[kbs.main_menu()])
