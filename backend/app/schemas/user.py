@@ -22,6 +22,13 @@ class UserCreate(UserBase):
     """Создание пользователя."""
 
 
+class UserByMaxIn(BaseModel):
+    """Связка пользователя MAX с платформой."""
+
+    max_user_id: int
+    name: str | None = None
+
+
 class UserUpdate(UserBase):
     """Обновление профиля пользователя."""
 
@@ -32,6 +39,7 @@ class UserOut(UserBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    max_user_id: int | None = None
     created_at: datetime
 
 

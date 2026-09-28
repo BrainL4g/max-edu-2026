@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, String, func
+from sqlalchemy import BigInteger, DateTime, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.app.domain import Base
@@ -16,6 +16,9 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    max_user_id: Mapped[int | None] = mapped_column(
+        BigInteger, unique=True, index=True
+    )
     name: Mapped[str | None] = mapped_column(String(120))
     education: Mapped[str | None] = mapped_column(String(200))
     direction: Mapped[str | None] = mapped_column(String(100), index=True)

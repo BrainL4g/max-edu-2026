@@ -10,7 +10,7 @@ from backend.app.database.session import get_db
 from backend.app.domain import Mission
 from backend.app.repositories.user_repository import UserRepository
 from backend.app.schemas.skill import AssessmentIn, AssessmentOut
-from backend.app.schemas.user import UserCreate, UserOut, UserProgressOut, UserUpdate
+from backend.app.schemas.user import UserByMaxIn, UserCreate, UserOut, UserProgressOut, UserUpdate
 from backend.app.services.assessment import AssessmentService
 from backend.app.services.skills import SkillService
 
@@ -25,6 +25,16 @@ def create_user(payload: UserCreate, db: Session = Depends(get_db)) -> UserOut:
         education=payload.education,
         direction=payload.direction,
         goal=payload.goal,
+    )
+
+
+@router.post("/users/by-max", response_model=UserOut)
+def get_or_create_by_max(
+    payload: UserByMaxIn, db: Session = Depends(get_db)
+) -> UserOut:
+    """Связка пользователя MAX: get-or-create по max_user_id."""
+    return UserRepository(db).get_or_create_by_max(
+        payload.max_user_id, name=payload.name
     )
 
 

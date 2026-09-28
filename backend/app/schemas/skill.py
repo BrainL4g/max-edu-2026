@@ -46,6 +46,15 @@ class AssessmentAnswerIn(BaseModel):
     option_index: int
 
 
+class AssessmentQuestionOut(BaseModel):
+    """Вопрос диагностики (ответ API, без внутренних оценок уровней)."""
+
+    id: int
+    skill: str
+    text: str
+    options: list[str]
+
+
 class AssessmentIn(BaseModel):
     """Ответы на первичную диагностику."""
 

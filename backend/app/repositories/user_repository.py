@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from backend.app.core.exceptions import NotFoundError
@@ -34,6 +35,31 @@ class UserRepository:
         user = User(name=name, education=education, direction=direction, goal=goal)
         self.db.add(user)
         self.db.commit()
+        self.db.refresh(user)
+        return user
+
+    def get_or_create_by_max(
+        self, max_user_id: int, name: str | None = None
+    ) -> User:
+        """Найти пользователя по max_user_id или создать нового.
+
+        Повторный вызов с тем же max_user_id возвращает существующего
+        пользователя (имя не перезаписывается).
+        """
+        user = self.db.scalar(select(User).where(User.max_user_id == max_user_id))
+        if user is not None:
+            return user
+
+        user = User(max_user_id=max_user_id, name=name)
+        self.db.add(user)
+        try:
+            self.db.commit()
+        except IntegrityError:
+            # Одновременный старт двух сессий бота: побеждает первый запись.
+            self.db.rollback()
+            user = self.db.scalar(select(User).where(User.max_user_id == max_user_id))
+            if user is None:
+                raise
         self.db.refresh(user)
         return user
 
