@@ -1,4 +1,3 @@
-# SkillQuest .dockerignore — что НЕ попадает в образ
 .git
 .idea
 .vscode
