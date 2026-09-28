@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 LEVEL_EMOJI = ("⬛", "🟥", "🟧", "🟨", "🟩", "🟦")
 
 
@@ -11,7 +13,7 @@ def progress_bar(percent: float, width: int = 10) -> str:
     return "▓" * filled + "░" * (width - filled)
 
 
-def skill_map_text(items: list[dict]) -> str:
+def skill_map_text(items: list[dict[str, Any]]) -> str:
     """Skill Map пользователя текстом."""
     if not items:
         return "Навыки ещё не оценены. Пройдите диагностику или миссии 🎮"
@@ -30,7 +32,7 @@ def skill_map_text(items: list[dict]) -> str:
     return "\n".join(lines)
 
 
-def course_card(course: dict, index: int = 0) -> str:
+def course_card(course: dict[str, Any], index: int = 0) -> str:
     """Карточка курса."""
     skills = ", ".join(s["name"] for s in course.get("skills", [])) or "—"
     cost = "бесплатно" if not course.get("cost") else f"{course['cost']:.0f} ₽"
@@ -44,12 +46,10 @@ def course_card(course: dict, index: int = 0) -> str:
     return "\n".join(lines)
 
 
-def internship_card(item: dict, index: int = 0) -> str:
+def internship_card(item: dict[str, Any], index: int = 0) -> str:
     """Карточка стажировки."""
     skills = ", ".join(s["name"] for s in item.get("skills", [])) or "—"
-    location = (
-        "🌍 Удалённо" if item.get("remote") else (item.get("city") or "Офис")
-    )
+    location = "🌍 Удалённо" if item.get("remote") else (item.get("city") or "Офис")
     lines = [
         f"{index}. {item['title']} @ {item['company']}",
         f"   {item['level']} · {location} · {item['format']}",
@@ -61,7 +61,7 @@ def internship_card(item: dict, index: int = 0) -> str:
     return "\n".join(lines)
 
 
-def resume_report(analysis: dict) -> str:
+def resume_report(analysis: dict[str, Any]) -> str:
     """Отчёт анализа резюме."""
     found = ", ".join(analysis.get("found_skills") or []) or "—"
     missing = ", ".join(analysis.get("missing_skills") or []) or "—"

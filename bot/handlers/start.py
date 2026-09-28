@@ -14,8 +14,11 @@ router = Router()
 @router.bot_started()
 async def on_bot_started(event: BotStarted) -> None:
     """Бот добавлен/запущен пользователем."""
+    bot = event.bot
+    if bot is None:
+        return
     first_name = event.user.first_name or "друг"
-    await event.bot.send_message(
+    await bot.send_message(
         chat_id=event.chat_id,
         text=f"Привет, {first_name}! Я SkillQuest 🎮 Нажми /start",
     )
@@ -25,6 +28,8 @@ async def on_bot_started(event: BotStarted) -> None:
 async def cmd_start(event: MessageCreated) -> None:
     """Команда /start: связываем пользователя и показываем меню."""
     sender = event.message.sender
+    if sender is None:
+        return
     await sessions.ensure_user(sender.user_id, sender.first_name or "")
     await event.message.answer("Что делаем? 🎮", attachments=[kbs.main_menu()])
 

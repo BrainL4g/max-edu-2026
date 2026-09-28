@@ -42,8 +42,14 @@ dp.include_routers(
 async def on_event_error(event: ErrorEvent) -> None:
     """Логируем ошибки хендлеров, чтобы polling продолжал работать."""
     logging.getLogger(__name__).error(
-        "Handler error in %s: %s", event.router_id, event.exception,
-        exc_info=(type(event.exception), event.exception, event.exception.__traceback__),
+        "Handler error in %s: %s",
+        event.router_id,
+        event.exception,
+        exc_info=(
+            type(event.exception),
+            event.exception,
+            event.exception.__traceback__,
+        ),
     )
 
 

@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+from typing import Any
+
 from maxapi import F, Router
 from maxapi.types import MessageCallback
 
@@ -15,10 +18,12 @@ router = Router()
 CARD_LIMIT = 5
 
 
-def _cards_links(items: list[dict], card_fn, label: str) -> tuple[str, list]:
-    cards = [
-        card_fn(item, index + 1) for index, item in enumerate(items[:CARD_LIMIT])
-    ]
+def _cards_links(
+    items: list[dict[str, Any]],
+    card_fn: Callable[[dict[str, Any], int], str],
+    label: str,
+) -> tuple[str, list[tuple[str, str]]]:
+    cards = [card_fn(item, index + 1) for index, item in enumerate(items[:CARD_LIMIT])]
     links = [
         (f"{label} {index + 1}", item["url"])
         for index, item in enumerate(items[:CARD_LIMIT])

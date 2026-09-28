@@ -25,6 +25,9 @@ async def ask_resume(event: MessageCallback) -> None:
 async def capture_resume_text(event: MessageCreated) -> None:
     """Ловим текстовое сообщение: если ждали резюме — анализируем."""
     sender = event.message.sender
+    body = event.message.body
+    if sender is None or body is None or not body.text:
+        return
     item = sessions.session_for(sender.user_id)
     if not item["resume"]:
         return
@@ -33,7 +36,7 @@ async def capture_resume_text(event: MessageCreated) -> None:
     user_id = item["uid"] or await sessions.ensure_user(
         sender.user_id, sender.first_name or ""
     )
-    upload = await api.upload_resume(user_id, event.message.body.text)
+    upload = await api.upload_resume(user_id, body.text)
     analysis = await api.analyze_resume(upload["id"])
     await event.message.answer(
         texts.resume_report(analysis), attachments=[kbs.main_menu()]

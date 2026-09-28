@@ -33,7 +33,10 @@ async def mission_next(event: MessageCallback) -> None:
 @router.message_callback(F.callback.payload.startswith("ms:ans:"))
 async def mission_answer(event: MessageCallback) -> None:
     """Проверка ответа: XP, уровень навыка, объяснение."""
-    _, _, mission_id, option_id = event.callback.payload.split(":")
+    payload = event.callback.payload
+    if payload is None or not payload.startswith("ms:ans:"):
+        return
+    _, _, mission_id, option_id = payload.split(":")
     user_id = await sessions.ensure_user_from(event.callback.user)
     result = await api.answer_mission(user_id, int(mission_id), int(option_id))
 

@@ -18,6 +18,4 @@ async def show_skill_map(event: MessageCallback) -> None:
     """Показать текущие уровни навыков."""
     user_id = await sessions.ensure_user_from(event.callback.user)
     items = await api.skill_map(user_id)
-    await event.edit(
-        texts.skill_map_text(items), attachments=[kbs.main_menu()]
-    )
+    await event.edit(texts.skill_map_text(items), attachments=[kbs.main_menu()])

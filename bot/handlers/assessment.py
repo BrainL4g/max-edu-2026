@@ -25,9 +25,7 @@ async def _ask(event: MessageCallback, index: int) -> None:
     """Показать вопрос под номером index (0-based)."""
     questions = await api.assessment_questions()
     question = questions[index]
-    kb = kbs.options_kb(
-        f"asq:{question['id']}", list(enumerate(question["options"]))
-    )
+    kb = kbs.options_kb(f"asq:{question['id']}", list(enumerate(question["options"])))
     await event.edit(
         f"Вопрос {index + 1}/{len(questions)}\n{question['text']}",
         attachments=[kb],
@@ -37,7 +35,10 @@ async def _ask(event: MessageCallback, index: int) -> None:
 @router.message_callback(F.callback.payload.startswith("asq:"))
 async def assessment_answer(event: MessageCallback) -> None:
     """Сохранение ответа и переход к следующему вопросу либо итог."""
-    _, question_id, option_index = event.callback.payload.split(":")
+    payload = event.callback.payload
+    if payload is None or not payload.startswith("asq:"):
+        return
+    _, question_id, option_index = payload.split(":")
     item = sessions.session_for(event.callback.user.user_id)
     item["answers"].append(
         {"question_id": int(question_id), "option_index": int(option_index)}

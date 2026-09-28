@@ -1,0 +1,25 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.black]
+line-length = 88
+target-version = ["py312"]
+
+[tool.isort]
+profile = "black"
+line_length = 88
+src_paths = [".", "tests"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.mypy]
+python_version = "3.12"
+mypy_path = "."
+files = ["."]
+exclude = ["tests/"]
+strict = true
+plugins = ["pydantic.mypy"]
+ignore_missing_imports = true
