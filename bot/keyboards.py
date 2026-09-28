@@ -32,18 +32,36 @@ def main_menu() -> AttachmentButton:
     return builder.as_markup()
 
 
+_OPTION_NUMBERS = ("①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨", "⑩")
+
+
+def _option_number(index: int) -> str:
+    """Бейдж-номер варианта: ① ② … ⑩, дальше — обычные цифры."""
+    if 0 <= index < len(_OPTION_NUMBERS):
+        return _OPTION_NUMBERS[index]
+    return str(index + 1)
+
+
 def options_kb(
     prefix: str, options: list[tuple[int, str]], back: bool = True
 ) -> AttachmentButton:
-    """Кнопки-номера вариантов ответа: payload = "{prefix}:{id}".
+    """Кнопки-бейджи вариантов по два в ряд: payload = "{prefix}:{id}".
 
     Полный текст вариантов выводится в сообщении (texts.numbered_options),
-    поэтому кнопки короткие: номер на кнопке — позиция варианта (1..N).
+    номер на кнопке — позиция варианта (1..N).
     """
     builder = InlineKeyboardBuilder()  # type: ignore[no-untyped-call]
-    for index, (option_id, _text) in enumerate(options):
+    for start in range(0, len(options), 2):
         builder.row(
-            CallbackButton(text=str(index + 1), payload=f"{prefix}:{option_id}")
+            *(
+                CallbackButton(
+                    text=_option_number(index),
+                    payload=f"{prefix}:{option_id}",
+                )
+                for index, (option_id, _) in enumerate(
+                    options[start : start + 2], start=start
+                )
+            )
         )
     if back:
         builder.row(CallbackButton(text="🏠 Меню", payload="menu:main"))

@@ -129,7 +129,7 @@ def test_mission_next_shows_question(monkeypatch) -> None:
     payloads = _payloads(buttons_from(attachments))
     assert "ms:ans:3:10" in payloads
     assert "ms:ans:3:11" in payloads
-    assert [b.text for b in buttons_from(attachments)[:-1]] == ["1", "2"]
+    assert [b.text for b in buttons_from(attachments)[:-1]] == ["①", "②"]
 
 
 def test_mission_next_all_done(monkeypatch) -> None:
