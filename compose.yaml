@@ -2,14 +2,24 @@ services:
   backend:
     build: ./backend
     container_name: skillquest-backend
-    ports:
-      - "8000:8000"
+    # Порт наружу не торчим: к API ходит только бот по внутренней сети.
+    # Для разработки можно вернуть:  ports: ["8000:8000"]
     environment:
       APP_NAME: SkillQuest
       APP_ENV: production
       DATABASE_URL: sqlite:////app/data/skillquest.db
     volumes:
       - skillquest_data:/app/data
+    restart: unless-stopped
+
+  bot:
+    build: ./bot
+    container_name: skillquest-bot
+    environment:
+      MAX_BOT_TOKEN: ${MAX_BOT_TOKEN}
+      SKILLQUEST_API: http://backend:8000
+    depends_on:
+      - backend
     restart: unless-stopped
 
 volumes:

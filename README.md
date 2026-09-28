@@ -81,21 +81,7 @@ SkillQuest превращает этот процесс в игру: диагн�
 ## 5. Архитектура
 
 ```text
-                    User
-                      │
-          ┌───────────┼───────────┐
-          ↓           ↓           ↓
-       Missions     Resume      Profile
-          ↓           ↓
-       Skills      Analysis
-          │           │
-          └──────┬────┘
-                 ↓
-           Skill Map
-                 ↓
-        Recommendation Service
-             ↙         ↘
-         Courses     Internships
+Пользователь в MAX ──► MAX-бот (bot/, maxapi) ──► FastAPI (backend/) ──► SQLite
 ```
 
 Слои backend:
@@ -188,8 +174,8 @@ internships ── internship_skills ── skills
 
 **Миграции.** Схема управляется Alembic (`backend/alembic/`):
 `001_initial_schema.py` (основные таблицы), `002_add_resume_analysis.py`
-(резюме и анализ). Применение (из корня):
-`alembic -c backend/alembic.ini upgrade head`.
+(резюме и анализ), `003_add_max_user_id.py` (связка с пользователями MAX).
+Применение (из корня): `alembic -c backend/alembic.ini upgrade head`.
 
 ## 9. Интеграции
 
@@ -204,16 +190,52 @@ internships ── internship_skills ── skills
 `api_router` (см. `backend/app/api/router.py`). Пример:
 
 ```python
-from backend.app.api.routes import courses, internships, missions, resumes, skills, users
+from backend.app.api.routes import (
+    assessment,
+    courses,
+    internships,
+    missions,
+    resumes,
+    skills,
+    users,
+)
 from fastapi import FastAPI
 
 app = FastAPI()
-for module in (users, skills, missions, courses, internships, resumes):
+for module in (users, skills, assessment, missions, courses, internships, resumes):
     app.include_router(module.router)
 ```
 
 Каждый модуль экспонирует объект `fastapi.APIRouter` в `module.router`,
 поэтому роутеры можно подключать выборочно.
+
+### MAX-бот
+
+Бот живёт в `bot/` и работает поверх готового API — вся логика на бэкенде,
+бот только показывает экраны и кнопки:
+
+```text
+main.py        точка входа (polling через maxapi)
+api.py         HTTP-клиент к API SkillQuest
+keyboards.py   inline-кнопки (меню, варианты ответов, ссылки)
+texts.py       форматирование Skill Map, миссий, рекомендаций, резюме
+handlers/      start, assessment, missions, skillmap, recommend, resume
+sessions.py    легковесное состояние (uid, ответы диагностики, флаг резюме)
+```
+
+Для бэкенда добавлены два эндпоинта, которые использует бот:
+
+- `POST /users/by-max` — связка MAX-пользователя: get-or-create по `max_user_id`
+  (вызывается на каждом `/start`; миграция `003`);
+- `GET /assessment/questions` — банк вопросов диагностики для показа в боте.
+
+Локальный запуск (токен — из `MAX_BOT_TOKEN` в `.env`):
+
+```bash
+cd bot
+pip install -r requirements.txt
+python main.py
+```
 
 ## 10. Установка
 
@@ -250,9 +272,14 @@ health-check — `/health`. При первом старте таблицы и �
 docker compose up --build
 ```
 
-- Сервис `backend` доступен на `http://localhost:8000`;
+```text
+backend   FastAPI + SQLite (доступен только по внутренней сети, наружу не торчит)
+bot       MAX-бот (maxapi, httpx); токен и адрес API — из окружения
+```
+
 - SQLite хранится в volume `skillquest_data` (`/app/data/skillquest.db`);
-- переменные окружения из `compose.yaml` (`DATABASE_URL` и др.).
+- `MAX_BOT_TOKEN` подхватывается из `.env` в корне репозитория;
+- для разработки к `backend` можно вернуть `ports: ["8000:8000"]` в `compose.yaml`.
 
 ## 12. Запуск тестов
 
