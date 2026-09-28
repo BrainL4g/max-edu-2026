@@ -294,11 +294,42 @@ python -m pytest -c backend/pyproject.toml
 pytest backend/tests/unit -q                     # только unit-тесты
 pytest backend/tests/integration/test_api.py     # интеграционный сценарий
 pytest -c backend/pyproject.toml --cov=backend.app --cov-report=term-missing
+
+# тесты MAX-бота (из папки bot/) — без сети и API, на фейк-событиях
+cd bot
+python -m pytest
 ```
 
-Unit-тесты покрывают: диагностику, расчёт навыков, игровые задания, фильтрацию,
-рекомендации и анализ резюме. Интеграционный тест проверяет полный сценарий
-через HTTP API (см. следующий раздел).
+Unit-тесты backend покрывают: диагностику, расчёт навыков, игровые задания,
+фильтрацию, рекомендации, анализ резюме, репозитории, исключения и seed.
+Интеграционный тест проверяет полный сценарий через HTTP API (см. следующий
+раздел). Покрытие backend — 100% (`fail_under = 90` в `backend/pyproject.toml`).
+
+Тесты MAX-бота (`bot/tests/`) проверяют: форматирование текстов, inline-клавиатуры,
+сессии, HTTP-клиент (MockTransport, без сети), все хендлеры (диагностика, миссии,
+Skill Map, рекомендации, резюме, старт), а также токен-гард и обработчик ошибок
+точки входа.
+
+### Статический анализ и форматирование
+
+Инструменты: `black`, `isort`, `autoflake`, `ruff`, `mypy --strict`
+(устанавливаются в dev-зависимостях backend; конфигурация — в
+`backend/pyproject.toml` и `bot/pyproject.toml`).
+
+```bash
+# из папки backend/
+python -m black app tests
+python -m isort app tests
+python -m autoflake --in-place --recursive --remove-all-unused-imports app
+python -m ruff check app
+python -m mypy app            # mypy --strict (настроено в pyproject.toml)
+
+# из папки bot/
+python -m black .
+python -m isort .
+python -m ruff check .
+python -m mypy .
+```
 
 ## 13. Пошаговая проверка сценария
 
