@@ -49,28 +49,30 @@ def upgrade() -> None:
         sa.Column("required_level", sa.Integer(), nullable=False, server_default="3"),
         sa.Column("importance", sa.Float(), nullable=False, server_default="1.0"),
         sa.Column("is_mandatory", sa.Boolean(), nullable=False, server_default=sa.true()),
+        sa.UniqueConstraint("role_id", "skill_id", name="uq_role_skill"),
     )
     op.create_index("ix_role_skills_role_id", "role_skills", ["role_id"], unique=False)
     op.create_index("ix_role_skills_skill_id", "role_skills", ["skill_id"], unique=False)
-    op.create_unique_constraint("uq_role_skill", "role_skills", ["role_id", "skill_id"])
 
-    op.add_column(
-        "users",
-        sa.Column(
-            "target_role_id",
-            sa.Integer(),
-            sa.ForeignKey("roles.id", ondelete="SET NULL"),
-            nullable=True,
-        ),
-    )
-    op.create_index("ix_users_target_role_id", "users", ["target_role_id"], unique=False)
+    with op.batch_alter_table("users") as batch_op:
+        batch_op.add_column(
+            sa.Column(
+                "target_role_id",
+                sa.Integer(),
+                sa.ForeignKey(
+                    "roles.id", ondelete="SET NULL", name="fk_users_target_role_id_roles"
+                ),
+                nullable=True,
+            )
+        )
+        batch_op.create_index("ix_users_target_role_id", ["target_role_id"])
 
 
 def downgrade() -> None:
     """Убрать роли и целевую роль пользователя."""
-    op.drop_index("ix_users_target_role_id", table_name="users")
-    op.drop_column("users", "target_role_id")
-    op.drop_constraint("uq_role_skill", "role_skills", type_="unique")
+    with op.batch_alter_table("users") as batch_op:
+        batch_op.drop_index("ix_users_target_role_id")
+        batch_op.drop_column("target_role_id")
     op.drop_index("ix_role_skills_skill_id", table_name="role_skills")
     op.drop_index("ix_role_skills_role_id", table_name="role_skills")
     op.drop_table("role_skills")
