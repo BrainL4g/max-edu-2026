@@ -615,7 +615,7 @@ SEED_ROLES: list[dict[str, Any]] = [
 def seed_database(db: Session) -> int:
     """Идемпотентное наполнение базы демо-данными. Возвращает число записей."""
     if db.scalar(select(func.count(Skill.id))) or 0:
-        return 0
+        return _seed_roles_if_empty(db)
 
     skills_by_name: dict[str, Skill] = {}
     for name, category, description in SEED_SKILLS:
@@ -667,6 +667,21 @@ def seed_database(db: Session) -> int:
         internship.skills = [skills_by_name[name] for name in internship_data["skills"]]
         db.add(internship)
 
+    role_count = _seed_roles(db, skills_by_name)
+    db.commit()
+    return (
+        len(SEED_SKILLS)
+        + len(SEED_MISSIONS)
+        + len(SEED_COURSES)
+        + len(SEED_INTERNSHIPS)
+        + role_count
+    )
+
+
+def _seed_roles(db: Session, skills_by_name: dict[str, Skill]) -> int:
+    """Создать целевые роли и их требования к навыкам ровно один раз."""
+    if db.scalar(select(func.count(Role.id))) or 0:
+        return 0
     for role_data in SEED_ROLES:
         role = Role(
             name=role_data["name"],
@@ -684,16 +699,18 @@ def seed_database(db: Session) -> int:
                 )
             )
         db.add(role)
+    db.flush()
+    return len(SEED_ROLES) + sum(len(r["skills"]) for r in SEED_ROLES)
 
+
+def _seed_roles_if_empty(db: Session) -> int:
+    """До-сидировать роли в уже наполненной базе (обратная совместимость)."""
+    if db.scalar(select(func.count(Role.id))) or 0:
+        return 0
+    skills_by_name = {skill.name: skill for skill in db.scalars(select(Skill))}
+    role_count = _seed_roles(db, skills_by_name)
     db.commit()
-    role_count = len(SEED_ROLES) + sum(len(r["skills"]) for r in SEED_ROLES)
-    return (
-        len(SEED_SKILLS)
-        + len(SEED_MISSIONS)
-        + len(SEED_COURSES)
-        + len(SEED_INTERNSHIPS)
-        + role_count
-    )
+    return role_count
 
 
 def seed_if_empty() -> int:
