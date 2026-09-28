@@ -16,6 +16,7 @@ from backend.app.domain.course import Course, CourseSkill  # noqa: E402
 from backend.app.domain.internship import Internship, InternshipSkill  # noqa: E402
 from backend.app.domain.mission import Attempt, Mission, MissionOption  # noqa: E402
 from backend.app.domain.resume import Resume, ResumeAnalysis  # noqa: E402
+from backend.app.domain.role import Role, RoleSkill  # noqa: E402
 from backend.app.domain.skill import Skill, UserSkill  # noqa: E402
 from backend.app.domain.user import User  # noqa: E402
 
@@ -33,4 +34,6 @@ __all__ = [
     "InternshipSkill",
     "Resume",
     "ResumeAnalysis",
+    "Role",
+    "RoleSkill",
 ]

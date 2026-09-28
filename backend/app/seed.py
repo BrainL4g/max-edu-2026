@@ -12,7 +12,15 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from backend.app.domain import Course, Internship, Mission, MissionOption, Skill
+from backend.app.domain import (
+    Course,
+    Internship,
+    Mission,
+    MissionOption,
+    Role,
+    RoleSkill,
+    Skill,
+)
 
 SEED_SKILLS: list[tuple[str, str, str]] = [
     ("Python", "Программирование", "Язык программирования для backend, data и не только"),
@@ -538,6 +546,72 @@ SEED_INTERNSHIPS: list[dict[str, Any]] = [
 ]
 
 
+# Роли: name, direction, level, description, skills [(skill_name, required_level, importance, is_mandatory)]
+SEED_ROLES: list[dict[str, Any]] = [
+    {
+        "name": "Backend Junior",
+        "direction": "backend",
+        "level": "junior",
+        "description": "Разработка серверной части: API, базы данных, интеграции.",
+        "skills": [
+            ("Python", 3, 0.9, True),
+            ("SQL", 3, 0.8, True),
+            ("FastAPI", 2, 0.6, False),
+            ("Git", 2, 0.6, False),
+            ("Docker", 1, 0.4, False),
+        ],
+    },
+    {
+        "name": "Frontend Junior",
+        "direction": "frontend",
+        "level": "junior",
+        "description": "Разработка пользовательских интерфейсов на JavaScript/React.",
+        "skills": [
+            ("JavaScript", 3, 0.9, True),
+            ("HTML/CSS", 3, 0.8, True),
+            ("React", 2, 0.7, False),
+            ("Git", 2, 0.5, False),
+        ],
+    },
+    {
+        "name": "QA Junior",
+        "direction": "qa",
+        "level": "junior",
+        "description": "Тестирование ПО: ручное и автоматизированное.",
+        "skills": [
+            ("Testing", 3, 0.9, True),
+            ("SQL", 2, 0.6, False),
+            ("Git", 2, 0.5, False),
+            ("Python", 1, 0.4, False),
+        ],
+    },
+    {
+        "name": "Data Analyst Junior",
+        "direction": "data",
+        "level": "junior",
+        "description": "Анализ данных: SQL, Pandas, визуализация и отчёты.",
+        "skills": [
+            ("SQL", 3, 0.9, True),
+            ("Python", 3, 0.8, True),
+            ("Pandas", 2, 0.7, False),
+            ("Git", 1, 0.4, False),
+        ],
+    },
+    {
+        "name": "ML Trainee",
+        "direction": "data",
+        "level": "trainee",
+        "description": "Ученик в ML: базовые модели, пайплайны, работа с данными.",
+        "skills": [
+            ("Python", 3, 0.9, True),
+            ("Machine Learning", 2, 0.7, True),
+            ("Pandas", 2, 0.6, False),
+            ("SQL", 2, 0.5, False),
+        ],
+    },
+]
+
+
 def seed_database(db: Session) -> int:
     """Идемпотентное наполнение базы демо-данными. Возвращает число записей."""
     if db.scalar(select(func.count(Skill.id))) or 0:
@@ -593,8 +667,33 @@ def seed_database(db: Session) -> int:
         internship.skills = [skills_by_name[name] for name in internship_data["skills"]]
         db.add(internship)
 
+    for role_data in SEED_ROLES:
+        role = Role(
+            name=role_data["name"],
+            direction=role_data["direction"],
+            level=role_data["level"],
+            description=role_data.get("description"),
+        )
+        for name, required_level, importance, is_mandatory in role_data["skills"]:
+            role.requirements.append(
+                RoleSkill(
+                    skill=skills_by_name[name],
+                    required_level=required_level,
+                    importance=importance,
+                    is_mandatory=is_mandatory,
+                )
+            )
+        db.add(role)
+
     db.commit()
-    return len(SEED_SKILLS) + len(SEED_MISSIONS) + len(SEED_COURSES) + len(SEED_INTERNSHIPS)
+    role_count = len(SEED_ROLES) + sum(len(r["skills"]) for r in SEED_ROLES)
+    return (
+        len(SEED_SKILLS)
+        + len(SEED_MISSIONS)
+        + len(SEED_COURSES)
+        + len(SEED_INTERNSHIPS)
+        + role_count
+    )
 
 
 def seed_if_empty() -> int:

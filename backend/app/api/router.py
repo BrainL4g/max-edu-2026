@@ -10,6 +10,7 @@ from backend.app.api.routes import (
     internships,
     missions,
     resumes,
+    roles,
     skills,
     users,
 )
@@ -17,6 +18,7 @@ from backend.app.api.routes import (
 api_router = APIRouter()
 api_router.include_router(users.router)
 api_router.include_router(skills.router)
+api_router.include_router(roles.router)
 api_router.include_router(assessment.router)
 api_router.include_router(missions.router)
 api_router.include_router(courses.router)

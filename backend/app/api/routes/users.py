@@ -8,10 +8,13 @@ from sqlalchemy.orm import Session
 
 from backend.app.database.session import get_db
 from backend.app.domain import Mission, User
+from backend.app.repositories.role_repository import RoleRepository
 from backend.app.repositories.user_repository import UserRepository
+from backend.app.schemas.role import GapAnalysisOut, GoalIn
 from backend.app.schemas.skill import AssessmentIn, AssessmentOut
 from backend.app.schemas.user import UserByMaxIn, UserCreate, UserOut, UserProgressOut, UserUpdate
 from backend.app.services.assessment import AssessmentService
+from backend.app.services.gap_analysis import GapAnalysisService
 from backend.app.services.skills import SkillService
 
 router = APIRouter(tags=["users"])
@@ -52,6 +55,24 @@ def update_user(user_id: int, payload: UserUpdate, db: Session = Depends(get_db)
         direction=payload.direction,
         goal=payload.goal,
     )
+
+
+@router.put("/users/{user_id}/goal", response_model=UserOut)
+def set_goal(user_id: int, payload: GoalIn, db: Session = Depends(get_db)) -> User:
+    """Выбор целевой роли пользователя."""
+    repo = UserRepository(db)
+    role = RoleRepository(db).get(payload.target_role_id)  # 404, если роли нет
+    user = repo.get(user_id)
+    user.target_role_id = role.id
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@router.get("/users/{user_id}/gap-analysis", response_model=GapAnalysisOut)
+def gap_analysis(user_id: int, db: Session = Depends(get_db)) -> GapAnalysisOut:
+    """Что не хватает до целевой роли и процент соответствия."""
+    return GapAnalysisOut(**GapAnalysisService(db).analyze(user_id))
 
 
 @router.post("/users/{user_id}/assessment", response_model=AssessmentOut)

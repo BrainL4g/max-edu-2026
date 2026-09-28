@@ -12,6 +12,8 @@ from backend.app.domain import (
     Internship,
     Mission,
     Resume,
+    Role,
+    RoleSkill,
     Skill,
     User,
 )
@@ -19,6 +21,7 @@ from backend.app.repositories.course_repository import CourseRepository
 from backend.app.repositories.internship_repository import InternshipRepository
 from backend.app.repositories.mission_repository import MissionRepository
 from backend.app.repositories.resume_repository import ResumeRepository
+from backend.app.repositories.role_repository import RoleRepository
 from backend.app.repositories.skill_repository import SkillRepository
 from backend.app.repositories.user_repository import UserRepository
 
@@ -281,3 +284,37 @@ def test_resume_repository_get_and_analysis(db_session):
     updated = repo.save_analysis(resume.id, {"found_skills": ["SQL"]})
     assert updated.id == saved.id
     assert updated.result["found_skills"] == ["SQL"]
+
+
+# --- RoleRepository -----------------------------------------------------------
+
+
+def _role(db, name: str = "Backend Junior") -> Role:
+    skill = Skill(name=f"Навык {name}", category="Программирование")
+    role = Role(name=name, direction="backend", level="junior")
+    role.requirements.append(
+        RoleSkill(
+            skill=skill,
+            required_level=3,
+            importance=0.9,
+            is_mandatory=True,
+        )
+    )
+    db.add(skill)
+    db.add(role)
+    db.commit()
+    db.refresh(role)
+    return role
+
+
+def test_role_repository_get_and_list(db_session):
+    first = _role(db_session, name="Backend Junior")
+    second = _role(db_session, name="QA Junior")
+
+    repo = RoleRepository(db_session)
+    assert [r.id for r in repo.list_all()] == [first.id, second.id]
+
+    assert repo.get(first.id).name == "Backend Junior"
+    assert len(repo.get(first.id).requirements) == 1
+    with pytest.raises(NotFoundError):
+        repo.get(999999)

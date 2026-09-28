@@ -17,6 +17,8 @@ from backend.app.domain import (  # noqa: F401
     MissionOption,
     Resume,
     ResumeAnalysis,
+    Role,
+    RoleSkill,
     Skill,
     User,
     UserSkill,

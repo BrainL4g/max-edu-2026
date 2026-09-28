@@ -40,6 +40,7 @@ class UserOut(UserBase):
 
     id: int
     max_user_id: int | None = None
+    target_role_id: int | None = None
     created_at: datetime
 
 
