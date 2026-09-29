@@ -32,7 +32,6 @@
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | бот → API → SQLite, Caddy, слой шифрования, границы ответственности, где живёт состояние |
 | [docs/DATA_MODEL.md](docs/DATA_MODEL.md) | ER-диаграмма, назначение таблиц, шифрованные колонки, индексы, миграции |
 | [docs/SECURITY.md](docs/SECURITY.md) | роли, хранение и ротация токенов и ключа, аудит, куда сообщать об уязвимости |
-| [SECURITY.md](SECURITY.md) | краткая политика раскрытия уязвимостей |
 | [docs/PRIVACY.md](docs/PRIVACY.md) | 152-ФЗ: карта данных, шифрование, права субъекта, действия при утечке |
 | [docs/RESUME_ANALYSIS.md](docs/RESUME_ANALYSIS.md) | как работает разбор резюме, что уходит в GigaChat |
 | [docs/BOT.md](docs/BOT.md) | карта экранов, callback payload, состояния, тон, ограничения MAX |
