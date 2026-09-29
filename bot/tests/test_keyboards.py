@@ -100,6 +100,41 @@ def test_menu_with_links_clips_long_title() -> None:
     assert buttons[0].text == "д" * (kbs.TEXT_LIMIT - 1) + "…"
 
 
+def test_menu_with_links_back_button() -> None:
+    buttons = buttons_from(
+        [
+            kbs.menu_with_links(
+                [("Открыть стажировку", "https://x.ru")], back_payload="in:rec"
+            )
+        ]
+    )
+    assert buttons[0].url == "https://x.ru"
+    assert buttons[1].text == "⬅️ Направления"
+    assert buttons[1].payload == "in:rec"
+    assert buttons[2].payload == "menu:main"
+
+
+def test_internship_directions_kb_grid() -> None:
+    rows = _rows([kbs.internship_directions_kb(["backend", "frontend", "data"])])
+    assert rows[0][0].text == "🌐 Все направления"
+    assert rows[0][0].payload == "in:dir:any"
+    assert [b.text for b in rows[1]] == ["backend", "frontend"]
+    assert [b.payload for b in rows[1]] == ["in:dir:backend", "in:dir:frontend"]
+    assert [b.text for b in rows[2]] == ["data"]
+    assert rows[3][0].payload == "menu:main"
+
+
+def test_internship_directions_kb_empty() -> None:
+    buttons = buttons_from([kbs.internship_directions_kb([])])
+    assert _payloads(buttons) == ["in:dir:any", "menu:main"]
+
+
+def test_internship_directions_kb_clips_long_code() -> None:
+    buttons = buttons_from([kbs.internship_directions_kb(["d" * 100])])
+    assert buttons[1].text == "d" * (kbs.TEXT_LIMIT - 1) + "…"
+    assert buttons[1].payload == f"in:dir:{'d' * 100}"
+
+
 def test_courses_pagination_kb_first_page() -> None:
     courses = [
         {"title": "FastAPI", "url": "https://fastapi.tiangolo.com"},

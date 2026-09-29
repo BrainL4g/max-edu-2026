@@ -107,6 +107,29 @@ def internship_card(item: dict[str, Any], index: int = 0) -> str:
     return "\n".join(lines)
 
 
+def internship_directions_text() -> str:
+    """Текст экрана выбора направления стажировок."""
+    return (
+        "💼 Стажировки\n\n"
+        "Выбери направление — подберу подходящие стажировки "
+        "с учётом твоих навыков."
+    )
+
+
+def internships_header(direction: str | None) -> str:
+    """Заголовок списка стажировок с учётом фильтра по направлению."""
+    if direction:
+        return f"💼 Рекомендуемые стажировки — {direction}:"
+    return "💼 Рекомендуемые стажировки:"
+
+
+def internships_empty_text(direction: str | None) -> str:
+    """Сообщение, когда по фильтру стажировок не нашлось."""
+    if direction:
+        return f"По направлению «{direction}» стажировок пока нет 🤷"
+    return "Рекомендаций по стажировкам пока нет 🤷"
+
+
 def resume_report(analysis: dict[str, Any]) -> str:
     """Отчёт анализа резюме."""
     found = ", ".join(analysis.get("found_skills") or []) or "—"

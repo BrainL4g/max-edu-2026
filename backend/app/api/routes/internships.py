@@ -45,6 +45,12 @@ def list_internships(
     )
 
 
+@router.get("/internships/directions", response_model=list[str])
+def list_internship_directions(db: Session = Depends(get_db)) -> list[str]:
+    """Доступные направления стажировок (для фильтров)."""
+    return InternshipRepository(db).list_directions()
+
+
 @router.get("/internships/recommended", response_model=list[InternshipOut])
 def recommended_internships(
     user_id: int = Query(...),

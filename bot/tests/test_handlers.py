@@ -336,9 +336,20 @@ def test_recommended_courses_empty(monkeypatch) -> None:
     assert "пока нет" in event.edits[0][0]
 
 
-def test_recommended_internships(monkeypatch) -> None:
-    _fake_user(monkeypatch)
-    item = {
+def _rec_internships_stub(
+    store: dict[str, Any], items: list[dict[str, Any]]
+) -> Callable[..., Any]:
+    """Заглушка rec_internships, запоминающая выбранное направление."""
+
+    async def _fake(user_id: int, direction: str | None = None) -> list[dict[str, Any]]:
+        store["direction"] = direction
+        return items
+
+    return _fake
+
+
+def _internship_item() -> dict[str, Any]:
+    return {
         "title": "Стажёр",
         "company": "Яндекс",
         "level": "beginner",
@@ -347,21 +358,89 @@ def test_recommended_internships(monkeypatch) -> None:
         "url": "https://ya.ru/vacancy",
         "skills": [],
     }
-    monkeypatch.setattr(api, "rec_internships", _async_result([item]))
+
+
+def test_internship_filters_shows_directions(monkeypatch) -> None:
+    _fake_user(monkeypatch)
+    monkeypatch.setattr(
+        api, "internship_directions", _async_result(["backend", "frontend"])
+    )
 
     event = FakeCallbackEvent("in:rec")
-    _run(recommend.recommended_internships(event))
-    text, _ = event.edits[0]
+    _run(recommend.internship_filters(event))
+    text, attachments = event.edits[0]
+    assert "Выбери направление" in text
+    assert _payloads(buttons_from(attachments)) == [
+        "in:dir:any",
+        "in:dir:backend",
+        "in:dir:frontend",
+        "menu:main",
+    ]
+
+
+def test_internship_filters_without_directions_falls_back_to_list(monkeypatch) -> None:
+    _fake_user(monkeypatch)
+    store: dict[str, Any] = {}
+    monkeypatch.setattr(api, "internship_directions", _async_result([]))
+    monkeypatch.setattr(
+        api, "rec_internships", _rec_internships_stub(store, [_internship_item()])
+    )
+
+    event = FakeCallbackEvent("in:rec")
+    _run(recommend.internship_filters(event))
+    assert "Стажёр @ Яндекс" in event.edits[0][0]
+    assert store["direction"] is None
+
+
+def test_internships_by_direction_filters(monkeypatch) -> None:
+    _fake_user(monkeypatch)
+    store: dict[str, Any] = {}
+    monkeypatch.setattr(
+        api, "rec_internships", _rec_internships_stub(store, [_internship_item()])
+    )
+
+    event = FakeCallbackEvent("in:dir:backend")
+    _run(recommend.internships_by_direction(event))
+    text, attachments = event.edits[0]
     assert "Стажёр @ Яндекс" in text
+    assert "backend" in text
+    assert store["direction"] == "backend"
+    buttons = buttons_from(attachments)
+    assert buttons[0].url == "https://ya.ru/vacancy"
+    assert _payloads(buttons[1:]) == ["in:rec", "menu:main"]
 
 
-def test_recommended_internships_empty(monkeypatch) -> None:
+def test_internships_by_direction_any(monkeypatch) -> None:
+    _fake_user(monkeypatch)
+    store: dict[str, Any] = {}
+    monkeypatch.setattr(
+        api, "rec_internships", _rec_internships_stub(store, [_internship_item()])
+    )
+
+    event = FakeCallbackEvent("in:dir:any")
+    _run(recommend.internships_by_direction(event))
+    text = event.edits[0][0]
+    assert store["direction"] is None
+    assert "Рекомендуемые стажировки" in text
+    assert "Все направления" not in text
+
+
+def test_internships_by_direction_empty(monkeypatch) -> None:
     _fake_user(monkeypatch)
     monkeypatch.setattr(api, "rec_internships", _async_result([]))
 
-    event = FakeCallbackEvent("in:rec")
-    _run(recommend.recommended_internships(event))
-    assert "пока нет" in event.edits[0][0]
+    event = FakeCallbackEvent("in:dir:qa")
+    _run(recommend.internships_by_direction(event))
+    text, attachments = event.edits[0]
+    assert "qa" in text
+    assert "пока нет" in text
+    assert _payloads(buttons_from(attachments)) == ["in:rec", "menu:main"]
+
+
+def test_parse_direction_payload() -> None:
+    assert recommend._parse_direction("in:dir:backend") == "backend"
+    assert recommend._parse_direction("in:dir:any") is None
+    assert recommend._parse_direction("in:dir:") is None
 
 
 def test_cards_links_limit_to_five() -> None:

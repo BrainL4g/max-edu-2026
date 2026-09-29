@@ -87,6 +87,34 @@ def test_recommended_uses_user_id_in_query(monkeypatch) -> None:
     assert asyncio.run(api.rec_internships(9)) == []
 
 
+def test_rec_internships_passes_direction_filter(monkeypatch) -> None:
+    captured: dict[str, str] = {}
+
+    def handler(request: httpx.Request) -> Response:
+        captured["query"] = str(request.url.query)
+        return Response(200, json=[])
+
+    client = httpx.AsyncClient(transport=MockTransport(handler), base_url="http://test")
+    monkeypatch.setattr(api, "_get_client", lambda: client)
+
+    assert asyncio.run(api.rec_internships(9, direction="backend")) == []
+    assert "user_id=9" in captured["query"]
+    assert "direction=backend" in captured["query"]
+
+    # "any" — фильтр не применяется
+    assert asyncio.run(api.rec_internships(9, direction="any")) == []
+    assert "direction" not in captured["query"]
+
+
+def test_internship_directions(monkeypatch) -> None:
+    client = _client(
+        {("GET", "/internships/directions"): Response(200, json=["backend", "qa"])}
+    )
+    monkeypatch.setattr(api, "_get_client", lambda: client)
+
+    assert asyncio.run(api.internship_directions()) == ["backend", "qa"]
+
+
 def test_resume_upload_and_analyze(monkeypatch) -> None:
     routes = {
         ("POST", "/users/7/resumes"): Response(201, json={"id": 12}),

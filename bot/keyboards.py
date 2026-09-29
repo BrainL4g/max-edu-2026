@@ -93,11 +93,33 @@ def after_mission_kb() -> AttachmentButton:
     return builder.as_markup()
 
 
-def menu_with_links(links: list[tuple[str, str]]) -> AttachmentButton:
-    """Кнопки-ссылки + кнопка «Меню». links — пары (текст, url)."""
+def menu_with_links(
+    links: list[tuple[str, str]], back_payload: str | None = None
+) -> AttachmentButton:
+    """Кнопки-ссылки + необязательная кнопка «Назад» и «Меню».
+
+    links — пары (текст, url); back_payload — payload кнопки возврата к списку.
+    """
     builder = InlineKeyboardBuilder()  # type: ignore[no-untyped-call]
     for title, url in links:
         builder.row(LinkButton(text=_clip(title), url=url))
+    if back_payload:
+        builder.row(CallbackButton(text="⬅️ Направления", payload=back_payload))
+    builder.row(CallbackButton(text="🏠 Меню", payload="menu:main"))
+    return builder.as_markup()
+
+
+def internship_directions_kb(directions: list[str]) -> AttachmentButton:
+    """Кнопки направлений стажировок по два в ряд: payload = "in:dir:{direction}"."""
+    builder = InlineKeyboardBuilder()  # type: ignore[no-untyped-call]
+    builder.row(CallbackButton(text="🌐 Все направления", payload="in:dir:any"))
+    for start in range(0, len(directions), 2):
+        builder.row(
+            *(
+                CallbackButton(text=_clip(direction), payload=f"in:dir:{direction}")
+                for direction in directions[start : start + 2]
+            )
+        )
     builder.row(CallbackButton(text="🏠 Меню", payload="menu:main"))
     return builder.as_markup()
 

@@ -108,6 +108,23 @@ def test_internship_card_office_with_requirements() -> None:
     assert "Навыки: —" in card
 
 
+def test_internship_directions_text() -> None:
+    assert "Выбери направление" in texts.internship_directions_text()
+
+
+def test_internships_header_with_and_without_direction() -> None:
+    assert "— backend:" in texts.internships_header("backend")
+    assert texts.internships_header(None) == "💼 Рекомендуемые стажировки:"
+
+
+def test_internships_empty_text_with_and_without_direction() -> None:
+    assert "«qa»" in texts.internships_empty_text("qa")
+    assert "пока нет" in texts.internships_empty_text("qa")
+    assert (
+        texts.internships_empty_text(None) == "Рекомендаций по стажировкам пока нет 🤷"
+    )
+
+
 def test_resume_report_full() -> None:
     analysis = {
         "direction_match": 90,

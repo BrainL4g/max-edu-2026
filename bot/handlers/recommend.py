@@ -80,20 +80,51 @@ async def recommended_courses(event: MessageCallback) -> None:
     )
 
 
-@router.message_callback(F.callback.payload == "in:rec")
-async def recommended_internships(event: MessageCallback) -> None:
-    """Рекомендации стажировок."""
+DIRECTION_ANY = "any"
+
+
+def _parse_direction(payload: str) -> str | None:
+    """Направление из payload "in:dir:{direction}" ("any" — без фильтра)."""
+    direction = payload.rsplit(":", 1)[-1].strip()
+    if not direction or direction == DIRECTION_ANY:
+        return None
+    return direction
+
+
+async def _show_internships(event: MessageCallback, direction: str | None) -> None:
+    """Показать рекомендованные стажировки с учётом направления."""
     user_id = await sessions.ensure_user_from(event.callback.user)
-    internships = await api.rec_internships(user_id)
+    internships = await api.rec_internships(user_id, direction=direction)
     if not internships:
         await event.edit(
-            "Рекомендаций по стажировкам пока нет 🤷",
-            attachments=[kbs.main_menu()],
+            texts.internships_empty_text(direction),
+            attachments=[kbs.menu_with_links([], back_payload="in:rec")],
         )
         return
 
     cards, links = _cards_links(
         internships, texts.internship_card, "Открыть стажировку"
     )
-    text = f"💼 Рекомендуемые стажировки:\n\n{cards}"
-    await event.edit(text, attachments=[kbs.menu_with_links(links)])
+    text = f"{texts.internships_header(direction)}\n\n{cards}"
+    await event.edit(
+        text, attachments=[kbs.menu_with_links(links, back_payload="in:rec")]
+    )
+
+
+@router.message_callback(F.callback.payload == "in:rec")
+async def internship_filters(event: MessageCallback) -> None:
+    """Экран выбора направления стажировок."""
+    directions = await api.internship_directions()
+    if not directions:
+        await _show_internships(event, None)
+        return
+    await event.edit(
+        texts.internship_directions_text(),
+        attachments=[kbs.internship_directions_kb(directions)],
+    )
+
+
+@router.message_callback(F.callback.payload.startswith("in:dir:"))
+async def internships_by_direction(event: MessageCallback) -> None:
+    """Рекомендации стажировок по выбранному направлению."""
+    await _show_internships(event, _parse_direction(event.callback.payload or ""))

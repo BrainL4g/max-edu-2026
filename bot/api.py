@@ -95,11 +95,19 @@ async def rec_courses(user_id: int) -> list[dict[str, Any]]:
     return _list(await _req("GET", "/courses/recommended", params={"user_id": user_id}))
 
 
-async def rec_internships(user_id: int) -> list[dict[str, Any]]:
-    """Рекомендации стажировок."""
-    return _list(
-        await _req("GET", "/internships/recommended", params={"user_id": user_id})
-    )
+async def rec_internships(
+    user_id: int, direction: str | None = None
+) -> list[dict[str, Any]]:
+    """Рекомендации стажировок, опционально с фильтром по направлению."""
+    params: dict[str, Any] = {"user_id": user_id}
+    if direction and direction != "any":
+        params["direction"] = direction
+    return _list(await _req("GET", "/internships/recommended", params=params))
+
+
+async def internship_directions() -> list[str]:
+    """Доступные направления стажировок (для кнопок фильтра)."""
+    return [str(item) for item in await _req("GET", "/internships/directions")]
 
 
 async def upload_resume(user_id: int, text: str) -> dict[str, Any]:
