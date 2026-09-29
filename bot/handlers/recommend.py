@@ -16,6 +16,7 @@ import texts
 router = Router()
 
 CARD_LIMIT = 5
+PAGE_SIZE = 5
 
 
 def _cards_links(
@@ -33,8 +34,9 @@ def _cards_links(
 
 
 @router.message_callback(F.callback.payload == "cr:rec")
+@router.message_callback(F.callback.payload.startswith("cr:page:"))
 async def recommended_courses(event: MessageCallback) -> None:
-    """Рекомендации курсов по пробелам в навыках."""
+    """Рекомендации курсов по пробелам в навыках с пагинацией по 5 элементов."""
     user_id = await sessions.ensure_user_from(event.callback.user)
     courses = await api.rec_courses(user_id)
     if not courses:
@@ -43,9 +45,39 @@ async def recommended_courses(event: MessageCallback) -> None:
         )
         return
 
-    cards, links = _cards_links(courses, texts.course_card, "Открыть курс")
-    text = f"📚 Рекомендуемые курсы:\n\n{cards}"
-    await event.edit(text, attachments=[kbs.menu_with_links(links)])
+    payload = getattr(getattr(event, "callback", None), "payload", "") or ""
+    page = 0
+    if payload.startswith("cr:page:"):
+        try:
+            page = int(payload.split(":", 2)[2])
+        except (IndexError, ValueError):
+            page = 0
+
+    total_items = len(courses)
+    total_pages = max(1, (total_items + PAGE_SIZE - 1) // PAGE_SIZE)
+    page = max(0, min(page, total_pages - 1))
+
+    start_idx = page * PAGE_SIZE
+    page_courses = courses[start_idx : start_idx + PAGE_SIZE]
+
+    cards = [
+        texts.course_card(course, start_idx + index + 1)
+        for index, course in enumerate(page_courses)
+    ]
+    cards_text = "\n".join(cards)
+
+    header = (
+        f"📚 Рекомендуемые курсы (страница {page + 1} из {total_pages}):"
+        if total_pages > 1
+        else "📚 Рекомендуемые курсы:"
+    )
+    text = f"{header}\n\n{cards_text}"
+    await event.edit(
+        text,
+        attachments=[
+            kbs.courses_pagination_kb(page_courses, page=page, total_pages=total_pages)
+        ],
+    )
 
 
 @router.message_callback(F.callback.payload == "in:rec")

@@ -82,10 +82,9 @@ def gap_analysis_text(analysis: dict[str, Any]) -> str:
 def course_card(course: dict[str, Any], index: int = 0) -> str:
     """Карточка курса."""
     skills = ", ".join(s["name"] for s in course.get("skills", [])) or "—"
-    cost = "бесплатно" if not course.get("cost") else f"{course['cost']:.0f} ₽"
     lines = [
         f"{index}. {course['title']}",
-        f"   {course['platform']} · {course['level']} · {course['format']} · {cost}",
+        f"   {course['platform']} · {course['level']} · {course['format']}",
         f"   Навыки: {skills}",
     ]
     if course.get("description"):

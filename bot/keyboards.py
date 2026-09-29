@@ -100,3 +100,36 @@ def menu_with_links(links: list[tuple[str, str]]) -> AttachmentButton:
         builder.row(LinkButton(text=_clip(title), url=url))
     builder.row(CallbackButton(text="🏠 Меню", payload="menu:main"))
     return builder.as_markup()
+
+
+def courses_pagination_kb(
+    courses: list[dict[str, Any]],
+    page: int,
+    total_pages: int,
+) -> AttachmentButton:
+    """Кнопки курсов со ссылками по названию, пагинация и «Меню»."""
+    builder = InlineKeyboardBuilder()  # type: ignore[no-untyped-call]
+    for course in courses:
+        url = course.get("url")
+        if url:
+            title = course.get("title") or course.get("platform") or "Курс"
+            builder.row(LinkButton(text=_clip(title), url=url))
+
+    nav_buttons: list[CallbackButton] = []
+    if page > 0:
+        prev_label = (
+            "⬅️ Предыдущая" if page < total_pages - 1 else "⬅️ Предыдущая страница"
+        )
+        nav_buttons.append(
+            CallbackButton(text=prev_label, payload=f"cr:page:{page - 1}")
+        )
+    if page < total_pages - 1:
+        next_label = "Следующая ➡️" if page > 0 else "Следующая страница ➡️"
+        nav_buttons.append(
+            CallbackButton(text=next_label, payload=f"cr:page:{page + 1}")
+        )
+
+    if nav_buttons:
+        builder.row(*nav_buttons)
+    builder.row(CallbackButton(text="🏠 Меню", payload="menu:main"))
+    return builder.as_markup()

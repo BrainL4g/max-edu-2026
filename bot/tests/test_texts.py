@@ -52,12 +52,14 @@ def test_course_card_free_with_skills() -> None:
     }
     card = texts.course_card(course, 1)
     assert "1. FastAPI" in card
-    assert "бесплатно" in card
+    assert "Stepik · junior · online" in card
     assert "Python, SQL" in card
     assert "Курс про бэкенд" in card
+    assert "бесплатно" not in card
+    assert "₽" not in card
 
 
-def test_course_card_paid_without_skills() -> None:
+def test_course_card_without_skills() -> None:
     course = {
         "title": "Курс",
         "platform": "Платформа",
@@ -67,8 +69,11 @@ def test_course_card_paid_without_skills() -> None:
         "skills": [],
     }
     card = texts.course_card(course)
-    assert "1000 ₽" in card
+    assert "0. Курс" in card
+    assert "Платформа · mid · offline" in card
     assert "Навыки: —" in card
+    assert "1000" not in card
+    assert "₽" not in card
 
 
 def test_internship_card_remote() -> None:

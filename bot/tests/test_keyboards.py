@@ -98,3 +98,60 @@ def test_menu_with_links() -> None:
 def test_menu_with_links_clips_long_title() -> None:
     buttons = buttons_from([kbs.menu_with_links([("д" * 100, "https://x.ru")])])
     assert buttons[0].text == "д" * (kbs.TEXT_LIMIT - 1) + "…"
+
+
+def test_courses_pagination_kb_first_page() -> None:
+    courses = [
+        {"title": "FastAPI", "url": "https://fastapi.tiangolo.com"},
+        {"title": "Python Basics", "url": "https://python.org"},
+    ]
+    attachments = [kbs.courses_pagination_kb(courses, page=0, total_pages=2)]
+    buttons = buttons_from(attachments)
+    assert [b.text for b in buttons[:2]] == ["FastAPI", "Python Basics"]
+    assert buttons[0].url == "https://fastapi.tiangolo.com"
+    assert buttons[2].text == "Следующая страница ➡️"
+    assert buttons[2].payload == "cr:page:1"
+    assert buttons[3].payload == "menu:main"
+
+
+def test_courses_pagination_kb_middle_page() -> None:
+    courses = [{"title": "Course 3", "url": "https://x.ru"}]
+    attachments = [kbs.courses_pagination_kb(courses, page=1, total_pages=3)]
+    rows = _rows(attachments)
+    nav_row = rows[1]
+    assert len(nav_row) == 2
+    assert nav_row[0].text == "⬅️ Предыдущая"
+    assert nav_row[0].payload == "cr:page:0"
+    assert nav_row[1].text == "Следующая ➡️"
+    assert nav_row[1].payload == "cr:page:2"
+    assert rows[2][0].payload == "menu:main"
+
+
+def test_courses_pagination_kb_last_page() -> None:
+    courses = [{"title": "Course Last", "url": "https://x.ru"}]
+    attachments = [kbs.courses_pagination_kb(courses, page=2, total_pages=3)]
+    buttons = buttons_from(attachments)
+    assert buttons[1].text == "⬅️ Предыдущая страница"
+    assert buttons[1].payload == "cr:page:1"
+    assert buttons[2].payload == "menu:main"
+
+
+def test_courses_pagination_kb_single_page() -> None:
+    courses = [{"title": "Only One", "url": "https://x.ru"}]
+    buttons = buttons_from([kbs.courses_pagination_kb(courses, page=0, total_pages=1)])
+    payloads = _payloads(buttons)
+    assert payloads == [None, "menu:main"]
+    assert buttons[0].text == "Only One"
+
+
+def test_courses_pagination_kb_clips_long_title() -> None:
+    courses = [{"title": "К" * 100, "url": "https://x.ru"}]
+    buttons = buttons_from([kbs.courses_pagination_kb(courses, page=0, total_pages=1)])
+    assert buttons[0].text == "К" * (kbs.TEXT_LIMIT - 1) + "…"
+
+
+def test_courses_pagination_kb_skips_no_url() -> None:
+    courses = [{"title": "No URL", "url": None}]
+    buttons = buttons_from([kbs.courses_pagination_kb(courses, page=0, total_pages=1)])
+    assert len(buttons) == 1
+    assert buttons[0].payload == "menu:main"

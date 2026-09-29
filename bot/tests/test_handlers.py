@@ -259,8 +259,72 @@ def test_recommended_courses_with_items(monkeypatch) -> None:
     text, attachments = event.edits[0]
     assert "Рекомендуемые курсы" in text
     assert "FastAPI" in text
-    urls = [getattr(b, "url", None) for b in buttons_from(attachments)]
+    assert "бесплатно" not in text
+    assert "₽" not in text
+    buttons = buttons_from(attachments)
+    urls = [getattr(b, "url", None) for b in buttons]
     assert "https://stepik.org/1" in urls
+    assert buttons[0].text == "FastAPI"
+
+
+def test_recommended_courses_pagination_next_and_prev(monkeypatch) -> None:
+    _fake_user(monkeypatch)
+    items = [
+        {
+            "id": i,
+            "title": f"Course {i}",
+            "platform": "Stepik",
+            "level": "junior",
+            "format": "online",
+            "cost": 0,
+            "url": f"https://stepik.org/{i}",
+            "skills": [],
+        }
+        for i in range(1, 8)
+    ]
+    monkeypatch.setattr(api, "rec_courses", _async_result(items))
+
+    # Страница 1
+    event_p0 = FakeCallbackEvent("cr:rec")
+    _run(recommend.recommended_courses(event_p0))
+    text0, att0 = event_p0.edits[0]
+    assert "страница 1 из 2" in text0
+    assert "1. Course 1" in text0
+    assert "5. Course 5" in text0
+    assert "6. Course 6" not in text0
+    buttons0 = buttons_from(att0)
+    assert buttons0[0].text == "Course 1"
+    assert buttons0[5].text == "Следующая страница ➡️"
+    assert buttons0[5].payload == "cr:page:1"
+
+    # Страница 2
+    event_p1 = FakeCallbackEvent("cr:page:1")
+    _run(recommend.recommended_courses(event_p1))
+    text1, att1 = event_p1.edits[0]
+    assert "страница 2 из 2" in text1
+    assert "6. Course 6" in text1
+    assert "7. Course 7" in text1
+    buttons1 = buttons_from(att1)
+    assert buttons1[0].text == "Course 6"
+    assert buttons1[2].text == "⬅️ Предыдущая страница"
+    assert buttons1[2].payload == "cr:page:0"
+
+
+def test_recommended_courses_invalid_page(monkeypatch) -> None:
+    _fake_user(monkeypatch)
+    monkeypatch.setattr(api, "rec_courses", _async_result([_course()]))
+
+    # Невалидный номер страницы — откат на 0
+    event = FakeCallbackEvent("cr:page:invalid")
+    _run(recommend.recommended_courses(event))
+    text, _ = event.edits[0]
+    assert "FastAPI" in text
+
+    # Запредельный номер страницы — ограничение максимальной страницей
+    event_overflow = FakeCallbackEvent("cr:page:999")
+    _run(recommend.recommended_courses(event_overflow))
+    text_ov, _ = event_overflow.edits[0]
+    assert "FastAPI" in text_ov
 
 
 def test_recommended_courses_empty(monkeypatch) -> None:
