@@ -96,12 +96,30 @@ async def revoke_consent(event: MessageCallback) -> None:
     await event.edit(texts.consent_revoked_text(), attachments=[kbs.main_menu()])
 
 
-@router.message_callback(F.callback.payload == "rs:cancel")
-async def cancel_resume(event: MessageCallback) -> None:
-    """Пользователь передумал: снимаем ожидание резюме."""
-    item = sessions.session_for(event.callback.user.user_id)
-    item["resume"] = False
-    await event.edit(texts.resume_cancelled_text(), attachments=[kbs.main_menu()])
+@router.message_callback(F.callback.payload.startswith("rs:del:"))
+async def delete_resume(event: MessageCallback) -> None:
+    """Удалить загруженное резюме (152-ФЗ ст. 18).
+
+    Кнопка появляется только в отчёте, то есть когда резюме действительно
+    загружено. Профиль, навыки и прогресс не затрагиваются — удаляется
+    только документ и его разбор.
+    """
+    payload = event.callback.payload
+    if payload is None or not payload.startswith("rs:del:"):
+        return
+    try:
+        resume_id = int(payload.rsplit(":", 1)[1])
+    except ValueError:
+        return
+    try:
+        await api.delete_resume(resume_id)
+    except api.ApiError as exc:
+        logger.warning("Не удалось удалить резюме %s: %s", resume_id, exc)
+        await event.edit(
+            texts.resume_delete_error_text(), attachments=[kbs.main_menu()]
+        )
+        return
+    await event.edit(texts.resume_deleted_text(), attachments=[kbs.main_menu()])
 
 
 def _first_file(attachments: list[Any] | None) -> Any | None:
@@ -165,7 +183,8 @@ async def capture_resume_file(event: MessageCreated) -> None:
         return
 
     await event.message.answer(
-        texts.resume_report(analysis), attachments=[kbs.resume_report_kb()]
+        texts.resume_report(analysis),
+        attachments=[kbs.resume_report_kb(analysis["resume_id"])],
     )
 
 
@@ -187,5 +206,6 @@ async def capture_resume_text(event: MessageCreated) -> None:
     upload = await api.upload_resume(user_id, body.text)
     analysis = await api.analyze_resume(upload["id"])
     await event.message.answer(
-        texts.resume_report(analysis), attachments=[kbs.resume_report_kb()]
+        texts.resume_report(analysis),
+        attachments=[kbs.resume_report_kb(analysis["resume_id"])],
     )

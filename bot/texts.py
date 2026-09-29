@@ -292,9 +292,20 @@ def privacy_policy_text(ai_enabled: bool) -> str:
     )
 
 
-def resume_cancelled_text() -> str:
-    """Отмена ожидания резюме по кнопке."""
-    return "Отменил 🙌 Возвращаемся в меню."
+def resume_deleted_text() -> str:
+    """Подтверждение удаления резюме."""
+    return (
+        "🗑 Резюме удалено вместе с разбором.\n\n"
+        "Профиль, навыки и прогресс не тронуты. "
+        "Пришлёшь новое — проанализирую заново."
+    )
+
+
+def resume_delete_error_text() -> str:
+    """Не удалось удалить резюме."""
+    return (
+        "⚠️ Не получилось удалить резюме — попробуй ещё раз " "или напиши мне об этом."
+    )
 
 
 def resume_file_error_text(reason: str) -> str:

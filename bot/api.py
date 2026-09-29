@@ -196,6 +196,11 @@ async def analyze_resume(resume_id: int) -> dict[str, Any]:
     )
 
 
+async def delete_resume(resume_id: int) -> None:
+    """Удалить резюме вместе с разбором (152-ФЗ ст. 18)."""
+    await _req("DELETE", f"/resumes/{resume_id}")
+
+
 async def list_roles() -> list[dict[str, Any]]:
     """Все целевые карьерные роли."""
     return _list(await _req("GET", "/roles"))

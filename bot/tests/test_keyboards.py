@@ -118,19 +118,23 @@ def test_resume_kb_back_button() -> None:
     assert [b.payload for b in buttons] == ["menu:main"]
 
 
-def test_resume_report_kb_buttons() -> None:
-    buttons = buttons_from([kbs.resume_report_kb()])
-    assert [b.text for b in buttons] == ["📄 Другое резюме", "🏠 Меню"]
-    assert [b.payload for b in buttons] == ["rs:start", "menu:main"]
-
-
-def test_resume_prompt_kb_has_cancel_and_revoke() -> None:
-    buttons = buttons_from([kbs.resume_prompt_kb()])
-    assert [b.payload for b in buttons] == [
-        "rs:cancel",
-        "rs:consent:revoke",
-        "menu:main",
+def test_resume_report_kb_has_delete_with_resume_id() -> None:
+    """Кнопка удаления есть только в отчёте и несёт id резюме."""
+    buttons = buttons_from([kbs.resume_report_kb(12)])
+    assert [b.payload for b in buttons] == ["rs:start", "rs:del:12", "menu:main"]
+    assert [b.text for b in buttons] == [
+        "📄 Другое резюме",
+        "🗑 Удалить резюме",
+        "🏠 Меню",
     ]
+
+
+def test_resume_prompt_kb_has_no_delete_or_cancel() -> None:
+    """До загрузки резюме удалять нечего — кнопки нет."""
+    buttons = buttons_from([kbs.resume_prompt_kb()])
+    payloads = [b.payload for b in buttons]
+    assert payloads == ["rs:consent:revoke", "menu:main"]
+    assert not any(p.startswith("rs:del:") for p in payloads)
 
 
 def test_resume_consent_kb_buttons() -> None:

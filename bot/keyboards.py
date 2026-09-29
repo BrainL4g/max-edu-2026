@@ -43,9 +43,13 @@ def resume_kb() -> AttachmentButton:
 
 
 def resume_prompt_kb() -> AttachmentButton:
-    """Ожидание резюме: отмена, отзыв согласия, возврат в меню."""
+    """Ожидание резюме: отзыв согласия, возврат в меню.
+
+    Отдельной кнопки отмены нет: «⬅️ Назад» сбрасывает ожидание так же,
+    а лишняя кнопка только путает — отменять тут нечего, резюме ещё
+    не отправлено.
+    """
     builder = InlineKeyboardBuilder()  # type: ignore[no-untyped-call]
-    builder.row(CallbackButton(text="❌ Отмена", payload="rs:cancel"))
     builder.row(
         CallbackButton(text="🚫 Отозвать согласие", payload="rs:consent:revoke")
     )
@@ -63,10 +67,16 @@ def resume_consent_kb() -> AttachmentButton:
     return builder.as_markup()
 
 
-def resume_report_kb() -> AttachmentButton:
-    """Кнопки после отчёта по резюме."""
+def resume_report_kb(resume_id: int) -> AttachmentButton:
+    """Кнопки после отчёта по резюме.
+
+    «🗑 Удалить резюме» — разрушительное действие, поэтому подписано
+    прямо, а не «Отмена»: отмена означала бы возврат по списку, и
+    пользователь потерял бы документ, не ожидая этого.
+    """
     builder = InlineKeyboardBuilder()  # type: ignore[no-untyped-call]
     builder.row(CallbackButton(text="📄 Другое резюме", payload="rs:start"))
+    builder.row(CallbackButton(text="🗑 Удалить резюме", payload=f"rs:del:{resume_id}"))
     builder.row(CallbackButton(text="🏠 Меню", payload="menu:main"))
     return builder.as_markup()
 

@@ -783,18 +783,47 @@ def test_ask_resume_sets_waiting_flag() -> None:
     assert "Пришли резюме" in text
     buttons = buttons_from(attachments)
     assert [b.payload for b in buttons] == [
-        "rs:cancel",
         "rs:consent:revoke",
         "menu:main",
     ]
 
 
-def test_cancel_resume_clears_waiting_flag() -> None:
-    sessions.session_for(USER_ID)["resume"] = True
-    event = FakeCallbackEvent("rs:cancel")
-    _run(resume.cancel_resume(event))
-    assert sessions.session_for(USER_ID)["resume"] is False
-    assert "Отменил" in event.edits[0][0]
+def test_delete_resume_removes_uploaded_document(monkeypatch) -> None:
+    """В отчёте кнопка удаляет загруженное резюме."""
+    deleted: list[int] = []
+
+    async def fake_delete(resume_id: int) -> None:
+        deleted.append(resume_id)
+
+    monkeypatch.setattr(api, "delete_resume", fake_delete)
+
+    event = FakeCallbackEvent("rs:del:12")
+    _run(resume.delete_resume(event))
+
+    assert deleted == [12]
+    assert "удалено" in event.edits[0][0]
+
+
+def test_delete_resume_reports_api_error(monkeypatch) -> None:
+    """Ошибка удаления не роняет хендлер, а объясняется."""
+
+    async def boom(resume_id: int) -> None:
+        raise api.ApiError("DELETE /resumes/12 -> 500", 500)
+
+    monkeypatch.setattr(api, "delete_resume", boom)
+
+    event = FakeCallbackEvent("rs:del:12")
+    _run(resume.delete_resume(event))
+
+    assert "Не получилось удалить" in event.edits[0][0]
+
+
+def test_delete_resume_ignores_broken_payloads() -> None:
+    """Мусорный payload игнорируется, а не роняет хендлер."""
+    for payload in ("rs:del:", "rs:del:abc", "rs:other"):
+        event = FakeCallbackEvent(payload)
+        _run(resume.delete_resume(event))
+        assert event.edits == []
 
 
 def _stub_ai(enabled: bool):
@@ -1001,6 +1030,7 @@ def test_resume_not_accepted_without_consent(monkeypatch) -> None:
 
 def _resume_analysis() -> dict[str, Any]:
     return {
+        "resume_id": 12,
         "direction_match": 75,
         "found_skills": ["Python"],
         "missing_skills": [],
@@ -1168,7 +1198,11 @@ def test_capture_resume_text_analyzes_without_uid(
     assert uploads == [(42, "Моё резюме...")]
     text, attachments = event.answers[0]
     assert "Оценка : 82/100" in text
-    assert _payloads(buttons_from(attachments)) == ["rs:start", "menu:main"]
+    assert _payloads(buttons_from(attachments)) == [
+        "rs:start",
+        "rs:del:12",
+        "menu:main",
+    ]
     assert sessions.session_for(USER_ID)["uid"] == 42
 
 
