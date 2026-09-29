@@ -18,7 +18,7 @@ from backend.app.domain import Base
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """Старт: создание таблиц и демо-данных для быстрого прототипа."""
+    """Старт: создание таблиц и наполнение демо-данными."""
     if settings.auto_create_tables:
         Base.metadata.create_all(bind=engine)
     if settings.seed_on_startup:

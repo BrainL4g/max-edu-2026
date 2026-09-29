@@ -1,9 +1,8 @@
 """Лёгкое in-memory состояние пользователей бота.
 
-Сессия: max_user_id → {"uid": id на платформе, "answers": [...], "resume": False},
-где `resume` — флаг ожидания резюме (файл или текст) после кнопки «Резюме».
-Состояние сбрасывается при рестарте бота. Для прода заменить на FSM с Redis
-(maxapi.context.StateContext) или хранение в БД.
+Сессия: max_user_id → {"uid": id на платформе, "answers": [...], "resume": False,
+"welcomed": bool}, где `resume` — флаг ожидания резюме (файл или текст) после
+кнопки «Резюме», а `welcomed` — признак отправленного приветствия.
 """
 
 from __future__ import annotations

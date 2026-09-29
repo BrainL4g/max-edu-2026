@@ -29,10 +29,13 @@ alembic revision -m "message"
 |---------|----------|
 | `001`   | Начальная схема: users, skills, user_skills, missions, mission_options, attempts, courses, course_skills, internships, internship_skills |
 | `002`   | Резюме: resumes, resume_analysis |
+| `003`   | Связка с пользователями MAX: users.max_user_id |
+| `004`   | Целевые роли: roles, role_skills |
+| `005`   | Таблица api_tokens — Bearer-токены ролей student и admin |
+| `006`   | Поля согласия в users и расширение колонок под шифротекст ПД |
 
 ## Важно
 
-- В `development` таблицы и демо-данные создаются автоматически при старте
-  (`auto_create_tables`, `seed_on_startup` в `.env`), поэтому миграции не
-  обязательны для прототипа.
+- Миграции применяются автоматически при старте контейнера
+  (`entrypoint.sh` выполняет `alembic upgrade head`).
 - Перед миграциями проверьте, что `.env` содержит корректный `DATABASE_URL`.
