@@ -1,0 +1,35 @@
+{
+  "meta": {
+    "description": "Тестовые данные для приёмки API SkillQuest. Прогон сценариев описан в DATA-API.yaml.",
+    "version": "1"
+  },
+  "student": {
+    "name": "Тестовый Студент Приёмки",
+    "education": "Московский технический университет, 3 курс",
+    "direction": "backend",
+    "goal": "Попасть на стажировку в ИТ-компанию",
+    "target_role_id": 1,
+    "target_role_name": "Backend Junior"
+  },
+  "admin": {
+    "name": "Тестовый Администратор"
+  },
+  "assessment": {
+    "answers": [
+      { "question_id": 1, "option_index": 2 },
+      { "question_id": 2, "option_index": 1 },
+      { "question_id": 3, "option_index": 1 },
+      { "question_id": 5, "option_index": 2 },
+      { "question_id": 9, "option_index": 1 },
+      { "question_id": 10, "option_index": 1 }
+    ]
+  },
+  "resume": {
+    "filename": "cv.txt",
+    "text": "Тестовый студент. Пишу простые скрипты на Python, знаю SQL на уровне SELECT и фильтрации, учусь на 3 курсе технического вуза. Цель — стажировка по направлению backend."
+  },
+  "expected": {
+    "assessment_skills_count": 6,
+    "backend_questions_count": 6
+  }
+}

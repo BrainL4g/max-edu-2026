@@ -118,3 +118,13 @@ def require_service(principal: Annotated[Principal, Depends(get_current_principa
             detail="Доступно только сервисному аккаунту",
         )
     return principal
+
+
+def require_admin(principal: Annotated[Principal, Depends(get_current_principal)]) -> Principal:
+    """Доступно только роли admin, иначе 403."""
+    if principal.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Требуется роль администратора",
+        )
+    return principal

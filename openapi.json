@@ -636,6 +636,53 @@
         }
       }
     },
+    "/admin/test-users/reset": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Reset Test Users",
+        "description": "Сбросить учебные данные тест-студентов (id и токены сохраняются).\n\nОчищает попытки, Skill Map, резюме и анализ резюме, снимает целевую\nроль и возвращает профиль к состоянию по умолчанию — чтобы прогоны\nDATA-API были воспроизводимыми. Требует роль ``admin``.",
+        "operationId": "reset_test_users_admin_test_users_reset_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResetOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Нет или невалидный Bearer-токен",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Доступ запрещён: не свой ресурс или не та роль",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
     "/skills": {
       "get": {
         "tags": [
@@ -3509,6 +3556,37 @@
         ],
         "title": "MissionOut",
         "description": "Миссия (варианты ответов не раскрывают правильный)."
+      },
+      "ResetOut": {
+        "properties": {
+          "reset": {
+            "type": "boolean",
+            "title": "Reset"
+          },
+          "students_affected": {
+            "type": "integer",
+            "title": "Students Affected"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reset",
+          "students_affected",
+          "message"
+        ],
+        "title": "ResetOut",
+        "description": "Результат сброса учебных данных тест-студентов.",
+        "examples": [
+          {
+            "message": "Учебные данные тест-студентов сброшены",
+            "reset": true,
+            "students_affected": 1
+          }
+        ]
       },
       "ResumeAnalysisOut": {
         "properties": {
