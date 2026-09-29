@@ -1,4 +1,8 @@
-"""HTTP-клиент к API SkillQuest."""
+"""HTTP-клиент к API SkillQuest.
+
+Клиент переиспользуется между запросами: один пул соединений httpx
+(до 10 активных, до 5 keep-alive).
+"""
 
 from __future__ import annotations
 
@@ -23,7 +27,6 @@ def _get_client() -> httpx.AsyncClient:
         _client = httpx.AsyncClient(
             base_url=BASE_URL,
             timeout=TIMEOUT,
-            # Переиспользуемый пул соединений (дефолтные лимиты httpx — 100/20).
             limits=httpx.Limits(max_connections=10, max_keepalive_connections=5),
         )
     return _client

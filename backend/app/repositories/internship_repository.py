@@ -20,7 +20,11 @@ def _apply_filters(
     remote: bool | None = None,
     format_: str | None = None,
 ) -> Select[tuple[Internship]]:
-    """Применить фильтры стажировок: поиск, навыки, направление, город и т.д."""
+    """Применить фильтры стажировок: поиск, навыки, направление, город и т.д.
+
+    SQLite ``lower()`` не работает с кириллицей, поэтому город сравнивается
+    как есть (без нормализации регистра).
+    """
     if search:
         like = f"%{search.strip().lower()}%"
         query = query.where(
@@ -37,7 +41,6 @@ def _apply_filters(
     if level and level != "any":
         query = query.where(Internship.level == level)
     if city and city != "any":
-        # SQLite lower() не работает с кириллицей — сравниваем как есть.
         query = query.where(Internship.city == city.strip())
     if remote is not None:
         query = query.where(Internship.remote.is_(remote))

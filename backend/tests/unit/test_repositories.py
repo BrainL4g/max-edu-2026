@@ -43,9 +43,6 @@ def _skill(db) -> Skill:
     return skill
 
 
-# --- SkillRepository ----------------------------------------------------------
-
-
 def test_skill_repository_get_found_and_missing(db_session):
     skill = _skill(db_session)
     repo = SkillRepository(db_session)
@@ -85,9 +82,6 @@ def test_user_skill_queries_and_upsert(db_session):
     loaded = repo.get_user_skills(user.id)
     assert len(loaded) == 1
     assert loaded[0].skill.name == "Python"  # selectinload навыка
-
-
-# --- UserRepository -----------------------------------------------------------
 
 
 def test_user_repository_list_and_update(db_session):
@@ -147,9 +141,6 @@ def test_get_or_create_by_max_reraises_when_race_lost(db_session, monkeypatch):
 
     with pytest.raises(IntegrityError):
         UserRepository(db_session).get_or_create_by_max(888, "Новичок")
-
-
-# --- MissionRepository --------------------------------------------------------
 
 
 def _mission(db) -> Mission:
@@ -212,7 +203,6 @@ def test_mission_repository_create_and_error_queries(db_session):
         xp_earned=0,
     )
     assert created.id is not None
-    # Верный ответ — отдельная запись, чтобы покрыть solved/error-выборки.
     solved = repo.create_attempt(
         user_id=user.id,
         mission_id=mission.id,
@@ -229,9 +219,6 @@ def test_mission_repository_create_and_error_queries(db_session):
     latest = repo.latest_correct_attempt(user.id, mission.id)
     assert latest is not None and latest.id == solved.id
     assert repo.latest_correct_attempt(user.id, 999999) is None
-
-
-# --- CourseRepository ---------------------------------------------------------
 
 
 def test_course_repository_get_and_filters(db_session):
@@ -264,9 +251,6 @@ def test_course_repository_get_and_filters(db_session):
     assert repo.list_all(category="any")
 
 
-# --- InternshipRepository -----------------------------------------------------
-
-
 def test_internship_repository_get_and_filters(db_session):
     python = _skill(db_session)
     internship = Internship(
@@ -297,9 +281,6 @@ def test_internship_repository_get_and_filters(db_session):
     assert repo.list_all(skill_ids=[python.id])[0].id == internship.id
 
 
-# --- ResumeRepository ---------------------------------------------------------
-
-
 def test_resume_repository_get_and_analysis(db_session):
     user = _user(db_session)
     resume = Resume(user_id=user.id, text="Текст резюме")
@@ -317,13 +298,9 @@ def test_resume_repository_get_and_analysis(db_session):
     assert saved.result["found_skills"] == ["Python"]
     assert repo.get_analysis(resume.id).result["found_skills"] == ["Python"]
 
-    # повторный вызов обновляет существующую запись анализа
     updated = repo.save_analysis(resume.id, {"found_skills": ["SQL"]})
     assert updated.id == saved.id
     assert updated.result["found_skills"] == ["SQL"]
-
-
-# --- RoleRepository -----------------------------------------------------------
 
 
 def _role(db, name: str = "Backend Junior") -> Role:

@@ -33,7 +33,6 @@ def test_courses_by_id_and_filters(client, db_session):
     assert client.get("/courses", params={"format": "online"}).status_code == 200
     assert client.get("/courses", params={"price_max": 0}).status_code == 200
     assert client.get("/courses", params={"platform": "Stepik"}).status_code == 200
-    # «skills» содержит мусор — разбирается только числовая часть
     assert client.get("/courses", params={"skills": "1,2,abc"}).status_code == 200
 
 
@@ -60,12 +59,10 @@ def test_missions_full_flow(client, db_session):
     assert client.get(f"/missions/{missions[0]['id']}").status_code == 200
     assert client.get("/missions/999999").status_code == 404
 
-    # Без цели — статус no_goal.
     no_goal = client.get("/missions/next", params={"user_id": user["id"]}).json()
     assert no_goal["status"] == "no_goal"
     assert no_goal["mission"] is None
 
-    # С целью (Backend Junior) — статус ok и миссия по навыкам роли.
     roles = client.get("/roles").json()
     backend_role = next(role for role in roles if role["name"] == "Backend Junior")
     assert (
@@ -106,7 +103,6 @@ def test_update_user_and_skills(client, db_session):
     assert response.json()["name"] == "Senior"
 
     assert client.get(f"/users/{user['id']}/progress").status_code == 200
-    # у нового пользователя Skill Map пуст
     assert client.get(f"/users/{user['id']}/skills").json() == []
 
 
@@ -138,6 +134,5 @@ def test_resume_endpoints_and_404(client, db_session):
     assert client.get(f"/users/{user['id']}/resumes").status_code == 200
     assert client.get(f"/resumes/{resume_id}").status_code == 200
     assert client.get("/resumes/999999").status_code == 404
-    # анализ ещё не запускался
     assert client.get(f"/resumes/{resume_id}/analysis").status_code == 404
     assert client.post("/resumes/999999/analyze").status_code == 404

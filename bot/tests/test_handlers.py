@@ -147,7 +147,6 @@ def test_mission_next_shows_question(monkeypatch) -> None:
     assert "Миссия 3/7 по цели" in text
     assert "Python" in text
     assert "+25 XP" in text
-    # сдвиг вариантов: id=3, len=2 → offset = 3 % 1 + 1 = 1 → порядок сдвинут
     assert "1. прервать" in text
     assert "2. продолжить" in text
     payloads = _payloads(buttons_from(attachments))

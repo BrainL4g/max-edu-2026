@@ -92,7 +92,6 @@ def test_answered_mission_path(client, db_session):
 
     first = client.get("/missions/next", params={"user_id": user["id"]}).json()["mission"]
     wrong = first["options"][0]
-    # Отвечаем неверно — XP нет, миссия не «решена».
     result = client.post(
         f"/missions/{first['id']}/answer",
         json={"user_id": user["id"], "option_id": wrong["id"]},
@@ -103,7 +102,6 @@ def test_answered_mission_path(client, db_session):
     second = client.get("/missions/next", params={"user_id": user["id"]}).json()["mission"]
     assert second["id"] != first["id"]
 
-    # Повторный верный ответ — already_solved и 0 XP.
     correct_id = _correct_option_id(db_session, first["id"])
     correct = client.post(
         f"/missions/{first['id']}/answer",
@@ -121,7 +119,6 @@ def test_answered_mission_path(client, db_session):
 def test_role_with_no_missions_is_all_done(client, db_session):
     """Роль без миссий по своим навыкам — сразу all_done (пустое множество)."""
     seed_database(db_session)
-    # HTML/CSS — навык без миссий в сиде.
     html_css = db_session.scalar(select(Skill).where(Skill.name == "HTML/CSS"))
     assert html_css is not None
     role = Role(name="Вёрстка", direction="frontend", level="junior", description="Только HTML/CSS")

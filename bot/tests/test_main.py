@@ -19,7 +19,6 @@ def test_main_importable_with_token(monkeypatch) -> None:
 
 
 def test_main_requires_token(monkeypatch) -> None:
-    # load_dotenv() считывает .env из репозитория и вернул бы токен обратно
     import dotenv
 
     monkeypatch.setattr(dotenv, "load_dotenv", lambda *args, **kwargs: False)

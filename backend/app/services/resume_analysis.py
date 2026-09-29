@@ -2,6 +2,7 @@
 
 Результат показывает найденные навыки, недостающие навыки, сильные стороны,
 проблемы резюме, рекомендации и соответствие выбранному направлению.
+``SKILL_ALIASES`` — алиасы для поиска навыков в тексте резюме (нижний регистр).
 """
 
 from __future__ import annotations
@@ -17,7 +18,6 @@ from backend.app.repositories.resume_repository import ResumeRepository
 from backend.app.repositories.user_repository import UserRepository
 from backend.app.services.recommendations import DIRECTION_REQUIRED_SKILLS
 
-# Алиасы для поиска навыков в тексте резюме (нижний регистр).
 SKILL_ALIASES: dict[str, list[str]] = {
     "Python": ["python", "питон"],
     "SQL": ["sql", "postgresql", "postgres", "mysql", "sqlite", "бд"],

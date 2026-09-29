@@ -18,7 +18,11 @@ for candidate in (Path.cwd() / ".env", Path(__file__).resolve().parents[3] / ".e
 
 
 class Settings(BaseSettings):
-    """Параметры приложения (из окружения / .env)."""
+    """Параметры приложения (из окружения / .env).
+
+    ``cors_origins`` — разрешённые CORS-origins через запятую; ``"*"`` —
+    разрешить все.
+    """
 
     app_name: str = "SkillQuest"
     app_env: Literal["development", "testing", "production"] = "development"
@@ -29,7 +33,6 @@ class Settings(BaseSettings):
     auto_create_tables: bool = True
     seed_on_startup: bool = True
 
-    # Разрешённые CORS-origins через запятую. "*" — разрешить все.
     cors_origins: str = "*"
 
     model_config = SettingsConfigDict(

@@ -1,6 +1,8 @@
 """Рекомендательный механизм.
 
 Skill Map → пробелы в навыках → подходящие курсы и стажировки.
+``DIRECTION_REQUIRED_SKILLS`` — необходимые навыки по направлениям
+(используется и при анализе резюме).
 """
 
 from __future__ import annotations
@@ -23,7 +25,6 @@ from backend.app.repositories.internship_repository import InternshipRepository
 from backend.app.repositories.user_repository import UserRepository
 from backend.app.services.skills import TARGET_LEVEL, level_from_xp
 
-# Необходимые навыки по направлениям (используется и при анализе резюме).
 DIRECTION_REQUIRED_SKILLS: dict[str, list[str]] = {
     "backend": ["Python", "SQL", "Git", "Алгоритмы и структуры данных", "Docker"],
     "frontend": ["JavaScript", "HTML/CSS", "React", "Git"],

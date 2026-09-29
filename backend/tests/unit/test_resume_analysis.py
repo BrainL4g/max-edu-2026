@@ -52,7 +52,6 @@ def test_analyze_finds_missing_skills(db_session):
     result = ResumeAnalysisService(db_session).analyze(resume.id)
 
     missing = set(result["missing_skills"])
-    # backend требует: Python, SQL, Git, Алгоритмы, Docker
     assert "Docker" in missing
 
 

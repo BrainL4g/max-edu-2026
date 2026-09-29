@@ -62,7 +62,6 @@ def test_analyze_with_gaps_and_match_percent(db_session):
     sql = _skill(db_session, "SQL")
     role = _role_with_two_skills(db_session, python, sql)
     user.target_role_id = role.id
-    # Python на уровне 3 (порог 450 XP), SQL пуст
     db_session.add(
         UserSkill(
             experience=LEVEL_THRESHOLDS[3],
@@ -89,7 +88,6 @@ def test_analyze_with_gaps_and_match_percent(db_session):
     sql_item = next(item for item in result["items"] if item["name"] == "SQL")
     assert sql_item["current_level"] == 0
     assert sql_item["gap"] == 2
-    # сортировка: сначала самые большие пробелы
     assert result["items"][0]["name"] == "SQL"
     assert "Не хватает" in result["summary"] and "SQL" in result["summary"]
 
@@ -153,5 +151,4 @@ def test_analyze_non_mandatory_skill_counts_less(db_session):
 
     docker_item = next(item for item in result["items"] if item["name"] == "Docker")
     assert docker_item["is_mandatory"] is False
-    # готовность: только Python закрыт → 0.9 из 1.3 ≈ 69%
     assert result["match_percent"] == round(0.9 / 1.3 * 100)

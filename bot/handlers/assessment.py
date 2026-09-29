@@ -27,7 +27,10 @@ async def start_assessment(event: MessageCallback) -> None:
 
 
 async def _ask(event: MessageCallback, index: int) -> None:
-    """Показать вопрос под номером index (0-based)."""
+    """Показать вопрос под номером index (0-based).
+
+    В заголовке подсказывается навык, который оценивает вопрос.
+    """
     item = sessions.session_for(event.callback.user.user_id)
     questions = await api.assessment_questions(item["uid"])
     question = questions[index]
@@ -35,7 +38,6 @@ async def _ask(event: MessageCallback, index: int) -> None:
     kb = kbs.options_kb(f"asq:{question['id']}", list(enumerate(options)))
     skill = question.get("skill")
     header = f"Вопрос {index + 1}/{len(questions)}"
-    # Направленная диагностика: подсказываем, какой навык оценивается.
     if skill:
         header = f"{header}\n📌 Навык: {skill}"
     body = (

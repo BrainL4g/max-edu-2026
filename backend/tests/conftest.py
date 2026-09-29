@@ -22,7 +22,6 @@ from backend.app.core.config import settings
 from backend.app.database.session import get_db
 from backend.app.domain import Base
 
-# Тесты никогда не трогают реальную БД и не сидируют её при старте app.
 settings.auto_create_tables = False
 settings.seed_on_startup = False
 

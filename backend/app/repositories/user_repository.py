@@ -43,7 +43,9 @@ class UserRepository:
         """Найти пользователя по max_user_id или создать нового.
 
         Повторный вызов с тем же max_user_id возвращает существующего
-        пользователя (имя не перезаписывается).
+        пользователя (имя не перезаписывается). При одновременном старте
+        двух сессий бота побеждает первый успевший записаться (конфликт
+        обрабатывается повторным поиском по max_user_id).
         """
         user = self.db.scalar(select(User).where(User.max_user_id == max_user_id))
         if user is not None:
@@ -54,7 +56,6 @@ class UserRepository:
         try:
             self.db.commit()
         except IntegrityError:
-            # Одновременный старт двух сессий бота: побеждает первый запись.
             self.db.rollback()
             user = self.db.scalar(select(User).where(User.max_user_id == max_user_id))
             if user is None:

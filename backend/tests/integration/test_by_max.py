@@ -15,7 +15,6 @@ def test_assessment_questions_exposed(client):
     assert questions[0]["skill"]
     assert questions[0]["text"]
     assert len(questions[0]["options"]) >= 2
-    # наружу отдаются только тексты вариантов, без внутренней оценки уровня
     assert all(isinstance(option, str) for option in questions[0]["options"])
 
 
@@ -27,7 +26,6 @@ def test_user_by_max_get_or_create(client, db_session):
     assert first["max_user_id"] == 918273645
     assert first["name"] == "MAX-студент"
 
-    # Повторный вызов — тот же пользователь, имя не перезаписывается.
     second_response = client.post(
         "/users/by-max", json={"max_user_id": 918273645, "name": "Другое имя"}
     )
@@ -36,7 +34,6 @@ def test_user_by_max_get_or_create(client, db_session):
     assert second["id"] == first["id"]
     assert second["name"] == "MAX-студент"
 
-    # Связанный пользователь доступен обычным профилем.
     assert client.get(f"/users/{first['id']}").status_code == 200
 
 

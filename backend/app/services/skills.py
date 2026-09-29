@@ -1,6 +1,8 @@
 """Расчёт и обновление навыков.
 
 Результат задания → изменение опыта и уровня навыка → обновление Skill Map.
+``LEVEL_THRESHOLDS`` — кумулятивный опыт для достижения каждого уровня (0..5);
+``DIFFICULTY_BONUS`` — бонус к опыту за сложность миссии.
 """
 
 from __future__ import annotations
@@ -12,12 +14,10 @@ from sqlalchemy.orm import Session
 
 from backend.app.domain import Mission, Skill, User, UserSkill
 
-# Кумулятивный опыт, необходимый для ДОСТИЖЕНИЯ каждого уровня (0..5).
 LEVEL_THRESHOLDS: tuple[int, ...] = (0, 100, 250, 450, 700, 1000)
 MAX_LEVEL = len(LEVEL_THRESHOLDS) - 1
 TARGET_LEVEL = 3
 
-# Бонус к опыту за сложность миссии.
 DIFFICULTY_BONUS: dict[str, int] = {"easy": 0, "medium": 10, "hard": 20}
 
 
@@ -77,7 +77,6 @@ class SkillService:
         if is_correct:
             xp_gained = mission.reward_xp + DIFFICULTY_BONUS.get(mission.difficulty, 0)
         else:
-            # Честный XP: за неверный ответ опыт не начисляется.
             xp_gained = 0
 
         user_skill = self._get_or_create_user_skill(user.id, mission.skill_id)

@@ -13,7 +13,6 @@ from backend.app.seed import seed_database
 def test_seed_database_fills_once(db_session):
     added = seed_database(db_session)
     assert added > 0
-    # повторное наполнение — пусто: база уже не пустая
     assert seed_database(db_session) == 0
 
 
@@ -36,7 +35,6 @@ def test_seed_roles_into_existing_database(db_session):
     roles = list(db_session.scalars(select(Role)))
     assert len(roles) == len(seed.SEED_ROLES)
     assert all(role.requirements for role in roles)
-    # повторный вызов больше ничего не добавляет
     assert seed_database(db_session) == 0
 
 
@@ -50,7 +48,6 @@ def test_seed_missions_correct_option_not_always_first():
     """Правильный ответ в миссиях не должен всегда стоять первым."""
     first_is_correct = [mission["options"][0][1] for mission in seed.SEED_MISSIONS]
     assert not all(first_is_correct)
-    # каждый вариант ровно один раз: правильный ровно один
     for mission in seed.SEED_MISSIONS:
         correct = [option for option in mission["options"] if option[1]]
         assert len(correct) == 1

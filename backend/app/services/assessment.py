@@ -1,4 +1,8 @@
-"""Первичная диагностика: ответы → оценка навыков → начальный Skill Map."""
+"""Первичная диагностика: ответы → оценка навыков → начальный Skill Map.
+
+``ASSESSMENT_QUESTIONS`` — банк вопросов; id задан явно, чтобы клиент мог
+ссылаться на вопросы.
+"""
 
 from __future__ import annotations
 
@@ -30,7 +34,6 @@ class AssessmentQuestion:
     directions: tuple[str, ...] | None = None
 
 
-# Банк вопросов диагностики. id задан явно, чтобы клиент мог ссылаться на вопросы.
 ASSESSMENT_QUESTIONS: tuple[AssessmentQuestion, ...] = (
     AssessmentQuestion(
         1,
@@ -182,9 +185,7 @@ def questions_for_direction(direction: str | None) -> list[AssessmentQuestion]:
         if q.directions is not None and direction in q.directions
     }
     if not relevant:
-        # Направление не распознано — не скрываем ничего.
         return list(ASSESSMENT_QUESTIONS)
-    # Универсальные + профильные для данного направления.
     return [
         question
         for question in ASSESSMENT_QUESTIONS
@@ -210,6 +211,7 @@ class AssessmentService:
         """Оценить ответы и сформировать начальный Skill Map.
 
         ``answers`` — список ``{"question_id": int, "option_index": int}``.
+        Ответ по навыку, отсутствующему в базе, пропускается.
         """
         if not answers:
             raise InvalidDataError("Диагностика требует хотя бы один ответ")
@@ -226,7 +228,6 @@ class AssessmentService:
                 )
             skill = self.db.scalar(select(Skill).where(Skill.name == question.skill))
             if skill is None:
-                # Навык не входит в базу — ответ пропускается.
                 continue
             levels_by_skill.setdefault(skill.id, []).append(question.options[option_index][1])
 

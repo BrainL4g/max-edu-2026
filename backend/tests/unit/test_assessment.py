@@ -16,7 +16,6 @@ def test_questions_for_direction_backend_excludes_frontend():
     assert "Python" in skills
     assert "JavaScript" not in skills
     assert "Figma" not in skills
-    # backend-направление включает профильные вопросы
     assert "FastAPI" in skills
     assert "Docker" in skills
 
@@ -28,7 +27,6 @@ def test_questions_for_direction_frontend_excludes_backend():
     assert "React" in skills
     assert "Python" not in skills
     assert "SQL" not in skills
-    # универсальные вопросы показываются фронтендерам
     assert "Git" in skills
 
 
@@ -83,7 +81,6 @@ def test_assessment_averages_options(db_session):
     _skills(db_session)
     user = _user(db_session)
 
-    # Python дважды: уровень 1 и уровень 3 → среднее 2.
     result = AssessmentService(db_session).run(
         user,
         [

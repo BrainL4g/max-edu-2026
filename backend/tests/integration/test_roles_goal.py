@@ -44,7 +44,6 @@ def test_set_goal_and_gap_analysis_flow(client, db_session):
     assert response.status_code == 200
     assert response.json()["target_role_id"] == backend["id"]
 
-    # прокачан только Python (уровень 3)
     skills = {skill["name"]: skill["id"] for skill in client.get("/skills").json()}
     db_session.add(
         UserSkill(
@@ -78,7 +77,6 @@ def test_full_match_gap_analysis(client, db_session):
     client.put(f"/users/{user['id']}/goal", json={"target_role_id": backend["id"]})
 
     skills = {skill["name"]: skill["id"] for skill in client.get("/skills").json()}
-    # уровни точно по требованиям Backend Junior: Python 3, SQL 3, FastAPI 2, Git 2, Docker 1
     for name, level in [
         ("Python", 3),
         ("SQL", 3),

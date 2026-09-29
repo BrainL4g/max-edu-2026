@@ -2,6 +2,14 @@
 
 Наполняет базу навыками, игровыми миссиями, курсами и стажировками.
 Вызов: ``python -m backend.app.seed`` или автоматически при старте (см. config).
+
+Форматы данных: ``SEED_MISSIONS`` — skill, difficulty, scenario,
+options [(text, is_correct)], explanation, reward_xp; ``SEED_COURSES`` —
+title, description, platform, url, level, category, cost, format, skills;
+``SEED_INTERNSHIPS`` — title, company, description, url, level, city, remote,
+format, requirements, direction, skills; ``SEED_ROLES`` — name, direction,
+level, description, skills [(skill_name, required_level, importance,
+is_mandatory)].
 """
 
 from __future__ import annotations
@@ -41,7 +49,6 @@ SEED_SKILLS: list[tuple[str, str, str]] = [
     ("Тайм-менеджмент", "Soft skills", "Управление временем и приоритетами"),
 ]
 
-# Каждая миссия: skill, difficulty, scenario, options [(text, is_correct)], explanation, reward_xp
 SEED_MISSIONS: list[dict[str, Any]] = [
     {
         "skill": "Python",
@@ -278,7 +285,6 @@ SEED_MISSIONS: list[dict[str, Any]] = [
     },
 ]
 
-# Курсы: title, description, platform, url, level, category, cost, format, skills
 SEED_COURSES: list[dict[str, Any]] = [
     {
         "title": "Поколение Python: курс для начинающих",
@@ -436,7 +442,6 @@ SEED_COURSES: list[dict[str, Any]] = [
     },
 ]
 
-# Стажировки: title, company, description, url, level, city, remote, format, requirements, direction, skills
 SEED_INTERNSHIPS: list[dict[str, Any]] = [
     {
         "title": "Стажировка Python-разработчик",
@@ -545,7 +550,6 @@ SEED_INTERNSHIPS: list[dict[str, Any]] = [
 ]
 
 
-# Роли: name, direction, level, description, skills [(skill_name, required_level, importance, is_mandatory)]
 SEED_ROLES: list[dict[str, Any]] = [
     {
         "name": "Backend Junior",
@@ -721,7 +725,6 @@ def seed_if_empty() -> int:
 
 
 if __name__ == "__main__":  # pragma: no cover (entry point, покрывается e2e-запуском)
-    # python -m backend.app.seed
     added = seed_if_empty()
     print(f"Seed завершён: добавлено записей: {added}" if added else "База уже наполнена")
     sys.exit(0)

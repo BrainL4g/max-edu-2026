@@ -74,7 +74,6 @@ def _seed(db):
     mission_b.options.append(MissionOption(text="WHERE", is_correct=False))
     db.add(mission_b)
 
-    # Миссия вне требований роли — никогда не должна попасть в пул.
     mission_extra = Mission(
         skill_id=extra.id,
         difficulty="easy",
@@ -128,7 +127,6 @@ def test_get_next_mission_only_role_skills_and_all_done(db_session):
     user = _user(db_session, role)
     svc = MissionService(db_session)
 
-    # Ни одна из миссий пула не должна быть вне требований роли.
     seen = []
     for _ in range(10):
         data = svc.get_next_mission(user.id)
@@ -201,7 +199,6 @@ def test_next_mission_different_after_wrong_answer(db_session):
 
     second = svc.get_next_mission(user.id)
     assert second["mission"].id != mission_a.id
-    # Та же слабая роль — сначала берём другую миссию этого же навыка.
     assert second["mission"].skill_id == mission_a.skill_id
     assert second["mission"].id == mission_c.id
 

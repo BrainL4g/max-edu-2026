@@ -1,4 +1,8 @@
-"""Репозиторий миссий и попыток."""
+"""Репозиторий миссий и попыток.
+
+``DIFFICULTY_RANK`` — числовая сложность миссий для стабильной сортировки
+«лёгкие → сложные».
+"""
 
 from __future__ import annotations
 
@@ -8,7 +12,6 @@ from sqlalchemy.orm import Session, selectinload
 from backend.app.core.exceptions import NotFoundError
 from backend.app.domain import Attempt, Mission
 
-# Числовая сложность миссий (для стабильной сортировки «лёгкие → сложные»).
 DIFFICULTY_RANK: dict[str, int] = {"easy": 0, "medium": 1, "hard": 2}
 
 

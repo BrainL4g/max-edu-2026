@@ -100,7 +100,6 @@ def test_set_initial_skill_does_not_lower_existing_progress(db_session):
     user = User(name="Тест", direction="backend")
     db_session.add(user)
     db_session.commit()
-    # Пользователь уже накопил опыт уровня 2 (300 XP — порог 250).
     db_session.add(UserSkill(user_id=user.id, skill_id=skill.id, level=2, experience=300))
     db_session.commit()
 
@@ -110,7 +109,6 @@ def test_set_initial_skill_does_not_lower_existing_progress(db_session):
         select(UserSkill).where(UserSkill.user_id == user.id, UserSkill.skill_id == skill.id)
     )
     assert user_skill is not None
-    # Опыт не понизился, уровень не откатился с 2 на 1.
     assert user_skill.experience == 300
     assert user_skill.level == 2
 

@@ -43,9 +43,6 @@ def _resume(db, user: User, text: str) -> Resume:
     return resume
 
 
-# --- Assessment ---------------------------------------------------------------
-
-
 def test_assessment_empty_answers_rejected(db_session):
     user = _user(db_session)
     with pytest.raises(InvalidDataError):
@@ -84,9 +81,6 @@ def test_assessment_skips_skills_not_in_database(db_session):
 )
 def test_assessment_summary_branches(average: float, expected: str) -> None:
     assert expected in AssessmentService._summary(average)
-
-
-# --- Missions -----------------------------------------------------------------
 
 
 def _mission(db, correct_text: str = "Верно") -> Mission:
@@ -131,9 +125,6 @@ def test_mission_get_history_unknown_user(db_session):
         MissionService(db_session).get_history(999999)
 
 
-# --- Recommendations ----------------------------------------------------------
-
-
 def test_recommend_no_gaps_summary(db_session):
     required = [
         ("Python", "Программирование"),
@@ -155,9 +146,6 @@ def test_recommend_no_gaps_summary(db_session):
     assert "не выявлены" in result["summary"].lower()
     assert result["courses"] == []
     assert result["internships"] == []
-
-
-# --- Resume analysis ----------------------------------------------------------
 
 
 def test_analyze_short_resume_collects_issues(db_session):
