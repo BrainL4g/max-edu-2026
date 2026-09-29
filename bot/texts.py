@@ -127,10 +127,9 @@ def gap_analysis_text(analysis: dict[str, Any]) -> str:
 def course_card(course: dict[str, Any], index: int = 0) -> str:
     """Карточка курса."""
     skills = ", ".join(s["name"] for s in course.get("skills", [])) or "—"
-    cost = "бесплатно" if not course.get("cost") else f"{course['cost']:.0f} ₽"
     lines = [
         f"{index}. {course['title']}",
-        f"   {course['platform']} · {course['level']} · {course['format']} · {cost}",
+        f"   {course['platform']} · {course['level']} · {course['format']}",
         f"   Навыки: {skills}",
     ]
     if course.get("description"):
@@ -153,16 +152,74 @@ def internship_card(item: dict[str, Any], index: int = 0) -> str:
     return "\n".join(lines)
 
 
+def internship_link_title(item: dict[str, Any], index: int) -> str:
+    """Подпись ссылки стажировки: номер карточки, компания и направление."""
+    company = item.get("company") or item.get("title") or "Стажировка"
+    direction = item.get("direction")
+    title = f"{company} · {direction}" if direction else company
+    return f"{index}. {title}"
+
+
+def internship_directions_text() -> str:
+    """Текст экрана выбора направления стажировок."""
+    return (
+        "💼 Стажировки\n\n"
+        "Выбери направление — подберу подходящие стажировки "
+        "с учётом твоих навыков."
+    )
+
+
+def internships_header(
+    direction: str | None, page: int = 0, total_pages: int = 1
+) -> str:
+    """Заголовок списка стажировок: направление и номер страницы (если их больше одной)."""
+    title = (
+        f"💼 Рекомендуемые стажировки — {direction}"
+        if direction
+        else "💼 Рекомендуемые стажировки"
+    )
+    if total_pages > 1:
+        return f"{title} (страница {page + 1} из {total_pages}):"
+    return f"{title}:"
+
+
+def internships_empty_text(direction: str | None) -> str:
+    """Сообщение, когда по фильтру стажировок не нашлось."""
+    if direction:
+        return f"По направлению «{direction}» стажировок пока нет 🤷"
+    return "Рекомендаций по стажировкам пока нет 🤷"
+
+
+def resume_prompt_text() -> str:
+    """Экран загрузки резюме (файлом или текстом)."""
+    return (
+        "📄 Пришли резюме файлом (PDF, DOCX или TXT) "
+        "или текстом одним сообщением.\n\n"
+    )
+
+
+def resume_file_error_text(reason: str) -> str:
+    """Ошибка приёма резюме."""
+    return (
+        f"Не получилось разобрать резюме: {reason}.\n\n"
+        "Пришли PDF, DOCX или TXT — либо текст резюме сообщением."
+    )
+
+
 def resume_report(analysis: dict[str, Any]) -> str:
-    """Отчёт анализа резюме."""
+    """Отчёт анализа резюме: эвристика + оценка GigaChat, если она есть."""
     found = ", ".join(analysis.get("found_skills") or []) or "—"
     missing = ", ".join(analysis.get("missing_skills") or []) or "—"
+    score = analysis.get("ai_score")
+    summary = analysis.get("ai_summary")
     lines = [
-        f"📄 Соответствие направлению: {round(analysis.get('direction_match', 0))}%",
-        "",
-        f"✅ Найдено: {found}",
-        f"➕ Не хватает: {missing}",
+        f"📄 Соответствие направлению: {round(analysis.get('direction_match', 0))}%"
     ]
+    if score is not None:
+        lines.append(f"🤖 Оценка : {round(float(score))}/100")
+    if summary:
+        lines.append(str(summary))
+    lines += ["", f"✅ Найдено: {found}", f"➕ Не хватает: {missing}"]
     if analysis.get("strengths"):
         lines += ["", "💪 Сильные стороны:"]
         lines += [f"• {item}" for item in analysis["strengths"]]

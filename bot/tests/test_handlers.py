@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
+from types import SimpleNamespace
 from typing import Any
+
+import pytest
 
 import api
 import sessions
@@ -21,6 +24,7 @@ from handlers import (
 from tests.fakes import (
     FakeBotStartedEvent,
     FakeCallbackEvent,
+    FakeFileAttachment,
     FakeMessageCreatedEvent,
     buttons_from,
 )
@@ -55,7 +59,16 @@ def _stub_get_user(platform_id: int = 42) -> Callable[..., Any]:
     return _fake
 
 
-def _fake_user(monkeypatch, platform_id: int = 42) -> None:
+def _failing_api_error(status: int) -> Callable[..., Any]:
+    """Заглушка API-функции, поднимающая ApiError с HTTP-кодом."""
+
+    async def _fake(*args: Any, **kwargs: Any) -> Any:
+        raise api.ApiError(f"boom -> {status}", status)
+
+    return _fake
+
+
+def _fake_user(monkeypatch: pytest.MonkeyPatch, platform_id: int = 42) -> None:
     monkeypatch.setattr(api, "get_user", _stub_get_user(platform_id))
 
 
@@ -78,7 +91,7 @@ def test_on_bot_started_skips_without_bot() -> None:
     _run(start.on_bot_started(event))  # не должно бросить исключение
 
 
-def test_cmd_start_ensures_user_and_answers(monkeypatch) -> None:
+def test_cmd_start_ensures_user_and_answers(monkeypatch: pytest.MonkeyPatch) -> None:
     _fake_user(monkeypatch, platform_id=9)
     event = FakeMessageCreatedEvent(USER_ID, "Ваня")
     _run(start.cmd_start(event))
@@ -89,7 +102,7 @@ def test_cmd_start_ensures_user_and_answers(monkeypatch) -> None:
     assert sessions.session_for(USER_ID)["uid"] == 9
 
 
-def test_cmd_start_skips_without_sender(monkeypatch) -> None:
+def test_cmd_start_skips_without_sender(monkeypatch: pytest.MonkeyPatch) -> None:
     _fake_user(monkeypatch)
     event = FakeMessageCreatedEvent(USER_ID, "Ваня")
     event.message.sender = None
@@ -117,12 +130,14 @@ def test_show_help_edits_instruction() -> None:
 
 def test_back_to_menu_edits() -> None:
     event = FakeCallbackEvent("menu:main")
+    sessions.session_for(USER_ID)["resume"] = True
     _run(start.back_to_menu(event))
     assert len(event.edits) == 1
     assert "Главное меню" in event.edits[0][0]
+    assert sessions.session_for(USER_ID)["resume"] is False  # ожидание резюме сброшено
 
 
-def test_show_skill_map(monkeypatch) -> None:
+def test_show_skill_map(monkeypatch: pytest.MonkeyPatch) -> None:
     _fake_user(monkeypatch)
     items = [{"name": "Python", "level": 2, "progress": 50.0, "next_level_xp": 125}]
     monkeypatch.setattr(api, "skill_map", _async_result(items))
@@ -134,7 +149,7 @@ def test_show_skill_map(monkeypatch) -> None:
     assert "уровень 2" in text
 
 
-def test_mission_next_shows_question(monkeypatch) -> None:
+def test_mission_next_shows_question(monkeypatch: pytest.MonkeyPatch) -> None:
     _fake_user(monkeypatch)
     mission = {
         "id": 3,
@@ -186,7 +201,7 @@ def test_mission_display_order_is_deterministic() -> None:
     assert [o["id"] for o in first] == [o["id"] for o in second]
 
 
-def test_mission_next_all_done(monkeypatch) -> None:
+def test_mission_next_all_done(monkeypatch: pytest.MonkeyPatch) -> None:
     _fake_user(monkeypatch)
     monkeypatch.setattr(
         api,
@@ -203,7 +218,7 @@ def test_mission_next_all_done(monkeypatch) -> None:
     assert "sm:show" in payloads
 
 
-def test_mission_next_no_goal(monkeypatch) -> None:
+def test_mission_next_no_goal(monkeypatch: pytest.MonkeyPatch) -> None:
     _fake_user(monkeypatch)
     monkeypatch.setattr(
         api,
@@ -219,7 +234,7 @@ def test_mission_next_no_goal(monkeypatch) -> None:
     assert "goal:show" in payloads
 
 
-def test_mission_answer_correct(monkeypatch) -> None:
+def test_mission_answer_correct(monkeypatch: pytest.MonkeyPatch) -> None:
     _fake_user(monkeypatch)
     result = {
         "is_correct": True,
@@ -241,7 +256,9 @@ def test_mission_answer_correct(monkeypatch) -> None:
     assert "Верно!" in text
 
 
-def test_mission_answer_wrong_without_skill_name(monkeypatch) -> None:
+def test_mission_answer_wrong_without_skill_name(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     _fake_user(monkeypatch)
     result = {
         "is_correct": False,
@@ -262,7 +279,7 @@ def test_mission_answer_wrong_without_skill_name(monkeypatch) -> None:
     assert "Навык «—»" in text
 
 
-def test_mission_answer_already_solved(monkeypatch) -> None:
+def test_mission_answer_already_solved(monkeypatch: pytest.MonkeyPatch) -> None:
     _fake_user(monkeypatch)
     result = {
         "is_correct": True,
@@ -289,7 +306,7 @@ def test_mission_answer_ignores_other_payloads() -> None:
     assert event.edits == []
 
 
-def _stub_profile(target_role_id: int) -> Callable[..., Any]:
+def _stub_profile(target_role_id: int | None) -> Callable[..., Any]:
     """Заглушка профиля платформы (цель задана или нет)."""
 
     async def _fake(user_id: int) -> dict[str, Any]:
@@ -298,13 +315,17 @@ def _stub_profile(target_role_id: int) -> Callable[..., Any]:
     return _fake
 
 
-def _fake_profile(monkeypatch, target_role_id: int = 1) -> None:
+def _fake_profile(
+    monkeypatch: pytest.MonkeyPatch, target_role_id: int | None = 1
+) -> None:
     monkeypatch.setattr(api, "get_profile", _stub_profile(target_role_id))
 
 
-def test_start_assessment_shows_first_question(monkeypatch) -> None:
+def test_start_assessment_shows_first_question(monkeypatch: pytest.MonkeyPatch) -> None:
     _fake_user(monkeypatch)
-    _fake_profile(monkeypatch)
+    _fake_profile(
+        monkeypatch,
+    )
     questions = [
         {"id": 1, "text": "Python?", "options": ["Нет", "Да"]},
         {"id": 2, "text": "SQL?", "options": ["Нет", "Да"]},
@@ -322,7 +343,9 @@ def test_start_assessment_shows_first_question(monkeypatch) -> None:
     assert sessions.session_for(USER_ID)["answers"] == []
 
 
-def test_start_assessment_without_goal_asks_goal(monkeypatch) -> None:
+def test_start_assessment_without_goal_asks_goal(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     _fake_user(monkeypatch)
     _fake_profile(monkeypatch, target_role_id=None)
 
@@ -334,9 +357,11 @@ def test_start_assessment_without_goal_asks_goal(monkeypatch) -> None:
     assert "goal:show" in payloads
 
 
-def test_assessment_question_shows_skill_label(monkeypatch) -> None:
+def test_assessment_question_shows_skill_label(monkeypatch: pytest.MonkeyPatch) -> None:
     _fake_user(monkeypatch)
-    _fake_profile(monkeypatch)
+    _fake_profile(
+        monkeypatch,
+    )
     questions = [
         {"id": 1, "skill": "Python", "text": "Оцените знания", "options": ["Нет", "Да"]}
     ]
@@ -349,14 +374,18 @@ def test_assessment_question_shows_skill_label(monkeypatch) -> None:
     assert "📌 Навык: Python" in text
 
 
-def test_assessment_answer_ignores_other_payloads(monkeypatch) -> None:
+def test_assessment_answer_ignores_other_payloads(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     _fake_user(monkeypatch)
     event = FakeCallbackEvent("as:other")
     _run(assessment.assessment_answer(event))
     assert event.edits == []
 
 
-def test_assessment_answer_goes_to_next_question(monkeypatch) -> None:
+def test_assessment_answer_goes_to_next_question(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     _fake_user(monkeypatch)
     questions = [
         {"id": 1, "text": "Q1", "options": ["a", "b"]},
@@ -372,7 +401,9 @@ def test_assessment_answer_goes_to_next_question(monkeypatch) -> None:
     ]
 
 
-def test_assessment_answer_finishes_and_submits(monkeypatch) -> None:
+def test_assessment_answer_finishes_and_submits(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     _fake_user(monkeypatch)
     questions = [{"id": 1, "text": "Q1", "options": ["a", "b"]}]
     monkeypatch.setattr(api, "assessment_questions", _async_result(questions))
@@ -409,7 +440,7 @@ def _course() -> dict[str, Any]:
     }
 
 
-def test_recommended_courses_with_items(monkeypatch) -> None:
+def test_recommended_courses_with_items(monkeypatch: pytest.MonkeyPatch) -> None:
     _fake_user(monkeypatch)
     monkeypatch.setattr(api, "rec_courses", _async_result([_course()]))
 
@@ -418,11 +449,77 @@ def test_recommended_courses_with_items(monkeypatch) -> None:
     text, attachments = event.edits[0]
     assert "Рекомендуемые курсы" in text
     assert "FastAPI" in text
-    urls = [getattr(b, "url", None) for b in buttons_from(attachments)]
+    assert "бесплатно" not in text
+    assert "₽" not in text
+    buttons = buttons_from(attachments)
+    urls = [getattr(b, "url", None) for b in buttons]
     assert "https://stepik.org/1" in urls
+    assert buttons[0].text == "FastAPI"
 
 
-def test_recommended_courses_empty(monkeypatch) -> None:
+def test_recommended_courses_pagination_next_and_prev(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _fake_user(monkeypatch)
+    items = [
+        {
+            "id": i,
+            "title": f"Course {i}",
+            "platform": "Stepik",
+            "level": "junior",
+            "format": "online",
+            "cost": 0,
+            "url": f"https://stepik.org/{i}",
+            "skills": [],
+        }
+        for i in range(1, 8)
+    ]
+    monkeypatch.setattr(api, "rec_courses", _async_result(items))
+
+    # Страница 1
+    event_p0 = FakeCallbackEvent("cr:rec")
+    _run(recommend.recommended_courses(event_p0))
+    text0, att0 = event_p0.edits[0]
+    assert "страница 1 из 2" in text0
+    assert "1. Course 1" in text0
+    assert "5. Course 5" in text0
+    assert "6. Course 6" not in text0
+    buttons0 = buttons_from(att0)
+    assert buttons0[0].text == "Course 1"
+    assert buttons0[5].text == "Следующая страница ➡️"
+    assert buttons0[5].payload == "cr:page:1"
+
+    # Страница 2
+    event_p1 = FakeCallbackEvent("cr:page:1")
+    _run(recommend.recommended_courses(event_p1))
+    text1, att1 = event_p1.edits[0]
+    assert "страница 2 из 2" in text1
+    assert "6. Course 6" in text1
+    assert "7. Course 7" in text1
+    buttons1 = buttons_from(att1)
+    assert buttons1[0].text == "Course 6"
+    assert buttons1[2].text == "⬅️ Предыдущая страница"
+    assert buttons1[2].payload == "cr:page:0"
+
+
+def test_recommended_courses_invalid_page(monkeypatch: pytest.MonkeyPatch) -> None:
+    _fake_user(monkeypatch)
+    monkeypatch.setattr(api, "rec_courses", _async_result([_course()]))
+
+    # Невалидный номер страницы — откат на 0
+    event = FakeCallbackEvent("cr:page:invalid")
+    _run(recommend.recommended_courses(event))
+    text, _ = event.edits[0]
+    assert "FastAPI" in text
+
+    # Запредельный номер страницы — ограничение максимальной страницей
+    event_overflow = FakeCallbackEvent("cr:page:999")
+    _run(recommend.recommended_courses(event_overflow))
+    text_ov, _ = event_overflow.edits[0]
+    assert "FastAPI" in text_ov
+
+
+def test_recommended_courses_empty(monkeypatch: pytest.MonkeyPatch) -> None:
     _fake_user(monkeypatch)
     monkeypatch.setattr(api, "rec_courses", _async_result([]))
 
@@ -431,9 +528,20 @@ def test_recommended_courses_empty(monkeypatch) -> None:
     assert "пока нет" in event.edits[0][0]
 
 
-def test_recommended_internships(monkeypatch) -> None:
-    _fake_user(monkeypatch)
-    item = {
+def _rec_internships_stub(
+    store: dict[str, Any], items: list[dict[str, Any]]
+) -> Callable[..., Any]:
+    """Заглушка rec_internships, запоминающая выбранное направление."""
+
+    async def _fake(user_id: int, direction: str | None = None) -> list[dict[str, Any]]:
+        store["direction"] = direction
+        return items
+
+    return _fake
+
+
+def _internship_item() -> dict[str, Any]:
+    return {
         "title": "Стажёр",
         "company": "Яндекс",
         "level": "beginner",
@@ -442,39 +550,219 @@ def test_recommended_internships(monkeypatch) -> None:
         "url": "https://ya.ru/vacancy",
         "skills": [],
     }
-    monkeypatch.setattr(api, "rec_internships", _async_result([item]))
+
+
+def _internships(count: int, direction: str = "backend") -> list[dict[str, Any]]:
+    """Список стажировок для проверки пагинации."""
+    return [
+        {
+            "title": f"Стажировка {i}",
+            "company": f"Компания {i}",
+            "level": "beginner",
+            "remote": False,
+            "city": "Москва",
+            "format": "office",
+            "url": f"https://jobs/{i}",
+            "direction": direction,
+            "skills": [],
+        }
+        for i in range(1, count + 1)
+    ]
+
+
+def test_internship_filters_shows_directions(monkeypatch: pytest.MonkeyPatch) -> None:
+    _fake_user(monkeypatch)
+    monkeypatch.setattr(
+        api, "internship_directions", _async_result(["backend", "frontend"])
+    )
 
     event = FakeCallbackEvent("in:rec")
-    _run(recommend.recommended_internships(event))
-    text, _ = event.edits[0]
+    _run(recommend.internship_filters(event))
+    text, attachments = event.edits[0]
+    assert "Выбери направление" in text
+    assert _payloads(buttons_from(attachments)) == [
+        "in:dir:any",
+        "in:dir:backend",
+        "in:dir:frontend",
+        "menu:main",
+    ]
+
+
+def test_internship_filters_without_directions_falls_back_to_list(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _fake_user(monkeypatch)
+    store: dict[str, Any] = {}
+    monkeypatch.setattr(api, "internship_directions", _async_result([]))
+    monkeypatch.setattr(
+        api, "rec_internships", _rec_internships_stub(store, [_internship_item()])
+    )
+
+    event = FakeCallbackEvent("in:rec")
+    _run(recommend.internship_filters(event))
+    assert "Стажёр @ Яндекс" in event.edits[0][0]
+    assert store["direction"] is None
+
+
+def test_internships_by_direction_filters(monkeypatch: pytest.MonkeyPatch) -> None:
+    _fake_user(monkeypatch)
+    store: dict[str, Any] = {}
+    monkeypatch.setattr(
+        api, "rec_internships", _rec_internships_stub(store, [_internship_item()])
+    )
+
+    event = FakeCallbackEvent("in:dir:backend")
+    _run(recommend.internships_by_direction(event))
+    text, attachments = event.edits[0]
     assert "Стажёр @ Яндекс" in text
+    assert "backend" in text
+    assert store["direction"] == "backend"
+    buttons = buttons_from(attachments)
+    # Направление не задано — подпись ссылки без направления
+    assert buttons[0].text == "1. Яндекс"
+    assert buttons[0].url == "https://ya.ru/vacancy"
+    assert _payloads(buttons[1:]) == ["in:rec", "menu:main"]
 
 
-def test_recommended_internships_empty(monkeypatch) -> None:
+def test_internships_by_direction_any(monkeypatch: pytest.MonkeyPatch) -> None:
+    _fake_user(monkeypatch)
+    store: dict[str, Any] = {}
+    monkeypatch.setattr(
+        api, "rec_internships", _rec_internships_stub(store, [_internship_item()])
+    )
+
+    event = FakeCallbackEvent("in:dir:any")
+    _run(recommend.internships_by_direction(event))
+    text = event.edits[0][0]
+    assert store["direction"] is None
+    assert "Рекомендуемые стажировки" in text
+    assert "Все направления" not in text
+
+
+def test_internships_pagination_next_and_prev(monkeypatch: pytest.MonkeyPatch) -> None:
+    _fake_user(monkeypatch)
+    store: dict[str, Any] = {}
+    monkeypatch.setattr(
+        api, "rec_internships", _rec_internships_stub(store, _internships(7))
+    )
+
+    # Страница 1: «Все направления» — все стажировки по 5 на страницу
+    event_p0 = FakeCallbackEvent("in:dir:any")
+    _run(recommend.internships_by_direction(event_p0))
+    text0, att0 = event_p0.edits[0]
+    assert store["direction"] is None
+    assert "страница 1 из 2" in text0
+    assert "1. Стажировка 1 @ Компания 1" in text0
+    assert "5. Стажировка 5" in text0
+    assert "6. Стажировка 6" not in text0
+    buttons0 = buttons_from(att0)
+    assert buttons0[0].text == "1. Компания 1 · backend"
+    assert buttons0[0].url == "https://jobs/1"
+    assert buttons0[5].text == "Следующая страница ➡️"
+    assert buttons0[5].payload == "in:dir:any:1"
+    assert buttons0[6].payload == "in:rec"
+    assert buttons0[7].payload == "menu:main"
+
+    # Страница 2: направление backend — сквозная нумерация и возврат назад
+    event_p1 = FakeCallbackEvent("in:dir:backend:1")
+    _run(recommend.internships_by_direction(event_p1))
+    text1, att1 = event_p1.edits[0]
+    assert store["direction"] == "backend"
+    assert "— backend (страница 2 из 2)" in text1
+    assert "6. Стажировка 6 @ Компания 6" in text1
+    assert "7. Стажировка 7" in text1
+    buttons1 = buttons_from(att1)
+    assert buttons1[0].text == "6. Компания 6 · backend"
+    assert buttons1[2].text == "⬅️ Предыдущая страница"
+    assert buttons1[2].payload == "in:dir:backend:0"
+    assert buttons1[3].payload == "in:rec"
+
+
+def test_internships_pagination_invalid_and_overflow_page(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _fake_user(monkeypatch)
+    monkeypatch.setattr(api, "rec_internships", _async_result(_internships(2)))
+
+    # Невалидный номер страницы — первая страница
+    event = FakeCallbackEvent("in:dir:any:invalid")
+    _run(recommend.internships_by_direction(event))
+    text, _ = event.edits[0]
+    assert "1. Стажировка 1" in text
+    assert "страница" not in text
+
+    # Запредельный номер страницы — ограничение последней страницей
+    event_overflow = FakeCallbackEvent("in:dir:any:999")
+    _run(recommend.internships_by_direction(event_overflow))
+    assert "2. Стажировка 2" in event_overflow.edits[0][0]
+    assert "страница" not in event_overflow.edits[0][0]
+
+
+def test_internships_single_page_has_no_nav(monkeypatch: pytest.MonkeyPatch) -> None:
+    _fake_user(monkeypatch)
+    monkeypatch.setattr(api, "rec_internships", _async_result(_internships(1)))
+
+    event = FakeCallbackEvent("in:dir:backend")
+    _run(recommend.internships_by_direction(event))
+    assert "страница" not in event.edits[0][0]
+    assert _payloads(buttons_from(event.edits[0][1])) == [
+        None,
+        "in:rec",
+        "menu:main",
+    ]
+
+
+def test_internships_by_direction_empty(monkeypatch: pytest.MonkeyPatch) -> None:
     _fake_user(monkeypatch)
     monkeypatch.setattr(api, "rec_internships", _async_result([]))
 
-    event = FakeCallbackEvent("in:rec")
-    _run(recommend.recommended_internships(event))
-    assert "пока нет" in event.edits[0][0]
+    event = FakeCallbackEvent("in:dir:qa")
+    _run(recommend.internships_by_direction(event))
+    text, attachments = event.edits[0]
+    assert "qa" in text
+    assert "пока нет" in text
+    assert _payloads(buttons_from(attachments)) == ["in:rec", "menu:main"]
 
 
-def test_cards_links_limit_to_five() -> None:
-    items = [{"title": f"Курс {i}", "url": f"https://x/{i}"} for i in range(7)]
+def test_parse_direction_payload() -> None:
+    assert recommend._parse_direction("in:dir:backend") == "backend"
+    assert recommend._parse_direction("in:dir:backend:2") == "backend"
+    assert recommend._parse_direction("in:dir:any") is None
+    assert recommend._parse_direction("in:dir:any:2") is None
+    assert recommend._parse_direction("in:dir:") is None
+    assert recommend._parse_direction("in:dir") is None
+
+
+def test_parse_page_payload() -> None:
+    assert recommend._parse_page("in:dir:any") == 0
+    assert recommend._parse_page("in:dir:any:2") == 2
+    assert recommend._parse_page("in:dir:backend:invalid") == 0
+    assert recommend._parse_page("in:dir:backend:") == 0
+
+
+def test_cards_links_numbers_with_offset() -> None:
+    items = [{"title": f"Курс {i}", "url": f"https://x/{i}"} for i in range(3)]
 
     def card_fn(item: dict[str, Any], index: int) -> str:
         return f"{index}. {item['title']}"
 
-    cards, links = recommend._cards_links(items, card_fn, "Открыть")
-    assert len(cards.split("\n")) == 5
-    assert len(links) == 5
-    assert links[0] == ("Открыть 1", "https://x/0")
+    cards, links = recommend._cards_links(
+        items, card_fn, lambda item, index: f"{index}. {item['title']}", offset=5
+    )
+    assert cards.split("\n") == ["6. Курс 0", "7. Курс 1", "8. Курс 2"]
+    assert links == [
+        ("6. Курс 0", "https://x/0"),
+        ("7. Курс 1", "https://x/1"),
+        ("8. Курс 2", "https://x/2"),
+    ]
 
 
 def test_cards_links_skips_missing_url() -> None:
     items = [{"title": "A", "url": "https://a"}, {"title": "B"}]
-    cards, links = recommend._cards_links(items, lambda item, index: "x", "L")
-    assert len(links) == 1
+    cards, links = recommend._cards_links(
+        items, lambda item, index: "x", lambda item, index: "L"
+    )
+    assert links == [("L", "https://a")]
     assert cards == "x\nx"
 
 
@@ -482,33 +770,150 @@ def test_ask_resume_sets_waiting_flag() -> None:
     event = FakeCallbackEvent("rs:start")
     _run(resume.ask_resume(event))
     assert sessions.session_for(USER_ID)["resume"] is True
-    assert "Пришли текст резюме" in event.edits[0][0]
-    assert "rs:cancel" in _payloads(buttons_from(event.edits[0][1]))
+    text, attachments = event.edits[0]
+    assert "Пришли резюме" in text
+    buttons = buttons_from(attachments)
+    assert [b.text for b in buttons] == ["⬅️ Назад"]
+    assert [b.payload for b in buttons] == ["menu:main"]
 
 
-def test_cancel_resume_callback_edits_menu() -> None:
-    sessions.session_for(USER_ID)["resume"] = True
-    event = FakeCallbackEvent("rs:cancel")
-    _run(resume.cancel_resume(event))
-    assert sessions.session_for(USER_ID)["resume"] is False
-    assert event.edits[0][0] == "Отменил 🙌"
-
-
-def test_on_text_resume_mode_analyzes(monkeypatch) -> None:
-    _fake_user(monkeypatch)
-    item = sessions.session_for(USER_ID)
-    item["resume"] = True
-    item["uid"] = 7
-    monkeypatch.setattr(api, "upload_resume", _async_result({"id": 12}))
-    analysis = {
+def _resume_analysis() -> dict[str, Any]:
+    return {
         "direction_match": 75,
         "found_skills": ["Python"],
         "missing_skills": [],
-        "strengths": [],
+        "strengths": ["Проекты"],
         "issues": [],
         "recommendations": [],
+        "ai_score": 82,
+        "ai_summary": "Хорошее резюме для стажировки",
     }
-    monkeypatch.setattr(api, "analyze_resume", _async_result(analysis))
+
+
+def _waiting_for_resume(uid: int = 7) -> None:
+    """Перевести сессию пользователя в режим ожидания резюме."""
+    item = sessions.session_for(USER_ID)
+    item["resume"] = True
+    item["uid"] = uid
+
+
+def test_capture_resume_file_uploads_and_analyzes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _fake_user(monkeypatch)
+    _waiting_for_resume()
+    uploaded: list[tuple[int, str | None, bytes]] = []
+
+    async def fake_upload(
+        user_id: int, filename: str | None, content: bytes
+    ) -> dict[str, Any]:
+        uploaded.append((user_id, filename, content))
+        return {"id": 12}
+
+    monkeypatch.setattr(api, "upload_resume_file", fake_upload)
+    monkeypatch.setattr(api, "analyze_resume", _async_result(_resume_analysis()))
+
+    event = FakeMessageCreatedEvent(
+        USER_ID,
+        "Ваня",
+        attachments=[FakeFileAttachment(filename="cv.pdf")],
+        file_bytes=b"%PDF-1.4 resume",
+    )
+    _run(resume.capture_resume_file(event))
+
+    assert event.bot.downloaded == ["https://max.ru/files/1"]
+    assert uploaded == [(7, "cv.pdf", b"%PDF-1.4 resume")]
+    assert sessions.session_for(USER_ID)["resume"] is False
+    text, attachments = event.answers[0]
+    assert "75%" in text
+    assert "Оценка : 82/100" in text
+    payloads = _payloads(buttons_from(attachments))
+    assert "rs:start" in payloads
+    assert "menu:main" in payloads
+
+
+def test_capture_resume_file_ignores_when_not_waiting() -> None:
+    event = FakeMessageCreatedEvent(USER_ID, "Ваня", attachments=[FakeFileAttachment()])
+    _run(resume.capture_resume_file(event))
+    assert event.answers == []
+    assert event.bot.downloaded == []
+
+
+def test_capture_resume_file_skips_without_sender() -> None:
+    _waiting_for_resume()
+    event = FakeMessageCreatedEvent(USER_ID, "Ваня", attachments=[FakeFileAttachment()])
+    event.message.sender = None
+    _run(resume.capture_resume_file(event))
+    assert event.answers == []
+
+
+def test_capture_resume_file_without_file_attachment() -> None:
+    _waiting_for_resume()
+    event = FakeMessageCreatedEvent(
+        USER_ID, "Ваня", attachments=[SimpleNamespace(filename=None)]
+    )
+    _run(resume.capture_resume_file(event))
+    text, attachments = event.answers[0]
+    assert "нет файла" in text
+    assert _payloads(buttons_from(attachments)) == ["menu:main"]
+
+
+def test_capture_resume_file_without_bot() -> None:
+    _waiting_for_resume()
+    event = FakeMessageCreatedEvent(USER_ID, "Ваня", attachments=[FakeFileAttachment()])
+    event.message.bot = None
+    _run(resume.capture_resume_file(event))
+    assert "нет файла" in event.answers[0][0]
+
+
+def test_capture_resume_file_without_url() -> None:
+    _waiting_for_resume()
+    event = FakeMessageCreatedEvent(
+        USER_ID, "Ваня", attachments=[FakeFileAttachment(url=None)]
+    )
+    _run(resume.capture_resume_file(event))
+    assert "ссылки на скачивание" in event.answers[0][0]
+
+
+def test_capture_resume_file_bad_format(monkeypatch: pytest.MonkeyPatch) -> None:
+    _waiting_for_resume()
+    monkeypatch.setattr(api, "upload_resume_file", _failing_api_error(422))
+
+    event = FakeMessageCreatedEvent(
+        USER_ID, "Ваня", attachments=[FakeFileAttachment()], file_bytes=b"png"
+    )
+    _run(resume.capture_resume_file(event))
+    assert "формат не поддерживается" in event.answers[0][0]
+    assert sessions.session_for(USER_ID)["resume"] is False
+
+
+def test_capture_resume_file_service_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    _waiting_for_resume()
+    monkeypatch.setattr(api, "upload_resume_file", _async_result({"id": 12}))
+    monkeypatch.setattr(api, "analyze_resume", _failing_api_error(500))
+
+    event = FakeMessageCreatedEvent(
+        USER_ID, "Ваня", attachments=[FakeFileAttachment()], file_bytes=b"txt"
+    )
+    _run(resume.capture_resume_file(event))
+    assert "сервис анализа вернул ошибку" in event.answers[0][0]
+
+
+def test_capture_resume_file_download_error() -> None:
+    _waiting_for_resume()
+    event = FakeMessageCreatedEvent(
+        USER_ID, "Ваня", attachments=[FakeFileAttachment()], file_bytes=b"txt"
+    )
+    event.bot.download_error = RuntimeError("нет сети")
+    _run(resume.capture_resume_file(event))
+    assert "файл не удалось скачать" in event.answers[0][0]
+
+
+def test_on_text_resume_mode_analyzes(monkeypatch: pytest.MonkeyPatch) -> None:
+    _fake_user(monkeypatch)
+    _waiting_for_resume()
+    monkeypatch.setattr(api, "upload_resume", _async_result({"id": 12}))
+    monkeypatch.setattr(api, "analyze_resume", _async_result(_resume_analysis()))
 
     event = FakeMessageCreatedEvent(USER_ID, "Ваня", "Моё резюме...")
     _run(fallback.on_text(event))
@@ -518,7 +923,32 @@ def test_on_text_resume_mode_analyzes(monkeypatch) -> None:
     assert sessions.session_for(USER_ID)["resume"] is False
 
 
-def test_on_text_resume_mode_cancels_by_word(monkeypatch) -> None:
+def test_capture_resume_text_analyzes_without_uid(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Текст резюме без uid в сессии: пользователь создаётся через get-or-create."""
+    _fake_user(monkeypatch, platform_id=42)
+    uploads: list[tuple[int, str]] = []
+
+    async def fake_upload(user_id: int, text: str) -> dict[str, Any]:
+        uploads.append((user_id, text))
+        return {"id": 13}
+
+    sessions.session_for(USER_ID)["resume"] = True
+    monkeypatch.setattr(api, "upload_resume", fake_upload)
+    monkeypatch.setattr(api, "analyze_resume", _async_result(_resume_analysis()))
+
+    event = FakeMessageCreatedEvent(USER_ID, "Ваня", "Моё резюме...")
+    _run(resume.capture_resume_text(event))
+
+    assert uploads == [(42, "Моё резюме...")]
+    text, attachments = event.answers[0]
+    assert "Оценка : 82/100" in text
+    assert _payloads(buttons_from(attachments)) == ["rs:start", "menu:main"]
+    assert sessions.session_for(USER_ID)["uid"] == 42
+
+
+def test_on_text_resume_mode_cancels_by_word(monkeypatch: pytest.MonkeyPatch) -> None:
     sessions.session_for(USER_ID)["resume"] = True
     event = FakeMessageCreatedEvent(USER_ID, "Ваня", "Отмена")
     _run(fallback.on_text(event))
@@ -536,9 +966,39 @@ def test_on_text_fallback_replies_menu() -> None:
     assert "help:show" in _payloads(buttons_from(attachments))
 
 
+def test_capture_resume_text_ignores_outside_resume_mode() -> None:
+    event = FakeMessageCreatedEvent(USER_ID, "Ваня", "просто текст")
+    _run(resume.capture_resume_text(event))
+    assert event.answers == []
+
+
+def test_capture_resume_text_skips_messages_with_attachments() -> None:
+    _waiting_for_resume()
+    event = FakeMessageCreatedEvent(
+        USER_ID, "Ваня", "подпись к файлу", attachments=[FakeFileAttachment()]
+    )
+    _run(resume.capture_resume_text(event))
+    assert event.answers == []
+
+
+def test_capture_resume_text_skips_without_sender() -> None:
+    _waiting_for_resume()
+    event = FakeMessageCreatedEvent(USER_ID, "Ваня", "текст")
+    event.message.sender = None
+    _run(resume.capture_resume_text(event))
+    assert event.answers == []
+
+
 def test_on_text_skips_without_sender() -> None:
     event = FakeMessageCreatedEvent(USER_ID, "Ваня", "текст")
     event.message.sender = None
+    _run(fallback.on_text(event))
+    assert event.answers == []
+
+
+def test_on_text_skips_empty_text() -> None:
+    event = FakeMessageCreatedEvent(USER_ID, "Ваня")
+    event.message.body.text = None
     _run(fallback.on_text(event))
     assert event.answers == []
 
@@ -574,7 +1034,7 @@ def _gap_analysis() -> dict[str, Any]:
     }
 
 
-def test_goal_show_lists_roles(monkeypatch) -> None:
+def test_goal_show_lists_roles(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(api, "list_roles", _async_result(_roles()))
 
     event = FakeCallbackEvent("goal:show")
@@ -590,7 +1050,7 @@ def test_goal_show_lists_roles(monkeypatch) -> None:
     assert buttons[-1].payload == "menu:main"
 
 
-def test_goal_show_empty(monkeypatch) -> None:
+def test_goal_show_empty(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(api, "list_roles", _async_result([]))
 
     event = FakeCallbackEvent("goal:show")
@@ -598,7 +1058,7 @@ def test_goal_show_empty(monkeypatch) -> None:
     assert "Ролей пока нет" in event.edits[0][0]
 
 
-def test_goal_pick_sets_goal_and_shows_gap(monkeypatch) -> None:
+def test_goal_pick_sets_goal_and_shows_gap(monkeypatch: pytest.MonkeyPatch) -> None:
     _fake_user(monkeypatch)
     calls: list[tuple[int, int]] = []
     monkeypatch.setattr(api, "gap_analysis", _async_result(_gap_analysis()))
@@ -620,7 +1080,7 @@ def test_goal_pick_sets_goal_and_shows_gap(monkeypatch) -> None:
     assert "goal:show" in payloads  # показано главное меню
 
 
-def test_goal_pick_ignores_other_payloads(monkeypatch) -> None:
+def test_goal_pick_ignores_other_payloads(monkeypatch: pytest.MonkeyPatch) -> None:
     _fake_user(monkeypatch)
     event = FakeCallbackEvent("goal:wrong")
     _run(goal.goal_pick(event))

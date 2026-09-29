@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from typing import Any
 
 import httpx
 import pytest
@@ -21,14 +22,14 @@ def _client(routes: dict[tuple[str, str], Response]) -> httpx.AsyncClient:
     return httpx.AsyncClient(transport=MockTransport(handler), base_url="http://test")
 
 
-def test_get_user(monkeypatch) -> None:
+def test_get_user(monkeypatch: pytest.MonkeyPatch) -> None:
     client = _client({("POST", "/users/by-max"): Response(200, json={"id": 1})})
     monkeypatch.setattr(api, "_get_client", lambda: client)
 
     assert asyncio.run(api.get_user(5, "Имя")) == {"id": 1}
 
 
-def test_questions_and_mission_flows(monkeypatch) -> None:
+def test_questions_and_mission_flows(monkeypatch: pytest.MonkeyPatch) -> None:
     routes = {
         ("GET", "/assessment/questions"): Response(
             200, json=[{"id": 1, "text": "Вопрос", "options": ["Нет", "Да"]}]
@@ -45,7 +46,7 @@ def test_questions_and_mission_flows(monkeypatch) -> None:
     assert asyncio.run(api.skill_map(1))[0]["level"] == 2
 
 
-def test_assessment_questions_sends_user_id(monkeypatch) -> None:
+def test_assessment_questions_sends_user_id(monkeypatch: pytest.MonkeyPatch) -> None:
     captured: dict[str, str] = {}
 
     def handler(request: httpx.Request) -> Response:
@@ -59,7 +60,9 @@ def test_assessment_questions_sends_user_id(monkeypatch) -> None:
     assert "user_id=42" in captured["query"]
 
 
-def test_assessment_questions_without_user_id_no_query(monkeypatch) -> None:
+def test_assessment_questions_without_user_id_no_query(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     captured: dict[str, bytes] = {}
 
     def handler(request: httpx.Request) -> Response:
@@ -73,7 +76,7 @@ def test_assessment_questions_without_user_id_no_query(monkeypatch) -> None:
     assert captured["query"] == b""
 
 
-def test_next_mission_returns_status_payload(monkeypatch) -> None:
+def test_next_mission_returns_status_payload(monkeypatch: pytest.MonkeyPatch) -> None:
     payload = {"status": "ok", "done": 1, "total": 5, "mission": {"id": 3}}
     client = _client({("GET", "/missions/next"): Response(200, json=payload)})
     monkeypatch.setattr(api, "_get_client", lambda: client)
@@ -81,7 +84,7 @@ def test_next_mission_returns_status_payload(monkeypatch) -> None:
     assert asyncio.run(api.next_mission(1)) == payload
 
 
-def test_get_profile(monkeypatch) -> None:
+def test_get_profile(monkeypatch: pytest.MonkeyPatch) -> None:
     client = _client(
         {("GET", "/users/5"): Response(200, json={"id": 5, "target_role_id": 1})}
     )
@@ -90,8 +93,8 @@ def test_get_profile(monkeypatch) -> None:
     assert asyncio.run(api.get_profile(5))["target_role_id"] == 1
 
 
-def test_answer_mission_sends_payload(monkeypatch) -> None:
-    captured: dict[str, object] = {}
+def test_answer_mission_sends_payload(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, str] = {}
 
     def handler(request: httpx.Request) -> Response:
         captured["method"] = request.method
@@ -109,8 +112,8 @@ def test_answer_mission_sends_payload(monkeypatch) -> None:
     assert "user_id" in captured["body"]
 
 
-def test_submit_assessment_sends_answers(monkeypatch) -> None:
-    captured: dict[str, object] = {}
+def test_submit_assessment_sends_answers(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, str] = {}
 
     def handler(request: httpx.Request) -> Response:
         captured["method"] = request.method
@@ -130,7 +133,7 @@ def test_submit_assessment_sends_answers(monkeypatch) -> None:
     assert "question_id" in captured["body"]
 
 
-def test_recommended_uses_user_id_in_query(monkeypatch) -> None:
+def test_recommended_uses_user_id_in_query(monkeypatch: pytest.MonkeyPatch) -> None:
     captured: dict[str, str] = {}
 
     def handler(request: httpx.Request) -> Response:
@@ -145,7 +148,37 @@ def test_recommended_uses_user_id_in_query(monkeypatch) -> None:
     assert asyncio.run(api.rec_internships(9)) == []
 
 
-def test_resume_upload_and_analyze(monkeypatch) -> None:
+def test_rec_internships_passes_direction_filter(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, str] = {}
+
+    def handler(request: httpx.Request) -> Response:
+        captured["query"] = str(request.url.query)
+        return Response(200, json=[])
+
+    client = httpx.AsyncClient(transport=MockTransport(handler), base_url="http://test")
+    monkeypatch.setattr(api, "_get_client", lambda: client)
+
+    assert asyncio.run(api.rec_internships(9, direction="backend")) == []
+    assert "user_id=9" in captured["query"]
+    assert "direction=backend" in captured["query"]
+
+    # "any" — фильтр не применяется
+    assert asyncio.run(api.rec_internships(9, direction="any")) == []
+    assert "direction" not in captured["query"]
+
+
+def test_internship_directions(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = _client(
+        {("GET", "/internships/directions"): Response(200, json=["backend", "qa"])}
+    )
+    monkeypatch.setattr(api, "_get_client", lambda: client)
+
+    assert asyncio.run(api.internship_directions()) == ["backend", "qa"]
+
+
+def test_resume_upload_and_analyze(monkeypatch: pytest.MonkeyPatch) -> None:
     routes = {
         ("POST", "/users/7/resumes"): Response(201, json={"id": 12}),
         ("POST", "/resumes/12/analyze"): Response(
@@ -161,7 +194,54 @@ def test_resume_upload_and_analyze(monkeypatch) -> None:
     assert analysis["direction_match"] == 80
 
 
-def test_roles_and_goal_api(monkeypatch) -> None:
+def test_resume_upload_file_multipart(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, str] = {}
+
+    def handler(request: httpx.Request) -> Response:
+        captured["content_type"] = request.headers.get("content-type", "")
+        captured["body"] = request.content.decode("utf-8", errors="ignore")
+        return Response(201, json={"id": 13})
+
+    client = httpx.AsyncClient(transport=MockTransport(handler), base_url="http://test")
+    monkeypatch.setattr(api, "_get_client", lambda: client)
+
+    upload = asyncio.run(api.upload_resume_file(7, "cv.pdf", b"%PDF-1.4 content"))
+    assert upload["id"] == 13
+    assert captured["content_type"].startswith("multipart/form-data")
+    assert "cv.pdf" in captured["body"]
+
+
+def test_resume_upload_file_default_filename(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, str] = {}
+
+    def handler(request: httpx.Request) -> Response:
+        captured["body"] = request.content.decode("utf-8", errors="ignore")
+        return Response(201, json={"id": 14})
+
+    client = httpx.AsyncClient(transport=MockTransport(handler), base_url="http://test")
+    monkeypatch.setattr(api, "_get_client", lambda: client)
+
+    asyncio.run(api.upload_resume_file(7, None, b"text"))  # имя по умолчанию
+    assert "resume.txt" in captured["body"]
+
+
+def test_analyze_resume_uses_extended_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, Any] = {}
+
+    def handler(request: httpx.Request) -> Response:
+        captured["timeout"] = request.extensions.get("timeout")
+        return Response(200, json={"direction_match": 80})
+
+    client = httpx.AsyncClient(transport=MockTransport(handler), base_url="http://test")
+    monkeypatch.setattr(api, "_get_client", lambda: client)
+
+    asyncio.run(api.analyze_resume(12))
+    timeout = captured["timeout"]
+    assert isinstance(timeout, dict)
+    assert timeout["read"] == api.ANALYZE_TIMEOUT
+
+
+def test_roles_and_goal_api(monkeypatch: pytest.MonkeyPatch) -> None:
     roles = [
         {
             "id": 1,
@@ -197,7 +277,7 @@ def test_roles_and_goal_api(monkeypatch) -> None:
     assert analysis["role"]["name"] == "Backend Junior"
 
 
-def test_set_goal_sends_payload(monkeypatch) -> None:
+def test_set_goal_sends_payload(monkeypatch: pytest.MonkeyPatch) -> None:
     captured: dict[str, str] = {}
 
     def handler(request: httpx.Request) -> Response:
@@ -211,15 +291,16 @@ def test_set_goal_sends_payload(monkeypatch) -> None:
     assert "target_role_id" in captured["body"]
 
 
-def test_http_error_raises_api_error(monkeypatch) -> None:
+def test_http_error_raises_api_error(monkeypatch: pytest.MonkeyPatch) -> None:
     client = _client({("GET", "/boom"): Response(500, json={"detail": "x"})})
     monkeypatch.setattr(api, "_get_client", lambda: client)
 
-    with pytest.raises(api.ApiError):
+    with pytest.raises(api.ApiError) as exc_info:
         asyncio.run(api._req("GET", "/boom"))
+    assert exc_info.value.status_code == 500  # код нужен обработчикам в боте
 
 
-def test_sends_service_token_header(monkeypatch) -> None:
+def test_sends_service_token_header(monkeypatch: pytest.MonkeyPatch) -> None:
     captured: dict[str, str | None] = {}
 
     def handler(request: httpx.Request) -> Response:
@@ -234,7 +315,7 @@ def test_sends_service_token_header(monkeypatch) -> None:
     assert captured["auth"] == "Bearer service-secret"
 
 
-def test_unknown_route_raises_api_error(monkeypatch) -> None:
+def test_unknown_route_raises_api_error(monkeypatch: pytest.MonkeyPatch) -> None:
     client = _client({})
     monkeypatch.setattr(api, "_get_client", lambda: client)
 
@@ -242,14 +323,14 @@ def test_unknown_route_raises_api_error(monkeypatch) -> None:
         asyncio.run(api._req("GET", "/unknown"))
 
 
-def test_204_returns_none(monkeypatch) -> None:
+def test_204_returns_none(monkeypatch: pytest.MonkeyPatch) -> None:
     client = _client({("DELETE", "/x"): Response(204)})
     monkeypatch.setattr(api, "_get_client", lambda: client)
 
     assert asyncio.run(api._req("DELETE", "/x")) is None
 
 
-def test_client_is_cached_and_reused(monkeypatch) -> None:
+def test_client_is_cached_and_reused(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(api, "_client", None)
     first = api._get_client()
     assert api._get_client() is first  # повторные вызовы используют один клиент

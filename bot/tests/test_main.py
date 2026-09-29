@@ -9,16 +9,17 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
+from maxapi import Bot
 
 
-def test_main_importable_with_token(monkeypatch) -> None:
+def test_main_importable_with_token(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("MAX_BOT_TOKEN", "test-token")
     import main as bot_main
 
     assert bot_main.TOKEN == "test-token"
 
 
-def test_main_requires_token(monkeypatch) -> None:
+def test_main_requires_token(monkeypatch: pytest.MonkeyPatch) -> None:
     import dotenv
 
     monkeypatch.setattr(dotenv, "load_dotenv", lambda *args, **kwargs: False)
@@ -36,7 +37,7 @@ def test_main_requires_token(monkeypatch) -> None:
     importlib.reload(bot_main)  # восстанавливаем рабочее состояние
 
 
-def test_error_handler_logs_exception(monkeypatch) -> None:
+def test_error_handler_logs_exception(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("MAX_BOT_TOKEN", "test-token")
     import main as bot_main
 
@@ -68,24 +69,27 @@ def test_error_handler_logs_exception(monkeypatch) -> None:
     assert "test_router" in records[0].getMessage()
 
 
-def test_routers_registered(monkeypatch) -> None:
+def test_routers_registered(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("MAX_BOT_TOKEN", "test-token")
     import main as bot_main
 
     assert len(bot_main.dp.routers) >= 6
 
 
-def test_register_commands_sets_start_and_help(monkeypatch) -> None:
+def test_register_commands_sets_start_and_help(monkeypatch: pytest.MonkeyPatch) -> None:
     """Кнопки «Старт» и «Помощь»: регистрируем /start и /help."""
     monkeypatch.setenv("MAX_BOT_TOKEN", "test-token")
     import main as bot_main
 
-    class _FakeBot:
+    class _FakeBot(Bot):
+        """Подкласс maxapi.Bot: сессии не создаём, только пишем команды."""
+
         def __init__(self) -> None:
             self.commands: list[Any] = []
 
-        async def set_commands(self, *commands: Any) -> None:
+        async def set_commands(self, *commands: Any) -> Any:
             self.commands = list(commands)
+            return None
 
     fake = _FakeBot()
     asyncio.run(bot_main.register_commands(fake))

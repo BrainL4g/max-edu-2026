@@ -81,6 +81,16 @@ class InternshipRepository:
         query = query.distinct().order_by(Internship.company, Internship.title)
         return list(self.db.scalars(query))
 
+    def list_directions(self) -> list[str]:
+        """Уникальные направления стажировок, отсортированные по алфавиту."""
+        query = (
+            select(Internship.direction)
+            .where(Internship.direction.is_not(None))
+            .distinct()
+            .order_by(Internship.direction)
+        )
+        return [direction for direction in self.db.scalars(query) if direction]
+
     def get(self, internship_id: int) -> Internship:
         internship = self.db.scalar(
             select(Internship)

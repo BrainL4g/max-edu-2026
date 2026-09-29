@@ -79,8 +79,8 @@ SkillQuest превращает этот процесс в игру: диагн�
   - **Честный XP**: за неверный ответ опыт не начисляется; верный ответ приносит XP **один раз** — повторная сдача уже решённой миссии не создаёт новых попыток и не добавляет опыта.
 - 📊 **Skill Map** — уровни и прогресс по каждому навыку.
 - 📚 **Курсы** — список, поиск, фильтрация, рекомендации по пробелам.
-- 💼 **Стажировки** — список, фильтрация, рекомендации по направлению и навыкам.
-- 📄 **Резюме** — загрузка (текст/файл), анализ, отчёт с проблемами и советами.
+- 💼 **Стажировки** — экран выбора направления (`backend`, `frontend`, `data`, …), фильтрация, пагинация по 5, ссылки-кнопки «N. Компания · направление» и рекомендации по навыкам.
+- 📄 **Резюме** — загрузка (текст/файл PDF, DOCX, TXT), анализ (эвристика + опционально GigaChat), отчёт с проблемами и советами.
 - 🏷️ **Фильтрация** курсов: `skill`, `category`, `level`, `price`, `format`, `platform`.
 - 🏷️ **Фильтрация** стажировок: `direction`, `skills`, `level`, `city`, `remote`, `format`.
 
@@ -115,7 +115,9 @@ pytest, httpx, Docker.
 - `pydantic` / `pydantic-settings` — валидация и конфигурация;
 - `SQLAlchemy` — ORM;
 - `alembic` — миграции;
-- `python-multipart` — загрузка файлов (резюме).
+- `python-multipart` — загрузка файлов (резюме);
+- `httpx` — HTTP-клиент (интеграция с GigaChat);
+- `pypdf` / `python-docx` — извлечение текста из резюме в форматах PDF и DOCX.
 
 Dev:
 
@@ -133,6 +135,7 @@ DATABASE_URL=sqlite:///./skillquest.db
 MAX_BOT_TOKEN=
 PUBLIC_BASE_URL=http://localhost:8000
 SERVICE_API_TOKEN=
+GIGACHAT_CREDENTIALS=
 ```
 
 | Переменная | Значение | По умолчанию |
@@ -146,6 +149,8 @@ SERVICE_API_TOKEN=
 | `AUTO_CREATE_TABLES` | Создавать таблицы при старте (прототип) | `true` |
 | `SEED_ON_STARTUP` | Наполнять базу демо-данными при старте | `true` |
 | `CORS_ORIGINS` | Разрешённые origins через запятую | `*` |
+| `GIGACHAT_CREDENTIALS` | Ключ GigaChat для AI-оценки резюме (опционально) | пусто |
+| `GIGACHAT_ACCESS_TOKEN` | OAuth-токен GigaChat (альтернатива ключу) | пусто |
 
 > ⚠️ Рабочие токены в Git не хранятся: `.env` в `.gitignore`, в примере — только шаблон.
 
@@ -241,18 +246,20 @@ for module in (users, skills, assessment, missions, courses, internships, resume
 ```text
 main.py        точка входа (polling через maxapi)
 api.py         HTTP-клиент к API SkillQuest
-keyboards.py   inline-кнопки (меню, варианты ответов, ссылки)
+keyboards.py   inline-кнопки (меню, варианты ответов, ссылки, пагинация)
 texts.py       форматирование Skill Map, миссий, рекомендаций, резюме
 handlers/      start, goal, missions, assessment, skillmap, recommend,
                resume, fallback (свободный текст → меню-подсказка)
 sessions.py    легковесное состояние (uid, ответы диагностики, флаг резюме)
 ```
 
-Для бэкенда добавлены два эндпоинта, которые использует бот:
+Для бэкенда добавлены эндпоинты, которые использует бот:
 
 - `POST /users/by-max` — связка MAX-пользователя: get-or-create по `max_user_id`
   (вызывается на каждом `/start`; миграция `003`);
-- `GET /assessment/questions` — банк вопросов диагностики для показа в боте.
+- `GET /assessment/questions` — банк вопросов диагностики для показа в боте;
+- `GET /internships/directions` — направления стажировок для кнопок фильтра
+  вкладки «Стажировки».
 
 Локальный запуск (токен — из `MAX_BOT_TOKEN` в `.env`):
 
@@ -350,7 +357,8 @@ python -m pytest
 Unit-тесты backend покрывают: диагностику, расчёт навыков, игровые задания,
 фильтрацию, рекомендации, анализ резюме, репозитории, исключения и seed.
 Интеграционный тест проверяет полный сценарий через HTTP API (см. следующий
-раздел). Покрытие backend — 100% (`fail_under = 90` в `backend/pyproject.toml`).
+раздел). Покрытие backend — 99% при пороге 90% (`fail_under = 90`
+в `backend/pyproject.toml`).
 
 Тесты MAX-бота (`bot/tests/`) проверяют: форматирование текстов, inline-клавиатуры,
 сессии, HTTP-клиент (MockTransport, без сети), все хендлеры (диагностика, миссии,

@@ -476,6 +476,10 @@ API разрешает кросс-доменные запросы из брау�
 }
 ```
 
+### Направления
+
+`GET /internships/directions` — список доступных направлений для фильтра (например, `["backend", "frontend", ...]`).
+
 ### Рекомендации
 
 `GET /internships/recommended?user_id={id}` — те же query-параметры.

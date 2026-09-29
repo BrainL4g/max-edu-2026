@@ -13,6 +13,8 @@ services:
       # Явный список CORS-origins: по умолчанию пусто (никакого '*'),
       # боту CORS не нужен — он ходит по внутренней сети.
       CORS_ORIGINS: ${CORS_ORIGINS:-}
+      GIGACHAT_CREDENTIALS: ${GIGACHAT_CREDENTIALS:-}
+      GIGACHAT_ACCESS_TOKEN: ${GIGACHAT_ACCESS_TOKEN:-}
     volumes:
       - skillquest_data:/app/data
     restart: unless-stopped

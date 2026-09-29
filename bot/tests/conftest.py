@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+from collections.abc import Generator
 from pathlib import Path
 
 import pytest
@@ -15,7 +16,7 @@ import sessions
 
 
 @pytest.fixture(autouse=True)
-def _clear_sessions() -> None:
+def _clear_sessions() -> Generator[None, None, None]:
     """Каждый тест работает с пустым in-memory хранилищем сессий."""
     sessions.sessions.clear()
     yield

@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import asyncio
-from types import SimpleNamespace
+from typing import Any
+
+import pytest
+from maxapi.types import User
 
 import api
 import sessions
@@ -15,10 +18,12 @@ def test_session_for_creates_defaults() -> None:
     assert sessions.session_for(7) is item
 
 
-def test_ensure_user_caches_platform_id(monkeypatch) -> None:
+def test_ensure_user_caches_platform_id(monkeypatch: pytest.MonkeyPatch) -> None:
     calls: list[tuple[int, str | None]] = []
 
-    async def fake_get_user(max_user_id: int, name: str | None = None) -> dict:
+    async def fake_get_user(
+        max_user_id: int, name: str | None = None
+    ) -> dict[str, Any]:
         calls.append((max_user_id, name))
         return {"id": max_user_id * 10}
 
@@ -34,12 +39,16 @@ def test_ensure_user_caches_platform_id(monkeypatch) -> None:
     assert calls == [(7, "Ваня")]
 
 
-def test_ensure_user_from_takes_user_object(monkeypatch) -> None:
-    async def fake_get_user(max_user_id: int, name: str | None = None) -> dict:
+def test_ensure_user_from_takes_user_object(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def fake_get_user(
+        max_user_id: int, name: str | None = None
+    ) -> dict[str, Any]:
         return {"id": 999}
 
     monkeypatch.setattr(api, "get_user", fake_get_user)
 
-    user = SimpleNamespace(user_id=5, first_name="Петя")
+    user = User.model_construct(
+        user_id=5, first_name="Петя", is_bot=False, last_activity_time=0
+    )
     assert asyncio.run(sessions.ensure_user_from(user)) == 999
     assert sessions.session_for(5)["uid"] == 999

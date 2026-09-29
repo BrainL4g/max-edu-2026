@@ -69,12 +69,14 @@ def test_course_card_free_with_skills() -> None:
     }
     card = texts.course_card(course, 1)
     assert "1. FastAPI" in card
-    assert "бесплатно" in card
+    assert "Stepik · junior · online" in card
     assert "Python, SQL" in card
     assert "Курс про бэкенд" in card
+    assert "бесплатно" not in card
+    assert "₽" not in card
 
 
-def test_course_card_paid_without_skills() -> None:
+def test_course_card_without_skills() -> None:
     course = {
         "title": "Курс",
         "platform": "Платформа",
@@ -84,8 +86,11 @@ def test_course_card_paid_without_skills() -> None:
         "skills": [],
     }
     card = texts.course_card(course)
-    assert "1000 ₽" in card
+    assert "0. Курс" in card
+    assert "Платформа · mid · offline" in card
     assert "Навыки: —" in card
+    assert "1000" not in card
+    assert "₽" not in card
 
 
 def test_internship_card_remote() -> None:
@@ -120,6 +125,42 @@ def test_internship_card_office_with_requirements() -> None:
     assert "Навыки: —" in card
 
 
+def test_internship_directions_text() -> None:
+    assert "Выбери направление" in texts.internship_directions_text()
+
+
+def test_internships_header_with_and_without_direction() -> None:
+    assert "— backend:" in texts.internships_header("backend")
+    assert texts.internships_header(None) == "💼 Рекомендуемые стажировки:"
+
+
+def test_internship_link_title() -> None:
+    assert (
+        texts.internship_link_title({"company": "Яндекс", "direction": "backend"}, 1)
+        == "1. Яндекс · backend"
+    )
+    assert texts.internship_link_title({"company": "Яндекс"}, 3) == "3. Яндекс"
+    assert texts.internship_link_title({"title": "Стажёр"}, 2) == "2. Стажёр"
+    assert texts.internship_link_title({}, 4) == "4. Стажировка"
+
+
+def test_internships_header_with_pagination() -> None:
+    assert texts.internships_header(None, page=1, total_pages=2) == (
+        "💼 Рекомендуемые стажировки (страница 2 из 2):"
+    )
+    assert texts.internships_header("qa", page=0, total_pages=3) == (
+        "💼 Рекомендуемые стажировки — qa (страница 1 из 3):"
+    )
+
+
+def test_internships_empty_text_with_and_without_direction() -> None:
+    assert "«qa»" in texts.internships_empty_text("qa")
+    assert "пока нет" in texts.internships_empty_text("qa")
+    assert (
+        texts.internships_empty_text(None) == "Рекомендаций по стажировкам пока нет 🤷"
+    )
+
+
 def test_resume_report_full() -> None:
     analysis = {
         "direction_match": 90,
@@ -143,6 +184,29 @@ def test_resume_report_empty() -> None:
     assert "0%" in report
     assert "Найдено: —" in report
     assert "Не хватает: —" in report
+    assert "GigaChat" not in report  # без AI-оценки блок не показывается
+
+
+def test_resume_report_with_gigachat() -> None:
+    report = texts.resume_report(
+        {"direction_match": 75, "ai_score": 82, "ai_summary": "Крепкое резюме"}
+    )
+    assert "Оценка : 82/100" in report
+    assert "Крепкое резюме" in report
+    assert "75%" in report
+
+
+def test_resume_report_gigachat_float_score() -> None:
+    report = texts.resume_report({"ai_score": 63.5, "ai_summary": None})
+    assert "Оценка : 64/100" in report
+
+
+def test_resume_prompt_and_file_error_texts() -> None:
+    prompt = texts.resume_prompt_text()
+    assert "PDF" in prompt and "DOCX" in prompt and "TXT" in prompt
+    error = texts.resume_file_error_text("пустой файл")
+    assert "пустой файл" in error
+    assert "PDF" in error
 
 
 def test_roles_question_text() -> None:

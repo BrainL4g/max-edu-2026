@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
 
 from maxapi.types import CallbackButton, LinkButton
@@ -31,6 +32,21 @@ def main_menu() -> AttachmentButton:
     )
     builder.row(CallbackButton(text="📄 Резюме", payload="rs:start"))
     builder.row(CallbackButton(text="ℹ️ Инструкция", payload="help:show"))
+    return builder.as_markup()
+
+
+def resume_kb() -> AttachmentButton:
+    """Экран «Резюме»: возврат в главное меню."""
+    builder = InlineKeyboardBuilder()  # type: ignore[no-untyped-call]
+    builder.row(CallbackButton(text="⬅️ Назад", payload="menu:main"))
+    return builder.as_markup()
+
+
+def resume_report_kb() -> AttachmentButton:
+    """Кнопки после отчёта по резюме."""
+    builder = InlineKeyboardBuilder()  # type: ignore[no-untyped-call]
+    builder.row(CallbackButton(text="📄 Другое резюме", payload="rs:start"))
+    builder.row(CallbackButton(text="🏠 Меню", payload="menu:main"))
     return builder.as_markup()
 
 
@@ -111,11 +127,99 @@ def after_mission_kb() -> AttachmentButton:
     return builder.as_markup()
 
 
-def menu_with_links(links: list[tuple[str, str]]) -> AttachmentButton:
-    """Кнопки-ссылки + кнопка «Меню». links — пары (текст, url)."""
+def menu_with_links(
+    links: list[tuple[str, str]], back_payload: str | None = None
+) -> AttachmentButton:
+    """Кнопки-ссылки + необязательная кнопка «Назад» и «Меню».
+
+    links — пары (текст, url); back_payload — payload кнопки возврата к списку.
+    """
     builder = InlineKeyboardBuilder()  # type: ignore[no-untyped-call]
     for title, url in links:
         builder.row(LinkButton(text=_clip(title), url=url))
+    if back_payload:
+        builder.row(CallbackButton(text="⬅️ Направления", payload=back_payload))
+    builder.row(CallbackButton(text="🏠 Меню", payload="menu:main"))
+    return builder.as_markup()
+
+
+def internship_directions_kb(directions: list[str]) -> AttachmentButton:
+    """Кнопки направлений стажировок по два в ряд: payload = "in:dir:{direction}"."""
+    builder = InlineKeyboardBuilder()  # type: ignore[no-untyped-call]
+    builder.row(CallbackButton(text="🌐 Все направления", payload="in:dir:any"))
+    for start in range(0, len(directions), 2):
+        builder.row(
+            *(
+                CallbackButton(text=_clip(direction), payload=f"in:dir:{direction}")
+                for direction in directions[start : start + 2]
+            )
+        )
+    builder.row(CallbackButton(text="🏠 Меню", payload="menu:main"))
+    return builder.as_markup()
+
+
+def _nav_row(
+    builder: InlineKeyboardBuilder,
+    page: int,
+    total_pages: int,
+    payload_fn: Callable[[int], str],
+) -> None:
+    """Добавить ряд навигации «Предыдущая/Следующая», если страниц больше одной."""
+    nav_buttons: list[CallbackButton] = []
+    if page > 0:
+        prev_label = (
+            "⬅️ Предыдущая" if page < total_pages - 1 else "⬅️ Предыдущая страница"
+        )
+        nav_buttons.append(
+            CallbackButton(text=prev_label, payload=payload_fn(page - 1))
+        )
+    if page < total_pages - 1:
+        next_label = "Следующая ➡️" if page > 0 else "Следующая страница ➡️"
+        nav_buttons.append(
+            CallbackButton(text=next_label, payload=payload_fn(page + 1))
+        )
+    if nav_buttons:
+        builder.row(*nav_buttons)
+
+
+def courses_pagination_kb(
+    courses: list[dict[str, Any]],
+    page: int,
+    total_pages: int,
+) -> AttachmentButton:
+    """Кнопки курсов со ссылками по названию, пагинация и «Меню»."""
+    builder = InlineKeyboardBuilder()  # type: ignore[no-untyped-call]
+    for course in courses:
+        url = course.get("url")
+        if url:
+            title = course.get("title") or course.get("platform") or "Курс"
+            builder.row(LinkButton(text=_clip(title), url=url))
+
+    _nav_row(builder, page, total_pages, lambda target: f"cr:page:{target}")
+    builder.row(CallbackButton(text="🏠 Меню", payload="menu:main"))
+    return builder.as_markup()
+
+
+def internships_pagination_kb(
+    links: list[tuple[str, str]],
+    direction: str | None,
+    page: int,
+    total_pages: int,
+) -> AttachmentButton:
+    """Кнопки-ссылки стажировок страницы, пагинация, «Направления» и «Меню»."""
+    builder = InlineKeyboardBuilder()  # type: ignore[no-untyped-call]
+    for title, url in links:
+        builder.row(LinkButton(text=_clip(title), url=url))
+
+    direction_key = direction or "any"
+    _nav_row(
+        builder,
+        page,
+        total_pages,
+        lambda target: f"in:dir:{direction_key}:{target}",
+    )
+
+    builder.row(CallbackButton(text="⬅️ Направления", payload="in:rec"))
     builder.row(CallbackButton(text="🏠 Меню", payload="menu:main"))
     return builder.as_markup()
 

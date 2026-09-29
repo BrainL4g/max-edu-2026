@@ -47,6 +47,16 @@ def list_internships(
     )
 
 
+@router.get(
+    "/internships/directions",
+    response_model=list[str],
+    openapi_extra={"security": []},
+)
+def list_internship_directions(db: Session = Depends(get_db)) -> list[str]:
+    """Доступные направления стажировок (для фильтров)."""
+    return InternshipRepository(db).list_directions()
+
+
 @router.get("/internships/recommended", response_model=list[InternshipOut], responses=OWN_ERRORS)
 def recommended_internships(
     user_id: int = Query(...),

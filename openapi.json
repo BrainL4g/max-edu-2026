@@ -1921,6 +1921,33 @@
         "security": []
       }
     },
+    "/internships/directions": {
+      "get": {
+        "tags": [
+          "internships"
+        ],
+        "summary": "List Internship Directions",
+        "description": "Доступные направления стажировок (для фильтров).",
+        "operationId": "list_internship_directions_internships_directions_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array",
+                  "title": "Response List Internship Directions Internships Directions Get"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
     "/internships/recommended": {
       "get": {
         "tags": [
@@ -2317,7 +2344,7 @@
           "resumes"
         ],
         "summary": "Upload Resume",
-        "description": "Загрузка резюме файлом (txt/md и др. текстовые форматы).",
+        "description": "Загрузка резюме файлом (TXT/MD, PDF или DOCX).",
         "operationId": "upload_resume_users__user_id__resumes_upload_post",
         "security": [
           {
@@ -3636,6 +3663,33 @@
           "summary": {
             "type": "string",
             "title": "Summary"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "default": "heuristic"
+          },
+          "ai_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Score"
+          },
+          "ai_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Summary"
           }
         },
         "type": "object",
@@ -3650,7 +3704,7 @@
           "summary"
         ],
         "title": "ResumeAnalysisOut",
-        "description": "Результат анализа резюме.",
+        "description": "Результат анализа резюме.\n\nПоля ``source``, ``ai_score`` и ``ai_summary`` заполняются, когда включена\nинтеграция с GigaChat; без неё отчёт остаётся эвристическим.",
         "examples": [
           {
             "direction_match": 0.8,

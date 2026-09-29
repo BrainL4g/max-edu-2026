@@ -17,7 +17,7 @@ from __future__ import annotations
 import sys
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from backend.app.domain import (
@@ -666,7 +666,7 @@ SEED_COURSES: list[dict[str, Any]] = [
         "url": "https://practicum.yandex.ru/algorithms/",
         "level": "intermediate",
         "category": "Программирование",
-        "cost": 1990.0,
+        "cost": 0.0,
         "format": "online",
         "skills": ["Алгоритмы и структуры данных", "Python"],
     },
@@ -677,7 +677,7 @@ SEED_COURSES: list[dict[str, Any]] = [
         "url": "https://skillbox.ru/course/react/",
         "level": "intermediate",
         "category": "Программирование",
-        "cost": 2500.0,
+        "cost": 0.0,
         "format": "online",
         "skills": ["React", "JavaScript"],
     },
@@ -688,7 +688,7 @@ SEED_COURSES: list[dict[str, Any]] = [
         "url": "https://otus.ru/lessons/docker/",
         "level": "advanced",
         "category": "Инструменты",
-        "cost": 3000.0,
+        "cost": 0.0,
         "format": "online",
         "skills": ["Docker"],
     },
@@ -699,7 +699,7 @@ SEED_COURSES: list[dict[str, Any]] = [
         "url": "https://practicum.yandex.ru/data-analysis/",
         "level": "intermediate",
         "category": "Данные",
-        "cost": 2490.0,
+        "cost": 0.0,
         "format": "online",
         "skills": ["Pandas", "Python"],
     },
@@ -710,7 +710,7 @@ SEED_COURSES: list[dict[str, Any]] = [
         "url": "https://www.coursera.org/specializations/machine-learning-introduction",
         "level": "advanced",
         "category": "Данные",
-        "cost": 1500.0,
+        "cost": 0.0,
         "format": "online",
         "skills": ["Machine Learning", "Python"],
     },
@@ -732,7 +732,7 @@ SEED_COURSES: list[dict[str, Any]] = [
         "url": "https://skillbox.ru/course/figma/",
         "level": "beginner",
         "category": "Дизайн",
-        "cost": 1500.0,
+        "cost": 0.0,
         "format": "online",
         "skills": ["Figma", "UI/UX"],
     },
@@ -743,7 +743,7 @@ SEED_COURSES: list[dict[str, Any]] = [
         "url": "https://practicum.yandex.ru/ui-design/",
         "level": "intermediate",
         "category": "Дизайн",
-        "cost": 2990.0,
+        "cost": 0.0,
         "format": "online",
         "skills": ["UI/UX", "Figma"],
     },
@@ -754,7 +754,7 @@ SEED_COURSES: list[dict[str, Any]] = [
         "url": "https://practicum.yandex.ru/frontend-developer/",
         "level": "intermediate",
         "category": "Программирование",
-        "cost": 2900.0,
+        "cost": 0.0,
         "format": "online",
         "skills": ["JavaScript", "React", "HTML/CSS"],
     },
@@ -963,6 +963,8 @@ SEED_ROLES: list[dict[str, Any]] = [
 def seed_database(db: Session) -> int:
     """Идемпотентное наполнение базы демо-данными. Возвращает число записей."""
     if db.scalar(select(func.count(Skill.id))) or 0:
+        db.execute(update(Course).where(Course.cost > 0).values(cost=0.0))
+        db.commit()
         return _seed_roles_if_empty(db)
 
     skills_by_name: dict[str, Skill] = {}
