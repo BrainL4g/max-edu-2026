@@ -23,10 +23,73 @@ BAD_FORMAT_ANSWER = "формат не поддерживается, нужен 
 
 @router.message_callback(F.callback.payload == "rs:start")
 async def ask_resume(event: MessageCallback) -> None:
-    """Пользователь нажал «Резюме» — ждём файл или текст следующим сообщением."""
+    """Кнопка «Резюме»: сначала согласие на обработку ПД, потом приём резюме.
+
+    Без явного согласия (152-ФЗ ст. 9) резюме не принимается: текст с
+    телефоном, почтой и историей работы — это персональные данные.
+    """
     item = sessions.session_for(event.callback.user.user_id)
+    if not item["consent"]:
+        await event.edit(
+            texts.resume_consent_text(), attachments=[kbs.resume_consent_kb()]
+        )
+        return
     item["resume"] = True
-    await event.edit(texts.resume_prompt_text(), attachments=[kbs.resume_kb()])
+    await event.edit(texts.resume_prompt_text(), attachments=[kbs.resume_prompt_kb()])
+
+
+@router.message_callback(F.callback.payload == "rs:consent:yes")
+async def accept_consent(event: MessageCallback) -> None:
+    """Пользователь согласился: фиксируем согласие и просим резюме.
+
+    Согласие пишется в API до отправки резюме. Если запрос не прошёл,
+    резюме не принимаем — обработка без зафиксированного согласия
+    недопустима.
+    """
+    user = event.callback.user
+    item = sessions.session_for(user.user_id)
+    item["resume"] = False
+    try:
+        user_id = item["uid"] or await sessions.ensure_user_from(user)
+        await api.give_consent(user_id)
+    except api.ApiError as exc:
+        logger.warning("Не удалось зафиксировать согласие: %s", exc)
+        await event.edit(texts.consent_error_text(), attachments=[kbs.resume_kb()])
+        return
+    item["consent"] = True
+    item["resume"] = True
+    await event.edit(texts.resume_prompt_text(), attachments=[kbs.resume_prompt_kb()])
+
+
+@router.message_callback(F.callback.payload == "rs:consent:no")
+async def decline_consent(event: MessageCallback) -> None:
+    """Пользователь отказался: резюме не отправляем и не обрабатываем."""
+    item = sessions.session_for(event.callback.user.user_id)
+    item["consent"] = False
+    item["resume"] = False
+    await event.edit(
+        texts.resume_consent_declined_text(), attachments=[kbs.resume_consent_kb()]
+    )
+
+
+@router.message_callback(F.callback.payload == "rs:policy")
+async def show_policy(event: MessageCallback) -> None:
+    """Текст политики обработки персональных данных."""
+    await event.edit(texts.privacy_policy_text(), attachments=[kbs.resume_consent_kb()])
+
+
+@router.message_callback(F.callback.payload == "rs:consent:revoke")
+async def revoke_consent(event: MessageCallback) -> None:
+    """Отзыв согласия (152-ФЗ ст. 9, п. 6): резюме больше не принимаем."""
+    item = sessions.session_for(event.callback.user.user_id)
+    item["consent"] = False
+    item["resume"] = False
+    if item["uid"]:
+        try:
+            await api.revoke_consent(item["uid"])
+        except api.ApiError as exc:
+            logger.warning("Не удалось отозвать согласие в API: %s", exc)
+    await event.edit(texts.consent_revoked_text(), attachments=[kbs.main_menu()])
 
 
 def _first_file(attachments: list[Any] | None) -> Any | None:
@@ -58,7 +121,7 @@ async def capture_resume_file(event: MessageCreated) -> None:
     if sender is None or body is None:
         return
     item = sessions.session_for(sender.user_id)
-    if not item["resume"]:
+    if not item["resume"] or not item["consent"]:
         return
     item["resume"] = False
 
@@ -104,13 +167,11 @@ async def capture_resume_text(event: MessageCreated) -> None:
     if body.attachments:
         return
     item = sessions.session_for(sender.user_id)
-    if not item["resume"]:
+    if not item["resume"] or not item["consent"]:
         return
     item["resume"] = False
 
-    user_id = item["uid"] or await sessions.ensure_user(
-        sender.user_id, sender.first_name or ""
-    )
+    user_id = item["uid"] or await sessions.ensure_user_from(sender)
     upload = await api.upload_resume(user_id, body.text)
     analysis = await api.analyze_resume(upload["id"])
     await event.message.answer(

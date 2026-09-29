@@ -14,7 +14,13 @@ import sessions
 
 def test_session_for_creates_defaults() -> None:
     item = sessions.session_for(7)
-    assert item == {"uid": None, "answers": [], "resume": False, "welcomed": False}
+    assert item == {
+        "uid": None,
+        "answers": [],
+        "resume": False,
+        "welcomed": False,
+        "consent": False,
+    }
     assert sessions.session_for(7) is item
 
 

@@ -42,6 +42,26 @@ def resume_kb() -> AttachmentButton:
     return builder.as_markup()
 
 
+def resume_prompt_kb() -> AttachmentButton:
+    """Ожидание резюме: отмена ожидания, отзыв согласия, возврат в меню."""
+    builder = InlineKeyboardBuilder()  # type: ignore[no-untyped-call]
+    builder.row(
+        CallbackButton(text="🚫 Отозвать согласие", payload="rs:consent:revoke")
+    )
+    builder.row(CallbackButton(text="⬅️ Назад", payload="menu:main"))
+    return builder.as_markup()
+
+
+def resume_consent_kb() -> AttachmentButton:
+    """Экран согласия на обработку ПД: да, нет, текст политики, меню."""
+    builder = InlineKeyboardBuilder()  # type: ignore[no-untyped-call]
+    builder.row(CallbackButton(text="✅ Согласен", payload="rs:consent:yes"))
+    builder.row(CallbackButton(text="❌ Не согласен", payload="rs:consent:no"))
+    builder.row(CallbackButton(text="📄 Политика", payload="rs:policy"))
+    builder.row(CallbackButton(text="🏠 Меню", payload="menu:main"))
+    return builder.as_markup()
+
+
 def resume_report_kb() -> AttachmentButton:
     """Кнопки после отчёта по резюме."""
     builder = InlineKeyboardBuilder()  # type: ignore[no-untyped-call]

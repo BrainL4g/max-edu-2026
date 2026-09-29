@@ -139,6 +139,16 @@ async def internship_directions() -> list[str]:
     return [str(item) for item in await _req("GET", "/internships/directions")]
 
 
+async def give_consent(user_id: int) -> dict[str, Any]:
+    """Зафиксировать согласие на обработку персональных данных (152-ФЗ ст. 9)."""
+    return _obj(await _req("POST", f"/users/{user_id}/consent"))
+
+
+async def revoke_consent(user_id: int) -> dict[str, Any]:
+    """Отозвать согласие на обработку персональных данных (152-ФЗ ст. 9)."""
+    return _obj(await _req("DELETE", f"/users/{user_id}/consent"))
+
+
 async def upload_resume(user_id: int, text: str) -> dict[str, Any]:
     """Загрузка резюме текстом."""
     return _obj(await _req("POST", f"/users/{user_id}/resumes", json={"text": text}))

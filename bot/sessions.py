@@ -1,8 +1,10 @@
 """Лёгкое in-memory состояние пользователей бота.
 
-Сессия: max_user_id → {"uid": id на платформе, "answers": [...], "resume": False,
-"welcomed": bool}, где `resume` — флаг ожидания резюме (файл или текст) после
-кнопки «Резюме», а `welcomed` — признак отправленного приветствия.
+Сессия: max_user_id → {"uid": id на платформе, "answers": [...],
+"resume": False, "welcomed": False, "consent": False}, где `resume` — флаг
+ожидания резюме (файл или текст) после кнопки «Резюме», `welcomed` — признак
+отправленного приветствия, `consent` — согласие на обработку персональных
+данных (152-ФЗ ст. 9), без которого резюме не отправляется.
 """
 
 from __future__ import annotations
@@ -20,7 +22,13 @@ def session_for(max_user_id: int) -> dict[str, Any]:
     """Состояние пользователя (с гарантированными ключами)."""
     return sessions.setdefault(
         max_user_id,
-        {"uid": None, "answers": [], "resume": False, "welcomed": False},
+        {
+            "uid": None,
+            "answers": [],
+            "resume": False,
+            "welcomed": False,
+            "consent": False,
+        },
     )
 
 

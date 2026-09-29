@@ -775,14 +775,168 @@ def test_cards_links_skips_missing_url() -> None:
 
 
 def test_ask_resume_sets_waiting_flag() -> None:
+    sessions.session_for(USER_ID)["consent"] = True
     event = FakeCallbackEvent("rs:start")
     _run(resume.ask_resume(event))
     assert sessions.session_for(USER_ID)["resume"] is True
     text, attachments = event.edits[0]
     assert "Пришли резюме" in text
     buttons = buttons_from(attachments)
-    assert [b.text for b in buttons] == ["⬅️ Назад"]
-    assert [b.payload for b in buttons] == ["menu:main"]
+    assert [b.payload for b in buttons] == ["rs:consent:revoke", "menu:main"]
+
+
+def test_ask_resume_asks_consent_first() -> None:
+    """Без согласия резюме не принимаем — показываем экран согласия (152-ФЗ ст. 9)."""
+    event = FakeCallbackEvent("rs:start")
+    _run(resume.ask_resume(event))
+
+    assert sessions.session_for(USER_ID)["resume"] is False
+    text, attachments = event.edits[0]
+    assert "согласие" in text
+    assert "152-ФЗ" in text
+    assert [b.payload for b in buttons_from(attachments)] == [
+        "rs:consent:yes",
+        "rs:consent:no",
+        "rs:policy",
+        "menu:main",
+    ]
+
+
+def test_accept_consent_records_and_asks_resume(monkeypatch) -> None:
+    _fake_user(monkeypatch, platform_id=5)
+    calls: list[int] = []
+
+    async def fake_give(uid: int) -> dict[str, Any]:
+        calls.append(uid)
+        return {"user_id": uid, "consent_given": True}
+
+    monkeypatch.setattr(api, "give_consent", fake_give)
+
+    event = FakeCallbackEvent("rs:consent:yes")
+    _run(resume.accept_consent(event))
+
+    assert calls == [5]
+    item = sessions.session_for(USER_ID)
+    assert item["consent"] is True
+    assert item["resume"] is True
+    assert "Пришли резюме" in event.edits[0][0]
+
+
+def test_accept_consent_reuses_known_user(monkeypatch) -> None:
+    sessions.session_for(USER_ID)["uid"] = 3
+    calls: list[int] = []
+
+    async def fake_give(uid: int) -> dict[str, Any]:
+        calls.append(uid)
+        return {"user_id": uid, "consent_given": True}
+
+    monkeypatch.setattr(api, "give_consent", fake_give)
+
+    _run(resume.accept_consent(FakeCallbackEvent("rs:consent:yes")))
+
+    assert calls == [3]
+
+
+def test_accept_consent_fails_closed(monkeypatch) -> None:
+    """Не зафиксировали согласие в API — резюме не принимаем."""
+    _fake_user(monkeypatch, platform_id=5)
+
+    async def boom(uid: int) -> dict[str, Any]:
+        raise api.ApiError("POST /users/5/consent -> 500", 500)
+
+    monkeypatch.setattr(api, "give_consent", boom)
+
+    event = FakeCallbackEvent("rs:consent:yes")
+    _run(resume.accept_consent(event))
+
+    item = sessions.session_for(USER_ID)
+    assert item["consent"] is False
+    assert item["resume"] is False
+    assert "Не удалось зафиксировать согласие" in event.edits[0][0]
+
+
+def test_decline_consent_blocks_resume() -> None:
+    sessions.session_for(USER_ID)["consent"] = True
+    sessions.session_for(USER_ID)["resume"] = True
+
+    event = FakeCallbackEvent("rs:consent:no")
+    _run(resume.decline_consent(event))
+
+    item = sessions.session_for(USER_ID)
+    assert item["consent"] is False
+    assert item["resume"] is False
+    assert "обрабатывать не буду" in event.edits[0][0]
+
+
+def test_show_policy_lists_rights() -> None:
+    event = FakeCallbackEvent("rs:policy")
+    _run(resume.show_policy(event))
+
+    text = event.edits[0][0]
+    assert "Политика обработки персональных данных" in text
+    assert "Роскомнадзоре" in text
+    assert "отозвать согласие" in text
+
+
+def test_revoke_consent_clears_flag_and_calls_api(monkeypatch) -> None:
+    sessions.session_for(USER_ID)["uid"] = 3
+    sessions.session_for(USER_ID)["consent"] = True
+    sessions.session_for(USER_ID)["resume"] = True
+    calls: list[int] = []
+
+    async def fake_revoke(uid: int) -> dict[str, Any]:
+        calls.append(uid)
+        return {"user_id": uid, "consent_given": False}
+
+    monkeypatch.setattr(api, "revoke_consent", fake_revoke)
+
+    event = FakeCallbackEvent("rs:consent:revoke")
+    _run(resume.revoke_consent(event))
+
+    assert calls == [3]
+    item = sessions.session_for(USER_ID)
+    assert item["consent"] is False
+    assert item["resume"] is False
+    assert "отозвано" in event.edits[0][0]
+
+
+def test_revoke_consent_without_uid_and_api_error(monkeypatch) -> None:
+    """Без известного uid и при ошибке API чат не падает."""
+    sessions.session_for(USER_ID)["consent"] = True
+
+    async def boom(uid: int) -> dict[str, Any]:
+        raise api.ApiError("DELETE -> 500", 500)
+
+    sessions.session_for(USER_ID)["uid"] = 9
+    monkeypatch.setattr(api, "revoke_consent", boom)
+    _run(resume.revoke_consent(FakeCallbackEvent("rs:consent:revoke")))
+    assert sessions.session_for(USER_ID)["consent"] is False
+
+    sessions.session_for(USER_ID)["uid"] = None
+    _run(resume.revoke_consent(FakeCallbackEvent("rs:consent:revoke")))
+    assert sessions.session_for(USER_ID)["consent"] is False
+
+
+def test_resume_not_accepted_without_consent(monkeypatch) -> None:
+    """Защита в обработчике: без согласия текст резюме наружу не уходит."""
+    item = sessions.session_for(USER_ID)
+    item["resume"] = True
+    item["consent"] = False
+    uploaded: list[str] = []
+
+    async def fake_upload(uid: int, body: str) -> dict[str, Any]:
+        uploaded.append(body)
+        return {"id": 1}
+
+    monkeypatch.setattr(api, "upload_resume", fake_upload)
+
+    _run(
+        resume.capture_resume_text(
+            FakeMessageCreatedEvent(USER_ID, "Ваня", "Моё резюме")
+        )
+    )
+
+    assert uploaded == []
 
 
 def _resume_analysis() -> dict[str, Any]:
@@ -799,9 +953,10 @@ def _resume_analysis() -> dict[str, Any]:
 
 
 def _waiting_for_resume(uid: int = 7) -> None:
-    """Перевести сессию пользователя в режим ожидания резюме."""
+    """Перевести сессию пользователя в режим ожидания резюме (с согласием)."""
     item = sessions.session_for(USER_ID)
     item["resume"] = True
+    item["consent"] = True
     item["uid"] = uid
 
 
@@ -943,6 +1098,7 @@ def test_capture_resume_text_analyzes_without_uid(
         return {"id": 13}
 
     sessions.session_for(USER_ID)["resume"] = True
+    sessions.session_for(USER_ID)["consent"] = True
     monkeypatch.setattr(api, "upload_resume", fake_upload)
     monkeypatch.setattr(api, "analyze_resume", _async_result(_resume_analysis()))
 
