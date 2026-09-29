@@ -6,13 +6,11 @@ services:
       APP_NAME: SkillQuest
       APP_ENV: production
       DATABASE_URL: sqlite:////app/data/skillquest.db
-      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8000}
-      # Явный список CORS-origins: по умолчанию пусто (никакого '*'),
-      # боту CORS не нужен — он ходит по внутренней сети.
       CORS_ORIGINS: ${CORS_ORIGINS:-}
       GIGACHAT_CREDENTIALS: ${GIGACHAT_CREDENTIALS:-}
       GIGACHAT_ACCESS_TOKEN: ${GIGACHAT_ACCESS_TOKEN:-}
       SERVICE_API_TOKEN: ${SERVICE_API_TOKEN:-skillquest-service-token}
+      DATA_ENCRYPTION_KEY: "${DATA_ENCRYPTION_KEY:?set DATA_ENCRYPTION_KEY in .env - generate with python -m backend.app.core.encryption}"
     volumes:
       - skillquest_data:/app/data
     restart: unless-stopped

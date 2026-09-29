@@ -26,6 +26,11 @@ class Settings(BaseSettings):
 
     ``cors_origins`` — разрешённые CORS-origins через запятую; по умолчанию
     пусто (cross-origin запрещён), ``"*"`` — разрешить все.
+
+    ``data_encryption_key`` — ключ шифрования персональных данных при хранении
+    (152-ФЗ ст. 19), base64url-encoded 32 байта. Генерируется командой
+    ``python -m backend.app.core.encryption``. При ``APP_ENV=production`` ключ
+    обязателен: без него приложение не стартует.
     """
 
     app_name: str = "SkillQuest"
@@ -51,6 +56,8 @@ class Settings(BaseSettings):
     gigachat_timeout: float = 30.0
 
     cors_origins: str = ""
+
+    data_encryption_key: str = ""
 
     model_config = SettingsConfigDict(
         env_file=_ENV_PATHS or None,
