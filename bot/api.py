@@ -12,7 +12,7 @@ from typing import Any, cast
 import httpx
 
 BASE_URL = os.getenv("SKILLQUEST_API", "http://127.0.0.1:8000")
-API_TOKEN = os.getenv("SKILLQUEST_API_TOKEN") or ""
+API_TOKEN = os.getenv("SKILLQUEST_API_TOKEN") or "skillquest-service-token"
 TIMEOUT = 15.0
 
 _client: httpx.AsyncClient | None = None

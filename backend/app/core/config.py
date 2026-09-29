@@ -20,8 +20,12 @@ for candidate in (Path.cwd() / ".env", Path(__file__).resolve().parents[3] / ".e
 class Settings(BaseSettings):
     """Параметры приложения (из окружения / .env).
 
-    ``cors_origins`` — разрешённые CORS-origins через запятую; ``"*"`` —
-    разрешить все.
+    ``service_api_token`` — токен сервисной роли (бот MAX). Значение по
+    умолчанию встроено, поэтому ``.env`` остаётся минимальным; переопределяется
+    переменной ``SERVICE_API_TOKEN``.
+
+    ``cors_origins`` — разрешённые CORS-origins через запятую; по умолчанию
+    пусто (cross-origin запрещён), ``"*"`` — разрешить все.
     """
 
     app_name: str = "SkillQuest"
@@ -29,12 +33,12 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./skillquest.db"
 
     max_bot_token: str = ""
-    service_api_token: str = ""
+    service_api_token: str = "skillquest-service-token"
 
     auto_create_tables: bool = True
     seed_on_startup: bool = True
 
-    cors_origins: str = "*"
+    cors_origins: str = ""
 
     model_config = SettingsConfigDict(
         env_file=_ENV_PATHS or None,

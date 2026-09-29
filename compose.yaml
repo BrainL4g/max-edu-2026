@@ -6,8 +6,7 @@ services:
       APP_NAME: SkillQuest
       APP_ENV: production
       DATABASE_URL: sqlite:////app/data/skillquest.db
-      SERVICE_API_TOKEN: ${SERVICE_API_TOKEN:-}
-      CORS_ORIGINS: ${CORS_ORIGINS:-}
+      SERVICE_API_TOKEN: ${SERVICE_API_TOKEN:-skillquest-service-token}
     volumes:
       - skillquest_data:/app/data
     restart: unless-stopped
@@ -24,7 +23,7 @@ services:
     environment:
       MAX_BOT_TOKEN: ${MAX_BOT_TOKEN}
       SKILLQUEST_API: http://backend:8000
-      SKILLQUEST_API_TOKEN: ${SERVICE_API_TOKEN:-}
+      SKILLQUEST_API_TOKEN: ${SERVICE_API_TOKEN:-skillquest-service-token}
     depends_on:
       backend:
         condition: service_healthy
