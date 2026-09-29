@@ -145,16 +145,37 @@ def internships_empty_text(direction: str | None) -> str:
     return "Рекомендаций по стажировкам пока нет 🤷"
 
 
+def resume_prompt_text() -> str:
+    """Экран загрузки резюме (файлом или текстом)."""
+    return (
+        "📄 Пришли резюме файлом (PDF, DOCX или TXT) "
+        "или текстом одним сообщением.\n\n"
+        "Отправлю его в GigaChat и покажу оценку, сильные стороны и советы."
+    )
+
+
+def resume_file_error_text(reason: str) -> str:
+    """Ошибка приёма резюме."""
+    return (
+        f"Не получилось разобрать резюме: {reason}.\n\n"
+        "Пришли PDF, DOCX или TXT — либо текст резюме сообщением."
+    )
+
+
 def resume_report(analysis: dict[str, Any]) -> str:
-    """Отчёт анализа резюме."""
+    """Отчёт анализа резюме: эвристика + оценка GigaChat, если она есть."""
     found = ", ".join(analysis.get("found_skills") or []) or "—"
     missing = ", ".join(analysis.get("missing_skills") or []) or "—"
+    score = analysis.get("ai_score")
+    summary = analysis.get("ai_summary")
     lines = [
-        f"📄 Соответствие направлению: {round(analysis.get('direction_match', 0))}%",
-        "",
-        f"✅ Найдено: {found}",
-        f"➕ Не хватает: {missing}",
+        f"📄 Соответствие направлению: {round(analysis.get('direction_match', 0))}%"
     ]
+    if score is not None:
+        lines.append(f"🤖 Оценка GigaChat: {round(float(score))}/100")
+    if summary:
+        lines.append(str(summary))
+    lines += ["", f"✅ Найдено: {found}", f"➕ Не хватает: {missing}"]
     if analysis.get("strengths"):
         lines += ["", "💪 Сильные стороны:"]
         lines += [f"• {item}" for item in analysis["strengths"]]

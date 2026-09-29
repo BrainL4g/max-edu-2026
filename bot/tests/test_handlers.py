@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
+from types import SimpleNamespace
 from typing import Any
 
 import api
@@ -12,6 +13,7 @@ from handlers import assessment, goal, missions, recommend, resume, skillmap, st
 from tests.fakes import (
     FakeBotStartedEvent,
     FakeCallbackEvent,
+    FakeFileAttachment,
     FakeMessageCreatedEvent,
     buttons_from,
 )
@@ -42,6 +44,15 @@ def _stub_get_user(platform_id: int = 42) -> Callable[..., Any]:
 
     async def _fake(max_user_id: int, name: str | None = None) -> dict[str, Any]:
         return {"id": platform_id}
+
+    return _fake
+
+
+def _failing_api_error(status: int) -> Callable[..., Any]:
+    """Заглушка API-функции, поднимающая ApiError с HTTP-кодом."""
+
+    async def _fake(*args: Any, **kwargs: Any) -> Any:
+        raise api.ApiError(f"boom -> {status}", status)
 
     return _fake
 
@@ -90,9 +101,11 @@ def test_cmd_start_skips_without_sender(monkeypatch) -> None:
 
 def test_back_to_menu_edits() -> None:
     event = FakeCallbackEvent("menu:main")
+    sessions.session_for(USER_ID)["resume"] = True
     _run(start.back_to_menu(event))
     assert len(event.edits) == 1
     assert "Главное меню" in event.edits[0][0]
+    assert sessions.session_for(USER_ID)["resume"] is False  # ожидание резюме сброшено
 
 
 def test_show_skill_map(monkeypatch) -> None:
@@ -574,24 +587,148 @@ def test_ask_resume_sets_waiting_flag() -> None:
     event = FakeCallbackEvent("rs:start")
     _run(resume.ask_resume(event))
     assert sessions.session_for(USER_ID)["resume"] is True
-    assert "Пришли текст резюме" in event.edits[0][0]
+    text, attachments = event.edits[0]
+    assert "Пришли резюме" in text
+    buttons = buttons_from(attachments)
+    assert [b.text for b in buttons] == ["⬅️ Назад"]
+    assert [b.payload for b in buttons] == ["menu:main"]
+
+
+def _resume_analysis() -> dict[str, Any]:
+    return {
+        "direction_match": 75,
+        "found_skills": ["Python"],
+        "missing_skills": [],
+        "strengths": ["Проекты"],
+        "issues": [],
+        "recommendations": [],
+        "ai_score": 82,
+        "ai_summary": "Хорошее резюме для стажировки",
+    }
+
+
+def _waiting_for_resume(uid: int = 7) -> None:
+    """Перевести сессию пользователя в режим ожидания резюме."""
+    item = sessions.session_for(USER_ID)
+    item["resume"] = True
+    item["uid"] = uid
+
+
+def test_capture_resume_file_uploads_and_analyzes(monkeypatch) -> None:
+    _fake_user(monkeypatch)
+    _waiting_for_resume()
+    uploaded: list[tuple[int, str | None, bytes]] = []
+
+    async def fake_upload(
+        user_id: int, filename: str | None, content: bytes
+    ) -> dict[str, Any]:
+        uploaded.append((user_id, filename, content))
+        return {"id": 12}
+
+    monkeypatch.setattr(api, "upload_resume_file", fake_upload)
+    monkeypatch.setattr(api, "analyze_resume", _async_result(_resume_analysis()))
+
+    event = FakeMessageCreatedEvent(
+        USER_ID,
+        "Ваня",
+        attachments=[FakeFileAttachment(filename="cv.pdf")],
+        file_bytes=b"%PDF-1.4 resume",
+    )
+    _run(resume.capture_resume_file(event))
+
+    assert event.bot.downloaded == ["https://max.ru/files/1"]
+    assert uploaded == [(7, "cv.pdf", b"%PDF-1.4 resume")]
+    assert sessions.session_for(USER_ID)["resume"] is False
+    text, attachments = event.answers[0]
+    assert "75%" in text
+    assert "Оценка GigaChat: 82/100" in text
+    payloads = _payloads(buttons_from(attachments))
+    assert "rs:start" in payloads
+    assert "menu:main" in payloads
+
+
+def test_capture_resume_file_ignores_when_not_waiting() -> None:
+    event = FakeMessageCreatedEvent(USER_ID, "Ваня", attachments=[FakeFileAttachment()])
+    _run(resume.capture_resume_file(event))
+    assert event.answers == []
+    assert event.bot.downloaded == []
+
+
+def test_capture_resume_file_skips_without_sender() -> None:
+    _waiting_for_resume()
+    event = FakeMessageCreatedEvent(USER_ID, "Ваня", attachments=[FakeFileAttachment()])
+    event.message.sender = None
+    _run(resume.capture_resume_file(event))
+    assert event.answers == []
+
+
+def test_capture_resume_file_without_file_attachment() -> None:
+    _waiting_for_resume()
+    event = FakeMessageCreatedEvent(
+        USER_ID, "Ваня", attachments=[SimpleNamespace(filename=None)]
+    )
+    _run(resume.capture_resume_file(event))
+    text, attachments = event.answers[0]
+    assert "нет файла" in text
+    assert _payloads(buttons_from(attachments)) == ["menu:main"]
+
+
+def test_capture_resume_file_without_bot() -> None:
+    _waiting_for_resume()
+    event = FakeMessageCreatedEvent(USER_ID, "Ваня", attachments=[FakeFileAttachment()])
+    event.message.bot = None
+    _run(resume.capture_resume_file(event))
+    assert "нет файла" in event.answers[0][0]
+
+
+def test_capture_resume_file_without_url() -> None:
+    _waiting_for_resume()
+    event = FakeMessageCreatedEvent(
+        USER_ID, "Ваня", attachments=[FakeFileAttachment(url=None)]
+    )
+    _run(resume.capture_resume_file(event))
+    assert "ссылки на скачивание" in event.answers[0][0]
+
+
+def test_capture_resume_file_bad_format(monkeypatch) -> None:
+    _waiting_for_resume()
+    monkeypatch.setattr(api, "upload_resume_file", _failing_api_error(422))
+
+    event = FakeMessageCreatedEvent(
+        USER_ID, "Ваня", attachments=[FakeFileAttachment()], file_bytes=b"png"
+    )
+    _run(resume.capture_resume_file(event))
+    assert "формат не поддерживается" in event.answers[0][0]
+    assert sessions.session_for(USER_ID)["resume"] is False
+
+
+def test_capture_resume_file_service_error(monkeypatch) -> None:
+    _waiting_for_resume()
+    monkeypatch.setattr(api, "upload_resume_file", _async_result({"id": 12}))
+    monkeypatch.setattr(api, "analyze_resume", _failing_api_error(500))
+
+    event = FakeMessageCreatedEvent(
+        USER_ID, "Ваня", attachments=[FakeFileAttachment()], file_bytes=b"txt"
+    )
+    _run(resume.capture_resume_file(event))
+    assert "сервис анализа вернул ошибку" in event.answers[0][0]
+
+
+def test_capture_resume_file_download_error() -> None:
+    _waiting_for_resume()
+    event = FakeMessageCreatedEvent(
+        USER_ID, "Ваня", attachments=[FakeFileAttachment()], file_bytes=b"txt"
+    )
+    event.bot.download_error = RuntimeError("нет сети")
+    _run(resume.capture_resume_file(event))
+    assert "файл не удалось скачать" in event.answers[0][0]
 
 
 def test_capture_resume_text_analyzes(monkeypatch) -> None:
     _fake_user(monkeypatch)
-    item = sessions.session_for(USER_ID)
-    item["resume"] = True
-    item["uid"] = 7
+    _waiting_for_resume()
     monkeypatch.setattr(api, "upload_resume", _async_result({"id": 12}))
-    analysis = {
-        "direction_match": 75,
-        "found_skills": ["Python"],
-        "missing_skills": [],
-        "strengths": [],
-        "issues": [],
-        "recommendations": [],
-    }
-    monkeypatch.setattr(api, "analyze_resume", _async_result(analysis))
+    monkeypatch.setattr(api, "analyze_resume", _async_result(_resume_analysis()))
 
     event = FakeMessageCreatedEvent(USER_ID, "Ваня", "Моё резюме...")
     _run(resume.capture_resume_text(event))
@@ -603,6 +740,15 @@ def test_capture_resume_text_analyzes(monkeypatch) -> None:
 
 def test_capture_resume_text_ignores_when_not_waiting() -> None:
     event = FakeMessageCreatedEvent(USER_ID, "Ваня", "просто текст")
+    _run(resume.capture_resume_text(event))
+    assert event.answers == []
+
+
+def test_capture_resume_text_skips_messages_with_attachments() -> None:
+    _waiting_for_resume()
+    event = FakeMessageCreatedEvent(
+        USER_ID, "Ваня", "подпись к файлу", attachments=[FakeFileAttachment()]
+    )
     _run(resume.capture_resume_text(event))
     assert event.answers == []
 

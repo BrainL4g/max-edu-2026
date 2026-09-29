@@ -37,5 +37,6 @@ async def cmd_start(event: MessageCreated) -> None:
 
 @router.message_callback(F.callback.payload == "menu:main")
 async def back_to_menu(event: MessageCallback) -> None:
-    """Кнопка «Меню»: возврат в главное меню."""
+    """Кнопка «Меню»: возврат в главное меню (сбрасывает ожидание резюме)."""
+    sessions.session_for(event.callback.user.user_id)["resume"] = False
     await event.edit("Главное меню 🎮", attachments=[kbs.main_menu()])

@@ -36,6 +36,21 @@ def main_menu() -> AttachmentButton:
     return builder.as_markup()
 
 
+def resume_kb() -> AttachmentButton:
+    """Экран «Резюме»: возврат в главное меню."""
+    builder = InlineKeyboardBuilder()  # type: ignore[no-untyped-call]
+    builder.row(CallbackButton(text="⬅️ Назад", payload="menu:main"))
+    return builder.as_markup()
+
+
+def resume_report_kb() -> AttachmentButton:
+    """Кнопки после отчёта по резюме."""
+    builder = InlineKeyboardBuilder()  # type: ignore[no-untyped-call]
+    builder.row(CallbackButton(text="📄 Другое резюме", payload="rs:start"))
+    builder.row(CallbackButton(text="🏠 Меню", payload="menu:main"))
+    return builder.as_markup()
+
+
 def roles_kb(roles: list[dict[str, Any]]) -> AttachmentButton:
     """Кнопки выбора целевой роли: payload = "goal:pick:{id}"."""
     builder = InlineKeyboardBuilder()  # type: ignore[no-untyped-call]

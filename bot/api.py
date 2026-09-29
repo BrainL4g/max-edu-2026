@@ -9,12 +9,18 @@ import httpx
 
 BASE_URL = os.getenv("SKILLQUEST_API", "http://127.0.0.1:8000")
 TIMEOUT = 15.0
+# Анализ резюме может ходить в GigaChat — даём ему больше времени.
+ANALYZE_TIMEOUT = 60.0
 
 _client: httpx.AsyncClient | None = None
 
 
 class ApiError(Exception):
     """Запрос к API SkillQuest завершился ошибкой."""
+
+    def __init__(self, message: str, status_code: int | None = None) -> None:
+        super().__init__(message)
+        self.status_code = status_code
 
 
 def _get_client() -> httpx.AsyncClient:
@@ -27,7 +33,9 @@ def _get_client() -> httpx.AsyncClient:
 async def _req(method: str, path: str, **kwargs: Any) -> Any:
     response = await _get_client().request(method, path, **kwargs)
     if response.status_code >= 400:
-        raise ApiError(f"{method} {path} -> {response.status_code}")
+        raise ApiError(
+            f"{method} {path} -> {response.status_code}", response.status_code
+        )
     if response.status_code == 204:
         return None
     return response.json()
@@ -115,9 +123,19 @@ async def upload_resume(user_id: int, text: str) -> dict[str, Any]:
     return _obj(await _req("POST", f"/users/{user_id}/resumes", json={"text": text}))
 
 
+async def upload_resume_file(
+    user_id: int, filename: str | None, content: bytes
+) -> dict[str, Any]:
+    """Загрузка резюме файлом (multipart/form-data)."""
+    files = {"file": (filename or "resume.txt", content, "application/octet-stream")}
+    return _obj(await _req("POST", f"/users/{user_id}/resumes/upload", files=files))
+
+
 async def analyze_resume(resume_id: int) -> dict[str, Any]:
-    """Запуск анализа резюме."""
-    return _obj(await _req("POST", f"/resumes/{resume_id}/analyze"))
+    """Запуск анализа резюме (увеличенный таймаут: бэкенд может ходить в GigaChat)."""
+    return _obj(
+        await _req("POST", f"/resumes/{resume_id}/analyze", timeout=ANALYZE_TIMEOUT)
+    )
 
 
 async def list_roles() -> list[dict[str, Any]]:

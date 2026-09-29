@@ -167,6 +167,29 @@ def test_resume_report_empty() -> None:
     assert "0%" in report
     assert "Найдено: —" in report
     assert "Не хватает: —" in report
+    assert "GigaChat" not in report  # без AI-оценки блок не показывается
+
+
+def test_resume_report_with_gigachat() -> None:
+    report = texts.resume_report(
+        {"direction_match": 75, "ai_score": 82, "ai_summary": "Крепкое резюме"}
+    )
+    assert "Оценка GigaChat: 82/100" in report
+    assert "Крепкое резюме" in report
+    assert "75%" in report
+
+
+def test_resume_report_gigachat_float_score() -> None:
+    report = texts.resume_report({"ai_score": 63.5, "ai_summary": None})
+    assert "Оценка GigaChat: 64/100" in report
+
+
+def test_resume_prompt_and_file_error_texts() -> None:
+    prompt = texts.resume_prompt_text()
+    assert "PDF" in prompt and "DOCX" in prompt and "TXT" in prompt
+    error = texts.resume_file_error_text("пустой файл")
+    assert "пустой файл" in error
+    assert "PDF" in error
 
 
 def test_roles_question_text() -> None:

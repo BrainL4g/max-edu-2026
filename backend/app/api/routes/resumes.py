@@ -14,6 +14,7 @@ from backend.app.repositories.resume_repository import ResumeRepository
 from backend.app.repositories.user_repository import UserRepository
 from backend.app.schemas.resume import ResumeAnalysisOut, ResumeCreate, ResumeOut
 from backend.app.services.resume_analysis import ResumeAnalysisService
+from backend.app.services.resume_text import extract_resume_text
 
 router = APIRouter(tags=["resumes"])
 
@@ -29,10 +30,10 @@ def create_resume(user_id: int, payload: ResumeCreate, db: Session = Depends(get
 async def upload_resume(
     user_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)
 ) -> Resume:
-    """Загрузка резюме файлом (txt/md и др. текстовые форматы)."""
+    """Загрузка резюме файлом (TXT/MD, PDF или DOCX)."""
     UserRepository(db).get(user_id)
     content = await file.read()
-    text = content.decode("utf-8", errors="replace")
+    text = extract_resume_text(file.filename, content)
     return ResumeRepository(db).create(user_id, text, file.filename)
 
 

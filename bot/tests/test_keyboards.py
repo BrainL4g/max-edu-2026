@@ -95,6 +95,18 @@ def test_menu_with_links() -> None:
     assert buttons[-1].payload == "menu:main"
 
 
+def test_resume_kb_back_button() -> None:
+    buttons = buttons_from([kbs.resume_kb()])
+    assert [b.text for b in buttons] == ["⬅️ Назад"]
+    assert [b.payload for b in buttons] == ["menu:main"]
+
+
+def test_resume_report_kb_buttons() -> None:
+    buttons = buttons_from([kbs.resume_report_kb()])
+    assert [b.text for b in buttons] == ["📄 Другое резюме", "🏠 Меню"]
+    assert [b.payload for b in buttons] == ["rs:start", "menu:main"]
+
+
 def test_menu_with_links_clips_long_title() -> None:
     buttons = buttons_from([kbs.menu_with_links([("д" * 100, "https://x.ru")])])
     assert buttons[0].text == "д" * (kbs.TEXT_LIMIT - 1) + "…"

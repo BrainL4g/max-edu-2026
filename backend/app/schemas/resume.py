@@ -27,7 +27,11 @@ class ResumeOut(BaseModel):
 
 
 class ResumeAnalysisOut(BaseModel):
-    """Результат анализа резюме."""
+    """Результат анализа резюме.
+
+    Поля ``source``, ``ai_score`` и ``ai_summary`` заполняются, когда включена
+    интеграция с GigaChat; без неё отчёт остаётся эвристическим.
+    """
 
     resume_id: int
     found_skills: list[str]
@@ -37,3 +41,6 @@ class ResumeAnalysisOut(BaseModel):
     recommendations: list[str]
     direction_match: float
     summary: str
+    source: str = "heuristic"
+    ai_score: float | None = None
+    ai_summary: str | None = None

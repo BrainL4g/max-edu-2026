@@ -14,6 +14,17 @@ class _FakeUser:
         self.first_name = first_name
 
 
+class FakeFileAttachment:
+    """Мини-замена maxapi File-вложения (имя файла + ссылка)."""
+
+    def __init__(
+        self, filename: str = "resume.pdf", url: str | None = "https://max.ru/files/1"
+    ) -> None:
+        self.filename = filename
+        self.size = 1024
+        self.payload = SimpleNamespace(url=url)
+
+
 class FakeCallbackEvent:
     """Мини-замена MessageCallback: записывает вызовы edit()."""
 
@@ -39,13 +50,20 @@ class FakeMessageCreatedEvent:
     """Мини-замена MessageCreated: sender + body + answer()."""
 
     def __init__(
-        self, user_id: int = 123, first_name: str = "Тест", text: str = ""
+        self,
+        user_id: int = 123,
+        first_name: str = "Тест",
+        text: str = "",
+        attachments: list[Any] | None = None,
+        file_bytes: bytes = b"",
     ) -> None:
         self.answers: list[tuple[str | None, list[Any] | None]] = []
+        self.bot = FakeBot(download_content=file_bytes)
         self.message = SimpleNamespace(
             sender=_FakeUser(user_id, first_name),
-            body=SimpleNamespace(text=text),
+            body=SimpleNamespace(text=text, attachments=attachments or []),
             answer=self._record_answer,
+            bot=self.bot,
         )
 
     async def _record_answer(
@@ -55,10 +73,15 @@ class FakeMessageCreatedEvent:
 
 
 class FakeBot:
-    """Мини-замена Bot: записывает отправленные сообщения."""
+    """Мини-замена Bot: записывает отправленные сообщения и скачивания."""
 
-    def __init__(self) -> None:
+    def __init__(
+        self, download_content: bytes = b"", download_error: Exception | None = None
+    ) -> None:
         self.sent: list[tuple[int, str, list[Any] | None]] = []
+        self.downloaded: list[str] = []
+        self.download_content = download_content
+        self.download_error = download_error
 
     async def send_message(
         self,
@@ -68,6 +91,13 @@ class FakeBot:
         **_: Any,
     ) -> None:
         self.sent.append((chat_id, text, attachments))
+
+    async def download_bytes(self, url: str) -> bytes:
+        """Заглушка скачивания вложения из MAX."""
+        self.downloaded.append(url)
+        if self.download_error is not None:
+            raise self.download_error
+        return self.download_content
 
 
 class FakeBotStartedEvent:

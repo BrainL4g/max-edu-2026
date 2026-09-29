@@ -74,7 +74,7 @@ SkillQuest превращает этот процесс в игру: диагн�
 - 📊 **Skill Map** — уровни и прогресс по каждому навыку.
 - 📚 **Курсы** — список, поиск, фильтрация, рекомендации по пробелам.
 - 💼 **Стажировки** — экран выбора направления (`backend`, `frontend`, `data`, …), фильтрация, пагинация по 5, ссылки-кнопки «N. Компания · направление» и рекомендации по навыкам.
-- 📄 **Резюме** — загрузка (текст/файл), анализ, отчёт с проблемами и советами.
+- 📄 **Резюме** — загрузка (текст/файл PDF, DOCX, TXT), анализ (эвристика + опционально GigaChat), отчёт с проблемами и советами.
 - 🏷️ **Фильтрация** курсов: `skill`, `category`, `level`, `price`, `format`, `platform`.
 - 🏷️ **Фильтрация** стажировок: `direction`, `skills`, `level`, `city`, `remote`, `format`.
 
@@ -109,7 +109,9 @@ pytest, httpx, Docker.
 - `pydantic` / `pydantic-settings` — валидация и конфигурация;
 - `SQLAlchemy` — ORM;
 - `alembic` — миграции;
-- `python-multipart` — загрузка файлов (резюме).
+- `python-multipart` — загрузка файлов (резюме);
+- `httpx` — HTTP-клиент (интеграция с GigaChat);
+- `pypdf` / `python-docx` — извлечение текста из резюме в форматах PDF и DOCX.
 
 Dev:
 
@@ -125,6 +127,7 @@ APP_NAME=SkillQuest
 APP_ENV=development
 DATABASE_URL=sqlite:///./skillquest.db
 MAX_BOT_TOKEN=
+GIGACHAT_CREDENTIALS=
 ```
 
 | Переменная | Значение | По умолчанию |
@@ -136,6 +139,8 @@ MAX_BOT_TOKEN=
 | `AUTO_CREATE_TABLES` | Создавать таблицы при старте (прототип) | `true` |
 | `SEED_ON_STARTUP` | Наполнять базу демо-данными при старте | `true` |
 | `CORS_ORIGINS` | Разрешённые origins через запятую | `*` |
+| `GIGACHAT_CREDENTIALS` | Ключ GigaChat для AI-оценки резюме (опционально) | пусто |
+| `GIGACHAT_ACCESS_TOKEN` | OAuth-токен GigaChat (альтернатива ключу) | пусто |
 
 > ⚠️ Рабочие токены в Git не хранятся: `.env` в `.gitignore`, в примере — только шаблон.
 

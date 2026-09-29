@@ -8,6 +8,8 @@ services:
       APP_NAME: SkillQuest
       APP_ENV: production
       DATABASE_URL: sqlite:////app/data/skillquest.db
+      GIGACHAT_CREDENTIALS: ${GIGACHAT_CREDENTIALS:-}
+      GIGACHAT_ACCESS_TOKEN: ${GIGACHAT_ACCESS_TOKEN:-}
     volumes:
       - skillquest_data:/app/data
     restart: unless-stopped

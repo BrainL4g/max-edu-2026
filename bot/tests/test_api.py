@@ -131,6 +131,53 @@ def test_resume_upload_and_analyze(monkeypatch) -> None:
     assert analysis["direction_match"] == 80
 
 
+def test_resume_upload_file_multipart(monkeypatch) -> None:
+    captured: dict[str, str] = {}
+
+    def handler(request: httpx.Request) -> Response:
+        captured["content_type"] = request.headers.get("content-type", "")
+        captured["body"] = request.content.decode("utf-8", errors="ignore")
+        return Response(201, json={"id": 13})
+
+    client = httpx.AsyncClient(transport=MockTransport(handler), base_url="http://test")
+    monkeypatch.setattr(api, "_get_client", lambda: client)
+
+    upload = asyncio.run(api.upload_resume_file(7, "cv.pdf", b"%PDF-1.4 content"))
+    assert upload["id"] == 13
+    assert captured["content_type"].startswith("multipart/form-data")
+    assert "cv.pdf" in captured["body"]
+
+
+def test_resume_upload_file_default_filename(monkeypatch) -> None:
+    captured: dict[str, str] = {}
+
+    def handler(request: httpx.Request) -> Response:
+        captured["body"] = request.content.decode("utf-8", errors="ignore")
+        return Response(201, json={"id": 14})
+
+    client = httpx.AsyncClient(transport=MockTransport(handler), base_url="http://test")
+    monkeypatch.setattr(api, "_get_client", lambda: client)
+
+    asyncio.run(api.upload_resume_file(7, None, b"text"))  # имя по умолчанию
+    assert "resume.txt" in captured["body"]
+
+
+def test_analyze_resume_uses_extended_timeout(monkeypatch) -> None:
+    captured: dict[str, object] = {}
+
+    def handler(request: httpx.Request) -> Response:
+        captured["timeout"] = request.extensions.get("timeout")
+        return Response(200, json={"direction_match": 80})
+
+    client = httpx.AsyncClient(transport=MockTransport(handler), base_url="http://test")
+    monkeypatch.setattr(api, "_get_client", lambda: client)
+
+    asyncio.run(api.analyze_resume(12))
+    timeout = captured["timeout"]
+    assert isinstance(timeout, dict)
+    assert timeout["read"] == api.ANALYZE_TIMEOUT  # type: ignore[typeddict-item]
+
+
 def test_roles_and_goal_api(monkeypatch) -> None:
     roles = [
         {
@@ -185,8 +232,9 @@ def test_http_error_raises_api_error(monkeypatch) -> None:
     client = _client({("GET", "/boom"): Response(500, json={"detail": "x"})})
     monkeypatch.setattr(api, "_get_client", lambda: client)
 
-    with pytest.raises(api.ApiError):
+    with pytest.raises(api.ApiError) as exc_info:
         asyncio.run(api._req("GET", "/boom"))
+    assert exc_info.value.status_code == 500  # код нужен обработчикам в боте
 
 
 def test_unknown_route_raises_api_error(monkeypatch) -> None:

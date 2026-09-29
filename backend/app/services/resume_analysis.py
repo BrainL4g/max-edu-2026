@@ -2,6 +2,8 @@
 
 Результат показывает найденные навыки, недостающие навыки, сильные стороны,
 проблемы резюме, рекомендации и соответствие выбранному направлению.
+Если настроен GigaChat, отчёт дополняется его оценкой (`ai_score`,
+`ai_summary` и AI-версиями сильных сторон, проблем и советов).
 """
 
 from __future__ import annotations
@@ -15,6 +17,7 @@ from sqlalchemy.orm import Session
 from backend.app.domain import Skill
 from backend.app.repositories.resume_repository import ResumeRepository
 from backend.app.repositories.user_repository import UserRepository
+from backend.app.services.gigachat import GigaChatClient
 from backend.app.services.recommendations import DIRECTION_REQUIRED_SKILLS
 
 # Алиасы для поиска навыков в тексте резюме (нижний регистр).
@@ -54,8 +57,9 @@ _ISSUE_ADVICE = {
 class ResumeAnalysisService:
     """Сервис анализа резюме."""
 
-    def __init__(self, db: Session) -> None:
+    def __init__(self, db: Session, ai: GigaChatClient | None = None) -> None:
         self.db = db
+        self.ai = ai if ai is not None else GigaChatClient()
         self.resumes = ResumeRepository(db)
         self.users = UserRepository(db)
 
@@ -90,8 +94,26 @@ class ResumeAnalysisService:
             "recommendations": recommendations,
             "direction_match": direction_match,
             "summary": self._summary(found, missing, direction_match, direction),
+            "source": "heuristic",
+            "ai_score": None,
+            "ai_summary": None,
         }
+        ai_result = self.ai.evaluate_resume(text, direction or None, found, missing)
+        if ai_result:
+            result = self._with_ai(result, ai_result)
         self.resumes.save_analysis(resume_id, result)
+        return result
+
+    @staticmethod
+    def _with_ai(result: dict[str, Any], ai_result: dict[str, Any]) -> dict[str, Any]:
+        """Дополнить эвристический отчёт оценкой GigaChat."""
+        result["source"] = "gigachat"
+        result["ai_score"] = ai_result.get("score")
+        result["ai_summary"] = ai_result.get("summary") or None
+        for key in ("strengths", "issues", "recommendations"):
+            items = ai_result.get(key) or []
+            if items:
+                result[key] = items
         return result
 
     def _skill_matches(self, name: str, text_lower: str) -> bool:
