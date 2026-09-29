@@ -117,6 +117,15 @@ def test_internships_header_with_and_without_direction() -> None:
     assert texts.internships_header(None) == "💼 Рекомендуемые стажировки:"
 
 
+def test_internships_header_with_pagination() -> None:
+    assert texts.internships_header(None, page=1, total_pages=2) == (
+        "💼 Рекомендуемые стажировки (страница 2 из 2):"
+    )
+    assert texts.internships_header("qa", page=0, total_pages=3) == (
+        "💼 Рекомендуемые стажировки — qa (страница 1 из 3):"
+    )
+
+
 def test_internships_empty_text_with_and_without_direction() -> None:
     assert "«qa»" in texts.internships_empty_text("qa")
     assert "пока нет" in texts.internships_empty_text("qa")

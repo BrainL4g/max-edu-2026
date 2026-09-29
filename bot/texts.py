@@ -116,11 +116,18 @@ def internship_directions_text() -> str:
     )
 
 
-def internships_header(direction: str | None) -> str:
-    """Заголовок списка стажировок с учётом фильтра по направлению."""
-    if direction:
-        return f"💼 Рекомендуемые стажировки — {direction}:"
-    return "💼 Рекомендуемые стажировки:"
+def internships_header(
+    direction: str | None, page: int = 0, total_pages: int = 1
+) -> str:
+    """Заголовок списка стажировок: направление и номер страницы (если их больше одной)."""
+    title = (
+        f"💼 Рекомендуемые стажировки — {direction}"
+        if direction
+        else "💼 Рекомендуемые стажировки"
+    )
+    if total_pages > 1:
+        return f"{title} (страница {page + 1} из {total_pages}):"
+    return f"{title}:"
 
 
 def internships_empty_text(direction: str | None) -> str:

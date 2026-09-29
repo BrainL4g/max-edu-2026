@@ -135,6 +135,62 @@ def test_internship_directions_kb_clips_long_code() -> None:
     assert buttons[1].payload == f"in:dir:{'d' * 100}"
 
 
+def test_internships_pagination_kb_first_page() -> None:
+    links = [
+        ("Открыть стажировку 1", "https://jobs/1"),
+        ("Открыть стажировку 2", "https://jobs/2"),
+    ]
+    buttons = buttons_from(
+        [kbs.internships_pagination_kb(links, direction=None, page=0, total_pages=2)]
+    )
+    assert [b.text for b in buttons[:2]] == [
+        "Открыть стажировку 1",
+        "Открыть стажировку 2",
+    ]
+    assert buttons[0].url == "https://jobs/1"
+    assert buttons[2].text == "Следующая страница ➡️"
+    assert buttons[2].payload == "in:dir:any:1"
+    assert buttons[3].payload == "in:rec"
+    assert buttons[4].payload == "menu:main"
+
+
+def test_internships_pagination_kb_middle_page() -> None:
+    rows = _rows(
+        [kbs.internships_pagination_kb([], direction="backend", page=1, total_pages=3)]
+    )
+    nav = rows[0]
+    assert [b.text for b in nav] == ["⬅️ Предыдущая", "Следующая ➡️"]
+    assert [b.payload for b in nav] == ["in:dir:backend:0", "in:dir:backend:2"]
+    assert rows[1][0].text == "⬅️ Направления"
+    assert rows[1][0].payload == "in:rec"
+    assert rows[2][0].payload == "menu:main"
+
+
+def test_internships_pagination_kb_last_page() -> None:
+    buttons = buttons_from(
+        [kbs.internships_pagination_kb([], direction="qa", page=2, total_pages=3)]
+    )
+    assert buttons[0].text == "⬅️ Предыдущая страница"
+    assert buttons[0].payload == "in:dir:qa:1"
+    assert buttons[1].payload == "in:rec"
+
+
+def test_internships_pagination_kb_single_page() -> None:
+    links = [("Открыть стажировку 1", "https://jobs/1")]
+    buttons = buttons_from(
+        [kbs.internships_pagination_kb(links, direction=None, page=0, total_pages=1)]
+    )
+    assert _payloads(buttons) == [None, "in:rec", "menu:main"]
+
+
+def test_internships_pagination_kb_clips_long_label() -> None:
+    links = [("О" * 100, "https://jobs/1")]
+    buttons = buttons_from(
+        [kbs.internships_pagination_kb(links, direction=None, page=0, total_pages=1)]
+    )
+    assert buttons[0].text == "О" * (kbs.TEXT_LIMIT - 1) + "…"
+
+
 def test_courses_pagination_kb_first_page() -> None:
     courses = [
         {"title": "FastAPI", "url": "https://fastapi.tiangolo.com"},

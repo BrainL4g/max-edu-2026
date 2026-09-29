@@ -360,6 +360,24 @@ def _internship_item() -> dict[str, Any]:
     }
 
 
+def _internships(count: int, direction: str = "backend") -> list[dict[str, Any]]:
+    """Список стажировок для проверки пагинации."""
+    return [
+        {
+            "title": f"Стажировка {i}",
+            "company": f"Компания {i}",
+            "level": "beginner",
+            "remote": False,
+            "city": "Москва",
+            "format": "office",
+            "url": f"https://jobs/{i}",
+            "direction": direction,
+            "skills": [],
+        }
+        for i in range(1, count + 1)
+    ]
+
+
 def test_internship_filters_shows_directions(monkeypatch) -> None:
     _fake_user(monkeypatch)
     monkeypatch.setattr(
@@ -425,6 +443,77 @@ def test_internships_by_direction_any(monkeypatch) -> None:
     assert "Все направления" not in text
 
 
+def test_internships_pagination_next_and_prev(monkeypatch) -> None:
+    _fake_user(monkeypatch)
+    store: dict[str, Any] = {}
+    monkeypatch.setattr(
+        api, "rec_internships", _rec_internships_stub(store, _internships(7))
+    )
+
+    # Страница 1: «Все направления» — все стажировки по 5 на страницу
+    event_p0 = FakeCallbackEvent("in:dir:any")
+    _run(recommend.internships_by_direction(event_p0))
+    text0, att0 = event_p0.edits[0]
+    assert store["direction"] is None
+    assert "страница 1 из 2" in text0
+    assert "1. Стажировка 1 @ Компания 1" in text0
+    assert "5. Стажировка 5" in text0
+    assert "6. Стажировка 6" not in text0
+    buttons0 = buttons_from(att0)
+    assert buttons0[0].text == "Открыть стажировку 1"
+    assert buttons0[0].url == "https://jobs/1"
+    assert buttons0[5].text == "Следующая страница ➡️"
+    assert buttons0[5].payload == "in:dir:any:1"
+    assert buttons0[6].payload == "in:rec"
+    assert buttons0[7].payload == "menu:main"
+
+    # Страница 2: направление backend — сквозная нумерация и возврат назад
+    event_p1 = FakeCallbackEvent("in:dir:backend:1")
+    _run(recommend.internships_by_direction(event_p1))
+    text1, att1 = event_p1.edits[0]
+    assert store["direction"] == "backend"
+    assert "— backend (страница 2 из 2)" in text1
+    assert "6. Стажировка 6 @ Компания 6" in text1
+    assert "7. Стажировка 7" in text1
+    buttons1 = buttons_from(att1)
+    assert buttons1[0].text == "Открыть стажировку 6"
+    assert buttons1[2].text == "⬅️ Предыдущая страница"
+    assert buttons1[2].payload == "in:dir:backend:0"
+    assert buttons1[3].payload == "in:rec"
+
+
+def test_internships_pagination_invalid_and_overflow_page(monkeypatch) -> None:
+    _fake_user(monkeypatch)
+    monkeypatch.setattr(api, "rec_internships", _async_result(_internships(2)))
+
+    # Невалидный номер страницы — первая страница
+    event = FakeCallbackEvent("in:dir:any:invalid")
+    _run(recommend.internships_by_direction(event))
+    text, _ = event.edits[0]
+    assert "1. Стажировка 1" in text
+    assert "страница" not in text
+
+    # Запредельный номер страницы — ограничение последней страницей
+    event_overflow = FakeCallbackEvent("in:dir:any:999")
+    _run(recommend.internships_by_direction(event_overflow))
+    assert "2. Стажировка 2" in event_overflow.edits[0][0]
+    assert "страница" not in event_overflow.edits[0][0]
+
+
+def test_internships_single_page_has_no_nav(monkeypatch) -> None:
+    _fake_user(monkeypatch)
+    monkeypatch.setattr(api, "rec_internships", _async_result(_internships(1)))
+
+    event = FakeCallbackEvent("in:dir:backend")
+    _run(recommend.internships_by_direction(event))
+    assert "страница" not in event.edits[0][0]
+    assert _payloads(buttons_from(event.edits[0][1])) == [
+        None,
+        "in:rec",
+        "menu:main",
+    ]
+
+
 def test_internships_by_direction_empty(monkeypatch) -> None:
     _fake_user(monkeypatch)
     monkeypatch.setattr(api, "rec_internships", _async_result([]))
@@ -439,20 +528,33 @@ def test_internships_by_direction_empty(monkeypatch) -> None:
 
 def test_parse_direction_payload() -> None:
     assert recommend._parse_direction("in:dir:backend") == "backend"
+    assert recommend._parse_direction("in:dir:backend:2") == "backend"
     assert recommend._parse_direction("in:dir:any") is None
+    assert recommend._parse_direction("in:dir:any:2") is None
     assert recommend._parse_direction("in:dir:") is None
+    assert recommend._parse_direction("in:dir") is None
 
 
-def test_cards_links_limit_to_five() -> None:
-    items = [{"title": f"Курс {i}", "url": f"https://x/{i}"} for i in range(7)]
+def test_parse_page_payload() -> None:
+    assert recommend._parse_page("in:dir:any") == 0
+    assert recommend._parse_page("in:dir:any:2") == 2
+    assert recommend._parse_page("in:dir:backend:invalid") == 0
+    assert recommend._parse_page("in:dir:backend:") == 0
+
+
+def test_cards_links_numbers_with_offset() -> None:
+    items = [{"title": f"Курс {i}", "url": f"https://x/{i}"} for i in range(3)]
 
     def card_fn(item: dict[str, Any], index: int) -> str:
         return f"{index}. {item['title']}"
 
-    cards, links = recommend._cards_links(items, card_fn, "Открыть")
-    assert len(cards.split("\n")) == 5
-    assert len(links) == 5
-    assert links[0] == ("Открыть 1", "https://x/0")
+    cards, links = recommend._cards_links(items, card_fn, "Открыть", offset=5)
+    assert cards.split("\n") == ["6. Курс 0", "7. Курс 1", "8. Курс 2"]
+    assert links == [
+        ("Открыть 6", "https://x/0"),
+        ("Открыть 7", "https://x/1"),
+        ("Открыть 8", "https://x/2"),
+    ]
 
 
 def test_cards_links_skips_missing_url() -> None:

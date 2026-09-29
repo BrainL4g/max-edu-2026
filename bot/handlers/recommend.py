@@ -15,7 +15,6 @@ import texts
 
 router = Router()
 
-CARD_LIMIT = 5
 PAGE_SIZE = 5
 
 
@@ -23,11 +22,13 @@ def _cards_links(
     items: list[dict[str, Any]],
     card_fn: Callable[[dict[str, Any], int], str],
     label: str,
+    offset: int = 0,
 ) -> tuple[str, list[tuple[str, str]]]:
-    cards = [card_fn(item, index + 1) for index, item in enumerate(items[:CARD_LIMIT])]
+    """Карточки страницы и ссылки-кнопки «{label} N» со сквозной нумерацией."""
+    cards = [card_fn(item, offset + index + 1) for index, item in enumerate(items)]
     links = [
-        (f"{label} {index + 1}", item["url"])
-        for index, item in enumerate(items[:CARD_LIMIT])
+        (f"{label} {offset + index + 1}", item["url"])
+        for index, item in enumerate(items)
         if item.get("url")
     ]
     return "\n".join(cards), links
@@ -84,15 +85,26 @@ DIRECTION_ANY = "any"
 
 
 def _parse_direction(payload: str) -> str | None:
-    """Направление из payload "in:dir:{direction}" ("any" — без фильтра)."""
-    direction = payload.rsplit(":", 1)[-1].strip()
+    """Направление из payload "in:dir:{direction}[:{page}]" ("any" — без фильтра)."""
+    parts = payload.split(":")
+    direction = parts[2].strip() if len(parts) > 2 else ""
     if not direction or direction == DIRECTION_ANY:
         return None
     return direction
 
 
-async def _show_internships(event: MessageCallback, direction: str | None) -> None:
-    """Показать рекомендованные стажировки с учётом направления."""
+def _parse_page(payload: str) -> int:
+    """Номер страницы из payload "in:dir:{direction}:{page}" (0, если не указан)."""
+    parts = payload.split(":")
+    if len(parts) > 3 and parts[3].isdigit():
+        return int(parts[3])
+    return 0
+
+
+async def _show_internships(
+    event: MessageCallback, direction: str | None, page: int = 0
+) -> None:
+    """Показать стажировки: фильтр по направлению и пагинация по 5 элементов."""
     user_id = await sessions.ensure_user_from(event.callback.user)
     internships = await api.rec_internships(user_id, direction=direction)
     if not internships:
@@ -102,12 +114,23 @@ async def _show_internships(event: MessageCallback, direction: str | None) -> No
         )
         return
 
+    total_pages = max(1, (len(internships) + PAGE_SIZE - 1) // PAGE_SIZE)
+    page = max(0, min(page, total_pages - 1))
+
+    start_idx = page * PAGE_SIZE
+    page_items = internships[start_idx : start_idx + PAGE_SIZE]
     cards, links = _cards_links(
-        internships, texts.internship_card, "Открыть стажировку"
+        page_items, texts.internship_card, "Открыть стажировку", offset=start_idx
     )
-    text = f"{texts.internships_header(direction)}\n\n{cards}"
+
+    header = texts.internships_header(direction, page=page, total_pages=total_pages)
     await event.edit(
-        text, attachments=[kbs.menu_with_links(links, back_payload="in:rec")]
+        f"{header}\n\n{cards}",
+        attachments=[
+            kbs.internships_pagination_kb(
+                links, direction=direction, page=page, total_pages=total_pages
+            )
+        ],
     )
 
 
@@ -126,5 +149,6 @@ async def internship_filters(event: MessageCallback) -> None:
 
 @router.message_callback(F.callback.payload.startswith("in:dir:"))
 async def internships_by_direction(event: MessageCallback) -> None:
-    """Рекомендации стажировок по выбранному направлению."""
-    await _show_internships(event, _parse_direction(event.callback.payload or ""))
+    """Рекомендации стажировок: фильтр по направлению и листание страниц."""
+    payload = event.callback.payload or ""
+    await _show_internships(event, _parse_direction(payload), _parse_page(payload))

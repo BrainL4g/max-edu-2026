@@ -73,7 +73,7 @@ SkillQuest превращает этот процесс в игру: диагн�
 - 🎮 **Миссии** — игровые задания с вариантами ответов, XP и уровнями.
 - 📊 **Skill Map** — уровни и прогресс по каждому навыку.
 - 📚 **Курсы** — список, поиск, фильтрация, рекомендации по пробелам.
-- 💼 **Стажировки** — экран выбора направления (`backend`, `frontend`, `data`, …), фильтрация и рекомендации по направлению и навыкам.
+- 💼 **Стажировки** — экран выбора направления (`backend`, `frontend`, `data`, …), фильтрация, пагинация по 5 и рекомендации по направлению и навыкам.
 - 📄 **Резюме** — загрузка (текст/файл), анализ, отчёт с проблемами и советами.
 - 🏷️ **Фильтрация** курсов: `skill`, `category`, `level`, `price`, `format`, `platform`.
 - 🏷️ **Фильтрация** стажировок: `direction`, `skills`, `level`, `city`, `remote`, `format`.
@@ -222,7 +222,7 @@ for module in (users, skills, assessment, missions, courses, internships, resume
 ```text
 main.py        точка входа (polling через maxapi)
 api.py         HTTP-клиент к API SkillQuest
-keyboards.py   inline-кнопки (меню, варианты ответов, ссылки)
+keyboards.py   inline-кнопки (меню, варианты ответов, ссылки, пагинация)
 texts.py       форматирование Skill Map, миссий, рекомендаций, резюме
 handlers/      start, assessment, missions, skillmap, recommend, resume
 sessions.py    легковесное состояние (uid, ответы диагностики, флаг резюме)
