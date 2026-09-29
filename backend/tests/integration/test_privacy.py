@@ -128,6 +128,28 @@ def test_consent_policy_is_public(client) -> None:
     assert "Права пользователя" in body["text"]
 
 
+def test_consent_policy_discloses_third_party_transfer(client) -> None:
+    """Передача резюме в GigaChat раскрыта в тексте политики (152-ФЗ ст. 12)."""
+    body = client.get("/consent/policy").json()
+    assert "GigaChat" in body["text"]
+    assert "8000" in body["text"]
+
+
+def test_consent_policy_reports_ai_flag_off_without_credentials(client) -> None:
+    """Без ключа GigaChat флаг ai_assessment_enabled равен false."""
+    body = client.get("/consent/policy").json()
+    assert body["ai_assessment_enabled"] is False
+
+
+def test_consent_policy_reports_ai_flag_on_with_credentials(
+    client, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """С ключом GigaChat предупреждение о передаче становится проверяемым."""
+    monkeypatch.setattr(settings, "gigachat_credentials", "basic-key")
+    body = client.get("/consent/policy").json()
+    assert body["ai_assessment_enabled"] is True
+
+
 def test_data_export_returns_profile(client, db_session) -> None:
     seed_database(db_session)
     user = client.post("/users/by-max", json={"max_user_id": 636363, "name": SECRET_NAME}).json()

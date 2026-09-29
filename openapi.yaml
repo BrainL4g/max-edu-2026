@@ -2131,14 +2131,26 @@ components:
         version:
           type: string
           title: Version
+        ai_assessment_enabled:
+          type: boolean
+          title: Ai Assessment Enabled
+          default: false
       type: object
       required:
       - text
       - version
       title: ConsentPolicyOut
-      description: Публичный текст политики обработки персональных данных.
+      description: 'Публичный текст политики обработки персональных данных.
+
+
+        ``ai_assessment_enabled`` показывает, передаётся ли текст резюме
+
+        внешнему сервису (GigaChat) прямо сейчас: текст политики предупреждает
+
+        о такой передаче, а флаг делает предупреждение проверяемым.'
       examples:
-      - text: Политика обработки ...
+      - ai_assessment_enabled: false
+        text: Политика обработки ...
         version: '1.0'
     CourseOut:
       properties:

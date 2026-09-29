@@ -8,7 +8,12 @@ from sqlalchemy.orm import Session
 from backend.app.api.deps import Principal, require_access
 from backend.app.api.responses import OWN_ERRORS
 from backend.app.core.audit import log_access
-from backend.app.core.consent import POLICY_TEXT, POLICY_VERSION, consent_timestamp
+from backend.app.core.consent import (
+    POLICY_TEXT,
+    POLICY_VERSION,
+    ai_assessment_enabled,
+    consent_timestamp,
+)
 from backend.app.database.session import get_db
 from backend.app.repositories.user_repository import UserRepository
 from backend.app.schemas.consent import ConsentOut, ConsentPolicyOut
@@ -19,7 +24,11 @@ router = APIRouter(tags=["privacy"])
 @router.get("/consent/policy", response_model=ConsentPolicyOut, openapi_extra={"security": []})
 def get_policy() -> ConsentPolicyOut:
     """Текст политики обработки персональных данных (публичный доступ)."""
-    return ConsentPolicyOut(text=POLICY_TEXT, version=POLICY_VERSION)
+    return ConsentPolicyOut(
+        text=POLICY_TEXT,
+        version=POLICY_VERSION,
+        ai_assessment_enabled=ai_assessment_enabled(),
+    )
 
 
 @router.get("/users/{user_id}/consent", response_model=ConsentOut, responses=OWN_ERRORS)

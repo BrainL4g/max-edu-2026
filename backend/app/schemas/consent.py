@@ -8,14 +8,24 @@ from pydantic import BaseModel, ConfigDict
 
 
 class ConsentPolicyOut(BaseModel):
-    """Публичный текст политики обработки персональных данных."""
+    """Публичный текст политики обработки персональных данных.
+
+    ``ai_assessment_enabled`` показывает, передаётся ли текст резюме
+    внешнему сервису (GigaChat) прямо сейчас: текст политики предупреждает
+    о такой передаче, а флаг делает предупреждение проверяемым.
+    """
 
     model_config = ConfigDict(
-        json_schema_extra={"examples": [{"text": "Политика обработки ...", "version": "1.0"}]}
+        json_schema_extra={
+            "examples": [
+                {"text": "Политика обработки ...", "version": "1.0", "ai_assessment_enabled": False}
+            ]
+        }
     )
 
     text: str
     version: str
+    ai_assessment_enabled: bool = False
 
 
 class ConsentOut(BaseModel):
