@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from backend.app.api.deps import Principal, require_access
+from backend.app.api.responses import OWN_ERRORS
 from backend.app.database.session import get_db
 from backend.app.domain import Course
 from backend.app.repositories.course_repository import CourseRepository
@@ -23,7 +24,7 @@ def _parse_skill_ids(raw: str | None) -> list[int] | None:
 router = APIRouter(tags=["courses"])
 
 
-@router.get("/courses", response_model=list[CourseOut])
+@router.get("/courses", response_model=list[CourseOut], openapi_extra={"security": []})
 def list_courses(
     search: str | None = None,
     skills: str | None = Query(None, description="id навыков через запятую"),
@@ -46,7 +47,7 @@ def list_courses(
     )
 
 
-@router.get("/courses/recommended", response_model=list[CourseOut])
+@router.get("/courses/recommended", response_model=list[CourseOut], responses=OWN_ERRORS)
 def recommended_courses(
     user_id: int = Query(...),
     search: str | None = None,
@@ -70,7 +71,7 @@ def recommended_courses(
     )
 
 
-@router.get("/courses/{course_id}", response_model=CourseOut)
+@router.get("/courses/{course_id}", response_model=CourseOut, openapi_extra={"security": []})
 def get_course(course_id: int, db: Session = Depends(get_db)) -> Course:
     """Курс по id."""
     return CourseRepository(db).get(course_id)

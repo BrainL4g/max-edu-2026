@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from backend.app.api.deps import Principal, get_optional_principal
+from backend.app.api.responses import FORBIDDEN, NOT_FOUND, UNAUTHORIZED
 from backend.app.database.session import get_db
 from backend.app.repositories.user_repository import UserRepository
 from backend.app.schemas.skill import AssessmentQuestionOut
@@ -14,7 +15,12 @@ from backend.app.services.assessment import questions_for_direction
 router = APIRouter(tags=["assessment"])
 
 
-@router.get("/assessment/questions", response_model=list[AssessmentQuestionOut])
+@router.get(
+    "/assessment/questions",
+    response_model=list[AssessmentQuestionOut],
+    openapi_extra={"security": []},
+    responses={**UNAUTHORIZED, **FORBIDDEN, **NOT_FOUND},
+)
 def get_assessment_questions(
     user_id: int | None = None,
     db: Session = Depends(get_db),

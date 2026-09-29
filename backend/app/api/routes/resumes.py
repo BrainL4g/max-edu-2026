@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, File, UploadFile
 from sqlalchemy.orm import Session
 
 from backend.app.api.deps import Principal, require_access, require_resume_owner
+from backend.app.api.responses import OWN_ERRORS
 from backend.app.core.exceptions import NotFoundError
 from backend.app.database.session import get_db
 from backend.app.domain import Resume
@@ -19,7 +20,9 @@ from backend.app.services.resume_analysis import ResumeAnalysisService
 router = APIRouter(tags=["resumes"])
 
 
-@router.post("/users/{user_id}/resumes", response_model=ResumeOut, status_code=201)
+@router.post(
+    "/users/{user_id}/resumes", response_model=ResumeOut, status_code=201, responses=OWN_ERRORS
+)
 def create_resume(
     user_id: int,
     payload: ResumeCreate,
@@ -31,7 +34,12 @@ def create_resume(
     return ResumeRepository(db).create(user_id, payload.text, payload.filename)
 
 
-@router.post("/users/{user_id}/resumes/upload", response_model=ResumeOut, status_code=201)
+@router.post(
+    "/users/{user_id}/resumes/upload",
+    response_model=ResumeOut,
+    status_code=201,
+    responses=OWN_ERRORS,
+)
 async def upload_resume(
     user_id: int,
     file: UploadFile = File(...),
@@ -45,7 +53,7 @@ async def upload_resume(
     return ResumeRepository(db).create(user_id, text, file.filename)
 
 
-@router.get("/users/{user_id}/resumes", response_model=list[ResumeOut])
+@router.get("/users/{user_id}/resumes", response_model=list[ResumeOut], responses=OWN_ERRORS)
 def list_resumes(
     user_id: int,
     db: Session = Depends(get_db),
@@ -55,7 +63,7 @@ def list_resumes(
     return ResumeRepository(db).list_by_user(user_id)
 
 
-@router.get("/resumes/{resume_id}", response_model=ResumeOut)
+@router.get("/resumes/{resume_id}", response_model=ResumeOut, responses=OWN_ERRORS)
 def get_resume(
     resume_id: int,
     db: Session = Depends(get_db),
@@ -65,7 +73,7 @@ def get_resume(
     return ResumeRepository(db).get(resume_id)
 
 
-@router.post("/resumes/{resume_id}/analyze", response_model=ResumeAnalysisOut)
+@router.post("/resumes/{resume_id}/analyze", response_model=ResumeAnalysisOut, responses=OWN_ERRORS)
 def analyze_resume(
     resume_id: int,
     db: Session = Depends(get_db),
@@ -75,7 +83,7 @@ def analyze_resume(
     return ResumeAnalysisService(db).analyze(resume_id)
 
 
-@router.get("/resumes/{resume_id}/analysis", response_model=ResumeAnalysisOut)
+@router.get("/resumes/{resume_id}/analysis", response_model=ResumeAnalysisOut, responses=OWN_ERRORS)
 def get_analysis(
     resume_id: int,
     db: Session = Depends(get_db),

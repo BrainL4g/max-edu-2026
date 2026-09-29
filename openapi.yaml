@@ -1,0 +1,2647 @@
+openapi: 3.1.0
+info:
+  title: SkillQuest
+  description: 'Игровой бэкенд SkillQuest: диагностика навыков, игровые миссии, рекомендации
+    курсов и стажировок, анализ резюме. Защищённые операции требуют Bearer-токен (см.
+    security и docs/API.md).'
+  contact:
+    name: SkillQuest Team
+    url: https://github.com/BrainL4g/max-edu-2026
+  version: 0.2.0
+servers:
+- url: http://localhost:8000
+  description: Публичный API SkillQuest
+paths:
+  /users:
+    post:
+      tags:
+      - users
+      summary: Create User
+      description: Создание пользователя (доступно любому аутентифицированному).
+      operationId: create_user_users_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserOut'
+        '401':
+          description: Нет или невалидный Bearer-токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - bearerAuth: []
+  /users/by-max:
+    post:
+      tags:
+      - users
+      summary: Get Or Create By Max
+      description: 'Связка пользователя MAX: get-or-create по max_user_id (только
+        service).'
+      operationId: get_or_create_by_max_users_by_max_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserByMaxIn'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserOut'
+        '401':
+          description: Нет или невалидный Bearer-токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '403':
+          description: 'Доступ запрещён: не свой ресурс или не та роль'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - bearerAuth: []
+  /users/{user_id}:
+    get:
+      tags:
+      - users
+      summary: Get User
+      description: Профиль пользователя.
+      operationId: get_user_users__user_id__get
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserOut'
+        '401':
+          description: Нет или невалидный Bearer-токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '403':
+          description: 'Доступ запрещён: не свой ресурс или не та роль'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '404':
+          description: Ресурс не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    patch:
+      tags:
+      - users
+      summary: Update User
+      description: Обновление профиля пользователя.
+      operationId: update_user_users__user_id__patch
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserOut'
+        '401':
+          description: Нет или невалидный Bearer-токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '403':
+          description: 'Доступ запрещён: не свой ресурс или не та роль'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '404':
+          description: Ресурс не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /users/{user_id}/goal:
+    put:
+      tags:
+      - users
+      summary: Set Goal
+      description: Выбор целевой роли пользователя.
+      operationId: set_goal_users__user_id__goal_put
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoalIn'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserOut'
+        '401':
+          description: Нет или невалидный Bearer-токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '403':
+          description: 'Доступ запрещён: не свой ресурс или не та роль'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '404':
+          description: Ресурс не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /users/{user_id}/gap-analysis:
+    get:
+      tags:
+      - users
+      summary: Gap Analysis
+      description: Что не хватает до целевой роли и процент соответствия.
+      operationId: gap_analysis_users__user_id__gap_analysis_get
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GapAnalysisOut'
+        '401':
+          description: Нет или невалидный Bearer-токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '403':
+          description: 'Доступ запрещён: не свой ресурс или не та роль'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '404':
+          description: Ресурс не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /users/{user_id}/assessment:
+    post:
+      tags:
+      - users
+      summary: Run Assessment
+      description: 'Первичная диагностика: ответы → начальный Skill Map.'
+      operationId: run_assessment_users__user_id__assessment_post
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssessmentIn'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssessmentOut'
+        '401':
+          description: Нет или невалидный Bearer-токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '403':
+          description: 'Доступ запрещён: не свой ресурс или не та роль'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '404':
+          description: Ресурс не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /users/{user_id}/progress:
+    get:
+      tags:
+      - users
+      summary: Get Progress
+      description: 'Прогресс пользователя: XP, миссии, средний уровень, Skill Map.'
+      operationId: get_progress_users__user_id__progress_get
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProgressOut'
+        '401':
+          description: Нет или невалидный Bearer-токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '403':
+          description: 'Доступ запрещён: не свой ресурс или не та роль'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '404':
+          description: Ресурс не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /skills:
+    get:
+      tags:
+      - skills
+      summary: List Skills
+      description: Список всех навыков.
+      operationId: list_skills_skills_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/SkillOut'
+                type: array
+                title: Response List Skills Skills Get
+      security: []
+  /skills/{skill_id}:
+    get:
+      tags:
+      - skills
+      summary: Get Skill
+      description: Навык по id.
+      operationId: get_skill_skills__skill_id__get
+      parameters:
+      - name: skill_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Skill Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SkillOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security: []
+  /users/{user_id}/skills:
+    get:
+      tags:
+      - skills
+      summary: User Skill Map
+      description: 'Skill Map пользователя: уровень и прогресс по каждому навыку.'
+      operationId: user_skill_map_users__user_id__skills_get
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SkillMapItem'
+                title: Response User Skill Map Users  User Id  Skills Get
+        '401':
+          description: Нет или невалидный Bearer-токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '403':
+          description: 'Доступ запрещён: не свой ресурс или не та роль'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '404':
+          description: Ресурс не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /roles:
+    get:
+      tags:
+      - roles
+      summary: List Roles
+      description: Все целевые роли (с требованиями к навыкам).
+      operationId: list_roles_roles_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/RoleOut'
+                type: array
+                title: Response List Roles Roles Get
+      security: []
+  /assessment/questions:
+    get:
+      tags:
+      - assessment
+      summary: Get Assessment Questions
+      description: 'Банк вопросов диагностики: текст и варианты ответов.
+
+
+        Публичный без ``user_id``. С ``user_id`` требуется Bearer-токен
+
+        владельца (иначе 401/403), вопросы фильтруются по направлению целевой
+
+        роли пользователя (``target_role.direction``, иначе ``user.direction``).'
+      operationId: get_assessment_questions_assessment_questions_get
+      security: []
+      parameters:
+      - name: user_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: User Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AssessmentQuestionOut'
+                title: Response Get Assessment Questions Assessment Questions Get
+        '401':
+          description: Нет или невалидный Bearer-токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '403':
+          description: 'Доступ запрещён: не свой ресурс или не та роль'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '404':
+          description: Ресурс не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /missions:
+    get:
+      tags:
+      - missions
+      summary: List Missions
+      description: Список всех миссий.
+      operationId: list_missions_missions_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/MissionOut'
+                type: array
+                title: Response List Missions Missions Get
+        '401':
+          description: Нет или невалидный Bearer-токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '403':
+          description: 'Доступ запрещён: не свой ресурс или не та роль'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+      security:
+      - bearerAuth: []
+  /missions/next:
+    get:
+      tags:
+      - missions
+      summary: Next Mission
+      description: 'Следующее задание строго по целевой роли: статус, прогресс, миссия.'
+      operationId: next_mission_missions_next_get
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: user_id
+        in: query
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MissionNextOut'
+        '401':
+          description: Нет или невалидный Bearer-токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '403':
+          description: 'Доступ запрещён: не свой ресурс или не та роль'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '404':
+          description: Ресурс не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /missions/{mission_id}:
+    get:
+      tags:
+      - missions
+      summary: Get Mission
+      description: Задание по id (варианты ответов не раскрывают правильный).
+      operationId: get_mission_missions__mission_id__get
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: mission_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Mission Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MissionOut'
+        '401':
+          description: Нет или невалидный Bearer-токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '404':
+          description: Ресурс не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /missions/{mission_id}/answer:
+    post:
+      tags:
+      - missions
+      summary: Submit Answer
+      description: 'Отправка ответа: проверка, начисление XP, результат.'
+      operationId: submit_answer_missions__mission_id__answer_post
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: mission_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Mission Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MissionAnswerIn'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttemptResultOut'
+        '401':
+          description: Нет или невалидный Bearer-токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '403':
+          description: 'Доступ запрещён: не свой ресурс или не та роль'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '404':
+          description: Ресурс не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /attempts/{attempt_id}:
+    get:
+      tags:
+      - missions
+      summary: Get Attempt Result
+      description: Результат по конкретной попытке.
+      operationId: get_attempt_result_attempts__attempt_id__get
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: attempt_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Attempt Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttemptResultOut'
+        '401':
+          description: Нет или невалидный Bearer-токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '403':
+          description: 'Доступ запрещён: не свой ресурс или не та роль'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '404':
+          description: Ресурс не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /users/{user_id}/attempts:
+    get:
+      tags:
+      - missions
+      summary: User Attempts
+      description: История попыток пользователя.
+      operationId: user_attempts_users__user_id__attempts_get
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AttemptHistoryItem'
+                title: Response User Attempts Users  User Id  Attempts Get
+        '401':
+          description: Нет или невалидный Bearer-токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '403':
+          description: 'Доступ запрещён: не свой ресурс или не та роль'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '404':
+          description: Ресурс не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /courses:
+    get:
+      tags:
+      - courses
+      summary: List Courses
+      description: Список курсов с фильтрацией и поиском.
+      operationId: list_courses_courses_get
+      parameters:
+      - name: search
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Search
+      - name: skills
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: id навыков через запятую
+          title: Skills
+        description: id навыков через запятую
+      - name: category
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Category
+      - name: level
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Level
+      - name: price_max
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Price Max
+      - name: format
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Format
+      - name: platform
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Platform
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CourseOut'
+                title: Response List Courses Courses Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security: []
+  /courses/recommended:
+    get:
+      tags:
+      - courses
+      summary: Recommended Courses
+      description: Рекомендации курсов на основе пробелов в навыках пользователя.
+      operationId: recommended_courses_courses_recommended_get
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: user_id
+        in: query
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      - name: search
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Search
+      - name: category
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Category
+      - name: level
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Level
+      - name: price_max
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Price Max
+      - name: format
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Format
+      - name: platform
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Platform
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CourseOut'
+                title: Response Recommended Courses Courses Recommended Get
+        '401':
+          description: Нет или невалидный Bearer-токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '403':
+          description: 'Доступ запрещён: не свой ресурс или не та роль'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '404':
+          description: Ресурс не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /courses/{course_id}:
+    get:
+      tags:
+      - courses
+      summary: Get Course
+      description: Курс по id.
+      operationId: get_course_courses__course_id__get
+      parameters:
+      - name: course_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Course Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security: []
+  /internships:
+    get:
+      tags:
+      - internships
+      summary: List Internships
+      description: Список стажировок с фильтрацией и поиском.
+      operationId: list_internships_internships_get
+      parameters:
+      - name: search
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Search
+      - name: direction
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Direction
+      - name: skills
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: id навыков через запятую
+          title: Skills
+        description: id навыков через запятую
+      - name: level
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Level
+      - name: city
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: City
+      - name: remote
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Remote
+      - name: format
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Format
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InternshipOut'
+                title: Response List Internships Internships Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security: []
+  /internships/recommended:
+    get:
+      tags:
+      - internships
+      summary: Recommended Internships
+      description: 'Рекомендации стажировок: совпадение направления и навыков.'
+      operationId: recommended_internships_internships_recommended_get
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: user_id
+        in: query
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      - name: search
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Search
+      - name: direction
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Direction
+      - name: level
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Level
+      - name: city
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: City
+      - name: remote
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Remote
+      - name: format
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Format
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InternshipOut'
+                title: Response Recommended Internships Internships Recommended Get
+        '401':
+          description: Нет или невалидный Bearer-токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '403':
+          description: 'Доступ запрещён: не свой ресурс или не та роль'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '404':
+          description: Ресурс не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /internships/{internship_id}:
+    get:
+      tags:
+      - internships
+      summary: Get Internship
+      description: Стажировка по id.
+      operationId: get_internship_internships__internship_id__get
+      parameters:
+      - name: internship_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Internship Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternshipOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security: []
+  /users/{user_id}/resumes:
+    post:
+      tags:
+      - resumes
+      summary: Create Resume
+      description: Загрузка резюме текстом.
+      operationId: create_resume_users__user_id__resumes_post
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResumeCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResumeOut'
+        '401':
+          description: Нет или невалидный Bearer-токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '403':
+          description: 'Доступ запрещён: не свой ресурс или не та роль'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '404':
+          description: Ресурс не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - resumes
+      summary: List Resumes
+      description: Резюме пользователя.
+      operationId: list_resumes_users__user_id__resumes_get
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ResumeOut'
+                title: Response List Resumes Users  User Id  Resumes Get
+        '401':
+          description: Нет или невалидный Bearer-токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '403':
+          description: 'Доступ запрещён: не свой ресурс или не та роль'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '404':
+          description: Ресурс не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /users/{user_id}/resumes/upload:
+    post:
+      tags:
+      - resumes
+      summary: Upload Resume
+      description: Загрузка резюме файлом (txt/md и др. текстовые форматы).
+      operationId: upload_resume_users__user_id__resumes_upload_post
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Body_upload_resume_users__user_id__resumes_upload_post'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResumeOut'
+        '401':
+          description: Нет или невалидный Bearer-токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '403':
+          description: 'Доступ запрещён: не свой ресурс или не та роль'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '404':
+          description: Ресурс не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /resumes/{resume_id}:
+    get:
+      tags:
+      - resumes
+      summary: Get Resume
+      description: Резюме по id.
+      operationId: get_resume_resumes__resume_id__get
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: resume_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Resume Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResumeOut'
+        '401':
+          description: Нет или невалидный Bearer-токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '403':
+          description: 'Доступ запрещён: не свой ресурс или не та роль'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '404':
+          description: Ресурс не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /resumes/{resume_id}/analyze:
+    post:
+      tags:
+      - resumes
+      summary: Analyze Resume
+      description: Запуск анализа резюме.
+      operationId: analyze_resume_resumes__resume_id__analyze_post
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: resume_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Resume Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResumeAnalysisOut'
+        '401':
+          description: Нет или невалидный Bearer-токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '403':
+          description: 'Доступ запрещён: не свой ресурс или не та роль'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '404':
+          description: Ресурс не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /resumes/{resume_id}/analysis:
+    get:
+      tags:
+      - resumes
+      summary: Get Analysis
+      description: Результат анализа резюме.
+      operationId: get_analysis_resumes__resume_id__analysis_get
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: resume_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Resume Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResumeAnalysisOut'
+        '401':
+          description: Нет или невалидный Bearer-токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '403':
+          description: 'Доступ запрещён: не свой ресурс или не та роль'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '404':
+          description: Ресурс не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /health:
+    get:
+      summary: Health
+      description: Health-check.
+      operationId: health_health_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: string
+                type: object
+                title: Response Health Health Get
+      security: []
+  /:
+    get:
+      summary: Root
+      description: Корневая страница со ссылками.
+      operationId: root__get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: string
+                type: object
+                title: Response Root  Get
+      security: []
+components:
+  schemas:
+    AssessmentAnswerIn:
+      properties:
+        question_id:
+          type: integer
+          title: Question Id
+        option_index:
+          type: integer
+          title: Option Index
+      type: object
+      required:
+      - question_id
+      - option_index
+      title: AssessmentAnswerIn
+      description: Один ответ диагностики.
+    AssessmentIn:
+      properties:
+        answers:
+          items:
+            $ref: '#/components/schemas/AssessmentAnswerIn'
+          type: array
+          title: Answers
+      type: object
+      required:
+      - answers
+      title: AssessmentIn
+      description: Ответы на первичную диагностику.
+      examples:
+      - answers:
+        - option_index: 2
+          question_id: 1
+        - option_index: 1
+          question_id: 2
+    AssessmentOut:
+      properties:
+        user_id:
+          type: integer
+          title: User Id
+        evaluated_skills:
+          items:
+            $ref: '#/components/schemas/SkillMapItem'
+          type: array
+          title: Evaluated Skills
+        summary:
+          type: string
+          title: Summary
+      type: object
+      required:
+      - user_id
+      - evaluated_skills
+      - summary
+      title: AssessmentOut
+      description: 'Результат диагностики: начальный Skill Map.'
+      examples:
+      - evaluated_skills:
+        - category: Программирование
+          experience: 0
+          level: 2
+          name: Python
+          next_level_xp: 50
+          progress: 0.0
+          skill_id: 1
+        summary: Ваш стартовый уровень — базовый.
+        user_id: 1
+    AssessmentQuestionOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        skill:
+          type: string
+          title: Skill
+        text:
+          type: string
+          title: Text
+        options:
+          items:
+            type: string
+          type: array
+          title: Options
+      type: object
+      required:
+      - id
+      - skill
+      - text
+      - options
+      title: AssessmentQuestionOut
+      description: Вопрос диагностики (ответ API, без внутренних оценок уровней).
+      examples:
+      - id: 1
+        options:
+        - 'Почти не писал(а): знаю только print'
+        - 'Писал(а) простые скрипты: циклы, условия, списки'
+        skill: Python
+        text: Как вы работаете с Python? Оцените свой уровень.
+    AttemptHistoryItem:
+      properties:
+        id:
+          type: integer
+          title: Id
+        mission_id:
+          type: integer
+          title: Mission Id
+        is_correct:
+          type: boolean
+          title: Is Correct
+        status:
+          type: string
+          title: Status
+        xp_earned:
+          type: integer
+          title: Xp Earned
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - mission_id
+      - is_correct
+      - status
+      - xp_earned
+      - created_at
+      title: AttemptHistoryItem
+      description: Попытка в истории пользователя.
+    AttemptResultOut:
+      properties:
+        attempt_id:
+          type: integer
+          title: Attempt Id
+        mission_id:
+          type: integer
+          title: Mission Id
+        is_correct:
+          type: boolean
+          title: Is Correct
+        xp_earned:
+          type: integer
+          title: Xp Earned
+        explanation:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Explanation
+        correct_option_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Correct Option Id
+        correct_option_text:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Correct Option Text
+        skill_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Skill Id
+        skill_name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Skill Name
+        skill_level_before:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Skill Level Before
+        skill_level_after:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Skill Level After
+        already_solved:
+          type: boolean
+          title: Already Solved
+          default: false
+      type: object
+      required:
+      - attempt_id
+      - mission_id
+      - is_correct
+      - xp_earned
+      title: AttemptResultOut
+      description: Результат проверки ответа на миссию.
+      examples:
+      - already_solved: false
+        attempt_id: 5
+        correct_option_id: 4
+        correct_option_text: print(sum(range(1, n + 1)))
+        explanation: sum(range(1, n + 1)) суммирует числа от 1 до n.
+        is_correct: true
+        mission_id: 1
+        skill_id: 1
+        skill_level_after: 3
+        skill_level_before: 2
+        skill_name: Python
+        xp_earned: 20
+    Body_upload_resume_users__user_id__resumes_upload_post:
+      properties:
+        file:
+          type: string
+          format: binary
+          title: File
+      type: object
+      required:
+      - file
+      title: Body_upload_resume_users__user_id__resumes_upload_post
+    CourseOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        title:
+          type: string
+          title: Title
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        platform:
+          type: string
+          title: Platform
+        url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Url
+        level:
+          type: string
+          title: Level
+        category:
+          type: string
+          title: Category
+        cost:
+          type: number
+          title: Cost
+        format:
+          type: string
+          title: Format
+        skills:
+          items:
+            $ref: '#/components/schemas/SkillOut'
+          type: array
+          title: Skills
+          default: []
+      type: object
+      required:
+      - id
+      - title
+      - platform
+      - level
+      - category
+      - cost
+      - format
+      title: CourseOut
+      description: Курс (ответ API).
+      examples:
+      - category: backend
+        cost: 0.0
+        description: Курс по написанию backend-сервисов.
+        format: online
+        id: 1
+        level: beginner
+        platform: Stepik
+        skills:
+        - category: Программирование
+          id: 1
+          name: Python
+        title: Python для бэкенда
+        url: https://stepik.org/course/1
+    ErrorOut:
+      properties:
+        detail:
+          type: string
+          title: Detail
+      type: object
+      required:
+      - detail
+      title: ErrorOut
+      description: 'Ошибка API: человекочитаемое сообщение в поле ``detail``.'
+    GapAnalysisOut:
+      properties:
+        user_id:
+          type: integer
+          title: User Id
+        role:
+          anyOf:
+          - $ref: '#/components/schemas/RoleOut'
+          - type: 'null'
+        match_percent:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Match Percent
+        items:
+          items:
+            $ref: '#/components/schemas/GapItemOut'
+          type: array
+          title: Items
+        summary:
+          type: string
+          title: Summary
+      type: object
+      required:
+      - user_id
+      - items
+      - summary
+      title: GapAnalysisOut
+      description: 'Gap-анализ пользователя: соответствие роли и пробелы.'
+      examples:
+      - items:
+        - category: Программирование
+          current_level: 2
+          gap: 1
+          importance: 1.0
+          is_mandatory: true
+          name: Python
+          required_level: 3
+          skill_id: 1
+        match_percent: 67
+        role:
+          direction: backend
+          id: 1
+          level: junior
+          name: Backend Junior
+          requirements: []
+        summary: 'До целевой роли не хватает навыков: Python.'
+        user_id: 1
+    GapItemOut:
+      properties:
+        skill_id:
+          type: integer
+          title: Skill Id
+        name:
+          type: string
+          title: Name
+        category:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Category
+        current_level:
+          type: integer
+          title: Current Level
+        required_level:
+          type: integer
+          title: Required Level
+        gap:
+          type: integer
+          title: Gap
+        importance:
+          type: number
+          title: Importance
+        is_mandatory:
+          type: boolean
+          title: Is Mandatory
+      type: object
+      required:
+      - skill_id
+      - name
+      - current_level
+      - required_level
+      - gap
+      - importance
+      - is_mandatory
+      title: GapItemOut
+      description: Одно требование роли и текущее состояние пользователя.
+    GoalIn:
+      properties:
+        target_role_id:
+          type: integer
+          title: Target Role Id
+      type: object
+      required:
+      - target_role_id
+      title: GoalIn
+      description: Выбор целевой роли пользователем.
+      examples:
+      - target_role_id: 1
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    InternshipOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        title:
+          type: string
+          title: Title
+        company:
+          type: string
+          title: Company
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        url:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Url
+        level:
+          type: string
+          title: Level
+        city:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: City
+        remote:
+          type: boolean
+          title: Remote
+        format:
+          type: string
+          title: Format
+        requirements:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Requirements
+        direction:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Direction
+        skills:
+          items:
+            $ref: '#/components/schemas/SkillOut'
+          type: array
+          title: Skills
+          default: []
+      type: object
+      required:
+      - id
+      - title
+      - company
+      - level
+      - remote
+      - format
+      title: InternshipOut
+      description: Стажировка (ответ API).
+      examples:
+      - city: Москва
+        company: Яндекс
+        description: Участие в разработке сервисов.
+        direction: backend
+        format: office
+        id: 1
+        level: junior
+        remote: false
+        requirements: Знание Python и SQL
+        skills:
+        - category: Программирование
+          id: 1
+          name: Python
+        title: Стажёр Python
+        url: https://yandex.ru/career
+    MissionAnswerIn:
+      properties:
+        user_id:
+          type: integer
+          title: User Id
+        option_id:
+          type: integer
+          title: Option Id
+      type: object
+      required:
+      - user_id
+      - option_id
+      title: MissionAnswerIn
+      description: Отправка ответа на миссию.
+      examples:
+      - option_id: 2
+        user_id: 1
+    MissionNextOut:
+      properties:
+        status:
+          type: string
+          enum:
+          - ok
+          - no_goal
+          - all_done
+          title: Status
+        mission:
+          anyOf:
+          - $ref: '#/components/schemas/MissionOut'
+          - type: 'null'
+        done:
+          type: integer
+          title: Done
+          default: 0
+        total:
+          type: integer
+          title: Total
+          default: 0
+      type: object
+      required:
+      - status
+      title: MissionNextOut
+      description: 'Следующая миссия по цели: статус, прогресс и сама миссия.
+
+
+        ``status``:
+
+        - ``ok`` — миссия доступна (поле ``mission`` заполнено);
+
+        - ``no_goal`` — у пользователя нет целевой роли;
+
+        - ``all_done`` — все миссии роли пройдены.'
+      examples:
+      - done: 1
+        mission:
+          difficulty: easy
+          id: 3
+          options:
+          - id: 9
+            text: SELECT * WHERE year > 2020
+          reward_xp: 20
+          scenario: Нужно выбрать все записи старше 2020 года.
+          skill_id: 2
+          skill_name: SQL
+        status: ok
+        total: 8
+    MissionOptionOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        text:
+          type: string
+          title: Text
+      type: object
+      required:
+      - id
+      - text
+      title: MissionOptionOut
+      description: Вариант ответа миссии (без флага правильности).
+    MissionOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        skill_id:
+          type: integer
+          title: Skill Id
+        skill_name:
+          type: string
+          title: Skill Name
+        difficulty:
+          type: string
+          title: Difficulty
+        scenario:
+          type: string
+          title: Scenario
+        explanation:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Explanation
+        reward_xp:
+          type: integer
+          title: Reward Xp
+        options:
+          items:
+            $ref: '#/components/schemas/MissionOptionOut'
+          type: array
+          title: Options
+          default: []
+      type: object
+      required:
+      - id
+      - skill_id
+      - skill_name
+      - difficulty
+      - scenario
+      - reward_xp
+      title: MissionOut
+      description: Миссия (варианты ответов не раскрывают правильный).
+    ResumeAnalysisOut:
+      properties:
+        resume_id:
+          type: integer
+          title: Resume Id
+        found_skills:
+          items:
+            type: string
+          type: array
+          title: Found Skills
+        missing_skills:
+          items:
+            type: string
+          type: array
+          title: Missing Skills
+        strengths:
+          items:
+            type: string
+          type: array
+          title: Strengths
+        issues:
+          items:
+            type: string
+          type: array
+          title: Issues
+        recommendations:
+          items:
+            type: string
+          type: array
+          title: Recommendations
+        direction_match:
+          type: number
+          title: Direction Match
+        summary:
+          type: string
+          title: Summary
+      type: object
+      required:
+      - resume_id
+      - found_skills
+      - missing_skills
+      - strengths
+      - issues
+      - recommendations
+      - direction_match
+      - summary
+      title: ResumeAnalysisOut
+      description: Результат анализа резюме.
+      examples:
+      - direction_match: 0.8
+        found_skills:
+        - Python
+        - SQL
+        issues:
+        - Не указан опыт с Docker
+        missing_skills:
+        - Docker
+        recommendations:
+        - Добавьте раздел про контейнеризацию
+        resume_id: 1
+        strengths:
+        - Опыт разработки на Python
+        summary: Резюме подходит под направление backend на 80%.
+    ResumeCreate:
+      properties:
+        text:
+          type: string
+          title: Text
+        filename:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Filename
+      type: object
+      required:
+      - text
+      title: ResumeCreate
+      description: Создание резюме из текста.
+      examples:
+      - filename: cv.txt
+        text: Разработчик Python, 2 года опыта...
+    ResumeOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        user_id:
+          type: integer
+          title: User Id
+        filename:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Filename
+        text:
+          type: string
+          title: Text
+        uploaded_at:
+          type: string
+          format: date-time
+          title: Uploaded At
+      type: object
+      required:
+      - id
+      - user_id
+      - text
+      - uploaded_at
+      title: ResumeOut
+      description: Резюме (ответ API).
+      examples:
+      - filename: cv.txt
+        id: 1
+        text: Разработчик Python, 2 года опыта...
+        uploaded_at: '2026-09-29T10:00:00'
+        user_id: 1
+    RoleOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        name:
+          type: string
+          title: Name
+        direction:
+          type: string
+          title: Direction
+        level:
+          type: string
+          title: Level
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        requirements:
+          items:
+            $ref: '#/components/schemas/RoleSkillOut'
+          type: array
+          title: Requirements
+          default: []
+      type: object
+      required:
+      - id
+      - name
+      - direction
+      - level
+      title: RoleOut
+      description: Целевая карьерная роль.
+      examples:
+      - description: Junior-разработчик бэкенда на Python
+        direction: backend
+        id: 1
+        level: junior
+        name: Backend Junior
+        requirements:
+        - category: Программирование
+          importance: 1.0
+          is_mandatory: true
+          name: Python
+          required_level: 3
+          skill_id: 1
+    RoleSkillOut:
+      properties:
+        skill_id:
+          type: integer
+          title: Skill Id
+        name:
+          type: string
+          title: Name
+        category:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Category
+        required_level:
+          type: integer
+          title: Required Level
+        importance:
+          type: number
+          title: Importance
+        is_mandatory:
+          type: boolean
+          title: Is Mandatory
+      type: object
+      required:
+      - skill_id
+      - name
+      - required_level
+      - importance
+      - is_mandatory
+      title: RoleSkillOut
+      description: Требование роли к навыку.
+    SkillMapItem:
+      properties:
+        skill_id:
+          type: integer
+          title: Skill Id
+        name:
+          type: string
+          title: Name
+        category:
+          type: string
+          title: Category
+        level:
+          type: integer
+          title: Level
+        experience:
+          type: integer
+          title: Experience
+        progress:
+          type: number
+          title: Progress
+        next_level_xp:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Next Level Xp
+      type: object
+      required:
+      - skill_id
+      - name
+      - category
+      - level
+      - experience
+      - progress
+      title: SkillMapItem
+      description: Элемент Skill Map пользователя.
+      examples:
+      - category: Программирование
+        experience: 45
+        level: 2
+        name: Python
+        next_level_xp: 30
+        progress: 0.75
+        skill_id: 1
+    SkillOut:
+      properties:
+        id:
+          type: integer
+          title: Id
+        name:
+          type: string
+          title: Name
+        category:
+          type: string
+          title: Category
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+      type: object
+      required:
+      - id
+      - name
+      - category
+      title: SkillOut
+      description: Навык (ответ API).
+    UserByMaxIn:
+      properties:
+        max_user_id:
+          type: integer
+          title: Max User Id
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Name
+      type: object
+      required:
+      - max_user_id
+      title: UserByMaxIn
+      description: Связка пользователя MAX с платформой.
+      examples:
+      - max_user_id: 12345
+        name: Иван из MAX
+    UserCreate:
+      properties:
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Name
+        education:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Education
+        direction:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Direction
+        goal:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Goal
+      type: object
+      title: UserCreate
+      description: Создание пользователя.
+      examples:
+      - direction: backend
+        education: МГТУ, 3 курс
+        goal: Попасть на стажировку
+        name: Иван Иванов
+    UserOut:
+      properties:
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Name
+        education:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Education
+        direction:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Direction
+        goal:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Goal
+        id:
+          type: integer
+          title: Id
+        max_user_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Max User Id
+        target_role_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Target Role Id
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - id
+      - created_at
+      title: UserOut
+      description: Профиль пользователя (ответ API).
+      examples:
+      - created_at: '2026-09-29T10:00:00'
+        direction: backend
+        education: МГТУ, 3 курс
+        goal: Попасть на стажировку
+        id: 1
+        max_user_id: 12345
+        name: Иван Иванов
+        target_role_id: 1
+    UserProgressOut:
+      properties:
+        user_id:
+          type: integer
+          title: User Id
+        total_xp:
+          type: integer
+          title: Total Xp
+        completed_missions:
+          type: integer
+          title: Completed Missions
+        total_missions:
+          type: integer
+          title: Total Missions
+        skills_count:
+          type: integer
+          title: Skills Count
+        average_level:
+          type: number
+          title: Average Level
+        skill_map:
+          items:
+            $ref: '#/components/schemas/SkillMapItem'
+          type: array
+          title: Skill Map
+      type: object
+      required:
+      - user_id
+      - total_xp
+      - completed_missions
+      - total_missions
+      - skills_count
+      - average_level
+      - skill_map
+      title: UserProgressOut
+      description: 'Прогресс пользователя: XP, миссии, средний уровень, Skill Map.'
+      examples:
+      - average_level: 1.67
+        completed_missions: 3
+        skill_map:
+        - category: Программирование
+          experience: 45
+          level: 2
+          name: Python
+          next_level_xp: 30
+          progress: 0.75
+          skill_id: 1
+        skills_count: 3
+        total_missions: 43
+        total_xp: 85
+        user_id: 1
+    UserUpdate:
+      properties:
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Name
+        education:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Education
+        direction:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Direction
+        goal:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Goal
+      type: object
+      title: UserUpdate
+      description: Обновление профиля пользователя.
+      examples:
+      - direction: frontend
+        name: Иван Петров
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+tags:
+- name: users
+  description: Профиль, диагностика, прогресс, целевая роль
+- name: skills
+  description: Навыки и Skill Map пользователя
+- name: roles
+  description: Целевые карьерные роли и их требования
+- name: assessment
+  description: Банк вопросов первичной диагностики
+- name: missions
+  description: 'Игровые миссии: следующее задание, ответ, попытки'
+- name: courses
+  description: 'Курсы: каталог и рекомендации по пробелам'
+- name: internships
+  description: 'Стажировки: каталог и рекомендации'
+- name: resumes
+  description: 'Резюме: загрузка, анализ, результат'

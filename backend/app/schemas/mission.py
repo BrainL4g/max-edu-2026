@@ -41,6 +41,28 @@ class MissionNextOut(BaseModel):
     - ``all_done`` — все миссии роли пройдены.
     """
 
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "status": "ok",
+                    "mission": {
+                        "id": 3,
+                        "skill_id": 2,
+                        "skill_name": "SQL",
+                        "difficulty": "easy",
+                        "scenario": "Нужно выбрать все записи старше 2020 года.",
+                        "explanation": None,
+                        "reward_xp": 20,
+                        "options": [{"id": 9, "text": "SELECT * WHERE year > 2020"}],
+                    },
+                    "done": 1,
+                    "total": 8,
+                }
+            ]
+        }
+    )
+
     status: Literal["ok", "no_goal", "all_done"]
     mission: MissionOut | None = None
     done: int = 0
@@ -50,12 +72,35 @@ class MissionNextOut(BaseModel):
 class MissionAnswerIn(BaseModel):
     """Отправка ответа на миссию."""
 
+    model_config = ConfigDict(json_schema_extra={"examples": [{"user_id": 1, "option_id": 2}]})
+
     user_id: int
     option_id: int
 
 
 class AttemptResultOut(BaseModel):
     """Результат проверки ответа на миссию."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "attempt_id": 5,
+                    "mission_id": 1,
+                    "is_correct": True,
+                    "xp_earned": 20,
+                    "explanation": "sum(range(1, n + 1)) суммирует числа от 1 до n.",
+                    "correct_option_id": 4,
+                    "correct_option_text": "print(sum(range(1, n + 1)))",
+                    "skill_id": 1,
+                    "skill_name": "Python",
+                    "skill_level_before": 2,
+                    "skill_level_after": 3,
+                    "already_solved": False,
+                }
+            ]
+        }
+    )
 
     attempt_id: int
     mission_id: int

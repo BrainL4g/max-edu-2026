@@ -21,7 +21,30 @@ class RoleSkillOut(BaseModel):
 class RoleOut(BaseModel):
     """Целевая карьерная роль."""
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
+            "examples": [
+                {
+                    "id": 1,
+                    "name": "Backend Junior",
+                    "direction": "backend",
+                    "level": "junior",
+                    "description": "Junior-разработчик бэкенда на Python",
+                    "requirements": [
+                        {
+                            "skill_id": 1,
+                            "name": "Python",
+                            "category": "Программирование",
+                            "required_level": 3,
+                            "importance": 1.0,
+                            "is_mandatory": True,
+                        }
+                    ],
+                }
+            ]
+        },
+    )
 
     id: int
     name: str
@@ -33,6 +56,8 @@ class RoleOut(BaseModel):
 
 class GoalIn(BaseModel):
     """Выбор целевой роли пользователем."""
+
+    model_config = ConfigDict(json_schema_extra={"examples": [{"target_role_id": 1}]})
 
     target_role_id: int
 
@@ -52,6 +77,38 @@ class GapItemOut(BaseModel):
 
 class GapAnalysisOut(BaseModel):
     """Gap-анализ пользователя: соответствие роли и пробелы."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "user_id": 1,
+                    "role": {
+                        "id": 1,
+                        "name": "Backend Junior",
+                        "direction": "backend",
+                        "level": "junior",
+                        "description": None,
+                        "requirements": [],
+                    },
+                    "match_percent": 67,
+                    "items": [
+                        {
+                            "skill_id": 1,
+                            "name": "Python",
+                            "category": "Программирование",
+                            "current_level": 2,
+                            "required_level": 3,
+                            "gap": 1,
+                            "importance": 1.0,
+                            "is_mandatory": True,
+                        }
+                    ],
+                    "summary": "До целевой роли не хватает навыков: Python.",
+                }
+            ]
+        }
+    )
 
     user_id: int
     role: RoleOut | None = None

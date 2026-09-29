@@ -13,6 +13,7 @@ from backend.app.api.deps import (
     require_access,
     require_attempt_owner,
 )
+from backend.app.api.responses import AUTH_ERRORS, MISSING_ERRORS, OWN_ERRORS
 from backend.app.database.session import get_db
 from backend.app.domain import Attempt, Mission
 from backend.app.schemas.mission import (
@@ -27,7 +28,7 @@ from backend.app.services.missions import MissionService
 router = APIRouter(tags=["missions"])
 
 
-@router.get("/missions", response_model=list[MissionOut])
+@router.get("/missions", response_model=list[MissionOut], responses=AUTH_ERRORS)
 def list_missions(
     db: Session = Depends(get_db),
     principal: Principal = Depends(get_current_principal),
@@ -36,7 +37,7 @@ def list_missions(
     return MissionService(db).missions.list_all()
 
 
-@router.get("/missions/next", response_model=MissionNextOut)
+@router.get("/missions/next", response_model=MissionNextOut, responses=OWN_ERRORS)
 def next_mission(
     user_id: int = Query(..., description="id пользователя"),
     db: Session = Depends(get_db),
@@ -46,7 +47,7 @@ def next_mission(
     return MissionService(db).get_next_mission(user_id)
 
 
-@router.get("/missions/{mission_id}", response_model=MissionOut)
+@router.get("/missions/{mission_id}", response_model=MissionOut, responses=MISSING_ERRORS)
 def get_mission(
     mission_id: int,
     db: Session = Depends(get_db),
@@ -56,7 +57,7 @@ def get_mission(
     return MissionService(db).get_mission(mission_id)
 
 
-@router.post("/missions/{mission_id}/answer", response_model=AttemptResultOut)
+@router.post("/missions/{mission_id}/answer", response_model=AttemptResultOut, responses=OWN_ERRORS)
 def submit_answer(
     mission_id: int,
     payload: MissionAnswerIn,
@@ -74,7 +75,7 @@ def submit_answer(
     )
 
 
-@router.get("/attempts/{attempt_id}", response_model=AttemptResultOut)
+@router.get("/attempts/{attempt_id}", response_model=AttemptResultOut, responses=OWN_ERRORS)
 def get_attempt_result(
     attempt_id: int,
     db: Session = Depends(get_db),
@@ -84,7 +85,9 @@ def get_attempt_result(
     return MissionService(db).get_result(attempt_id)
 
 
-@router.get("/users/{user_id}/attempts", response_model=list[AttemptHistoryItem])
+@router.get(
+    "/users/{user_id}/attempts", response_model=list[AttemptHistoryItem], responses=OWN_ERRORS
+)
 def user_attempts(
     user_id: int,
     db: Session = Depends(get_db),

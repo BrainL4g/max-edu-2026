@@ -10,7 +10,34 @@ from backend.app.schemas.skill import SkillOut
 class InternshipOut(BaseModel):
     """Стажировка (ответ API)."""
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
+            "examples": [
+                {
+                    "id": 1,
+                    "title": "Стажёр Python",
+                    "company": "Яндекс",
+                    "description": "Участие в разработке сервисов.",
+                    "url": "https://yandex.ru/career",
+                    "level": "junior",
+                    "city": "Москва",
+                    "remote": False,
+                    "format": "office",
+                    "requirements": "Знание Python и SQL",
+                    "direction": "backend",
+                    "skills": [
+                        {
+                            "id": 1,
+                            "name": "Python",
+                            "category": "Программирование",
+                            "description": None,
+                        }
+                    ],
+                }
+            ]
+        },
+    )
 
     id: int
     title: str

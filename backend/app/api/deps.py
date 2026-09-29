@@ -29,7 +29,7 @@ from backend.app.domain import ApiToken
 from backend.app.repositories.mission_repository import MissionRepository
 from backend.app.repositories.resume_repository import ResumeRepository
 
-_bearer = HTTPBearer(auto_error=False)
+_bearer = HTTPBearer(auto_error=False, scheme_name="bearerAuth")
 
 
 class Principal(BaseModel):

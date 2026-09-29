@@ -37,7 +37,7 @@ def _to_out(role: Any) -> RoleOut:
     )
 
 
-@router.get("/roles", response_model=list[RoleOut])
+@router.get("/roles", response_model=list[RoleOut], openapi_extra={"security": []})
 def list_roles(db: Session = Depends(get_db)) -> list[RoleOut]:
     """Все целевые роли (с требованиями к навыкам)."""
     return [_to_out(role) for role in RoleRepository(db).list_all()]

@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from backend.app.api.deps import Principal, require_access
+from backend.app.api.responses import OWN_ERRORS
 from backend.app.database.session import get_db
 from backend.app.domain import Internship
 from backend.app.repositories.internship_repository import InternshipRepository
@@ -23,7 +24,7 @@ def _parse_skill_ids(raw: str | None) -> list[int] | None:
 router = APIRouter(tags=["internships"])
 
 
-@router.get("/internships", response_model=list[InternshipOut])
+@router.get("/internships", response_model=list[InternshipOut], openapi_extra={"security": []})
 def list_internships(
     search: str | None = None,
     direction: str | None = None,
@@ -46,7 +47,7 @@ def list_internships(
     )
 
 
-@router.get("/internships/recommended", response_model=list[InternshipOut])
+@router.get("/internships/recommended", response_model=list[InternshipOut], responses=OWN_ERRORS)
 def recommended_internships(
     user_id: int = Query(...),
     search: str | None = None,
@@ -70,7 +71,9 @@ def recommended_internships(
     )
 
 
-@router.get("/internships/{internship_id}", response_model=InternshipOut)
+@router.get(
+    "/internships/{internship_id}", response_model=InternshipOut, openapi_extra={"security": []}
+)
 def get_internship(internship_id: int, db: Session = Depends(get_db)) -> Internship:
     """Стажировка по id."""
     return InternshipRepository(db).get(internship_id)

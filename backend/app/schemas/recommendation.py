@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from backend.app.schemas.course import CourseOut
 from backend.app.schemas.internship import InternshipOut
@@ -20,6 +20,28 @@ class SkillGap(BaseModel):
 
 class RecommendationOut(BaseModel):
     """Рекомендации: пробелы + подходящие курсы и стажировки."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "user_id": 1,
+                    "gaps": [
+                        {
+                            "skill_id": 8,
+                            "name": "Docker",
+                            "category": "Инструменты",
+                            "current_level": 0,
+                            "target_level": 3,
+                        }
+                    ],
+                    "courses": [],
+                    "internships": [],
+                    "summary": "Рекомендуем закрыть пробелы: Docker.",
+                }
+            ]
+        }
+    )
 
     user_id: int
     gaps: list[SkillGap]

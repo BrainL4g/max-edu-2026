@@ -12,6 +12,7 @@ from backend.app.api.deps import (
     require_access,
     require_service,
 )
+from backend.app.api.responses import AUTH_ERRORS, OWN_ERRORS, UNAUTHORIZED
 from backend.app.database.session import get_db
 from backend.app.domain import Mission, User
 from backend.app.repositories.role_repository import RoleRepository
@@ -26,7 +27,7 @@ from backend.app.services.skills import SkillService
 router = APIRouter(tags=["users"])
 
 
-@router.post("/users", response_model=UserOut, status_code=201)
+@router.post("/users", response_model=UserOut, status_code=201, responses=UNAUTHORIZED)
 def create_user(
     payload: UserCreate,
     db: Session = Depends(get_db),
@@ -41,7 +42,7 @@ def create_user(
     )
 
 
-@router.post("/users/by-max", response_model=UserOut)
+@router.post("/users/by-max", response_model=UserOut, responses=AUTH_ERRORS)
 def get_or_create_by_max(
     payload: UserByMaxIn,
     db: Session = Depends(get_db),
@@ -51,7 +52,7 @@ def get_or_create_by_max(
     return UserRepository(db).get_or_create_by_max(payload.max_user_id, name=payload.name)
 
 
-@router.get("/users/{user_id}", response_model=UserOut)
+@router.get("/users/{user_id}", response_model=UserOut, responses=OWN_ERRORS)
 def get_user(
     user_id: int,
     db: Session = Depends(get_db),
@@ -61,7 +62,7 @@ def get_user(
     return UserRepository(db).get(user_id)
 
 
-@router.patch("/users/{user_id}", response_model=UserOut)
+@router.patch("/users/{user_id}", response_model=UserOut, responses=OWN_ERRORS)
 def update_user(
     user_id: int,
     payload: UserUpdate,
@@ -80,7 +81,7 @@ def update_user(
     )
 
 
-@router.put("/users/{user_id}/goal", response_model=UserOut)
+@router.put("/users/{user_id}/goal", response_model=UserOut, responses=OWN_ERRORS)
 def set_goal(
     user_id: int,
     payload: GoalIn,
@@ -97,7 +98,7 @@ def set_goal(
     return user
 
 
-@router.get("/users/{user_id}/gap-analysis", response_model=GapAnalysisOut)
+@router.get("/users/{user_id}/gap-analysis", response_model=GapAnalysisOut, responses=OWN_ERRORS)
 def gap_analysis(
     user_id: int,
     db: Session = Depends(get_db),
@@ -107,7 +108,7 @@ def gap_analysis(
     return GapAnalysisOut(**GapAnalysisService(db).analyze(user_id))
 
 
-@router.post("/users/{user_id}/assessment", response_model=AssessmentOut)
+@router.post("/users/{user_id}/assessment", response_model=AssessmentOut, responses=OWN_ERRORS)
 def run_assessment(
     user_id: int,
     payload: AssessmentIn,
@@ -120,7 +121,7 @@ def run_assessment(
     return AssessmentOut(**result)
 
 
-@router.get("/users/{user_id}/progress", response_model=UserProgressOut)
+@router.get("/users/{user_id}/progress", response_model=UserProgressOut, responses=OWN_ERRORS)
 def get_progress(
     user_id: int,
     db: Session = Depends(get_db),
