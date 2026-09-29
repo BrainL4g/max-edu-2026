@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 from backend.app.domain import (  # noqa: F401
+    ApiToken,
     Attempt,
     Base,
     Course,

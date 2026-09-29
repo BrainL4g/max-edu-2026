@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from backend.app.api.deps import Principal, get_optional_principal
 from backend.app.database.session import get_db
 from backend.app.repositories.user_repository import UserRepository
 from backend.app.schemas.skill import AssessmentQuestionOut
@@ -17,15 +18,27 @@ router = APIRouter(tags=["assessment"])
 def get_assessment_questions(
     user_id: int | None = None,
     db: Session = Depends(get_db),
+    principal: Principal | None = Depends(get_optional_principal),
 ) -> list[AssessmentQuestionOut]:
     """Банк вопросов диагностики: текст и варианты ответов.
 
-    Если передан ``user_id``, вопросы фильтруются по направлению целевой
-    роли пользователя (``target_role.direction``, иначе ``user.direction``),
-    чтобы, например, выбравшему backend не показывались вопросы по фронтенду.
+    Публичный без ``user_id``. С ``user_id`` требуется Bearer-токен
+    владельца (иначе 401/403), вопросы фильтруются по направлению целевой
+    роли пользователя (``target_role.direction``, иначе ``user.direction``).
     """
     direction: str | None = None
     if user_id is not None:
+        if principal is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Требуется валидный Bearer-токен",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        if principal.role == "student" and principal.user_id != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Нет доступа к ресурсу другого пользователя",
+            )
         user = UserRepository(db).get(user_id)
         target_role = user.target_role
         direction = (target_role.direction if target_role else None) or user.direction

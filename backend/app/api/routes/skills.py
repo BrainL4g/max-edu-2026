@@ -7,6 +7,7 @@ from typing import Any
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from backend.app.api.deps import Principal, require_access
 from backend.app.database.session import get_db
 from backend.app.domain import Skill
 from backend.app.repositories.skill_repository import SkillRepository
@@ -29,6 +30,10 @@ def get_skill(skill_id: int, db: Session = Depends(get_db)) -> Skill:
 
 
 @router.get("/users/{user_id}/skills", response_model=list[SkillMapItem])
-def user_skill_map(user_id: int, db: Session = Depends(get_db)) -> list[dict[str, Any]]:
+def user_skill_map(
+    user_id: int,
+    db: Session = Depends(get_db),
+    principal: Principal = Depends(require_access),
+) -> list[dict[str, Any]]:
     """Skill Map пользователя: уровень и прогресс по каждому навыку."""
     return SkillService(db).get_skill_map(user_id)

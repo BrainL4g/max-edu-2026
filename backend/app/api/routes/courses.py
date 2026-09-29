@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
+from backend.app.api.deps import Principal, require_access
 from backend.app.database.session import get_db
 from backend.app.domain import Course
 from backend.app.repositories.course_repository import CourseRepository
@@ -55,6 +56,7 @@ def recommended_courses(
     format: str | None = Query(None, alias="format"),
     platform: str | None = None,
     db: Session = Depends(get_db),
+    principal: Principal = Depends(require_access),
 ) -> list[Course]:
     """Рекомендации курсов на основе пробелов в навыках пользователя."""
     return RecommendationService(db).recommend_courses(

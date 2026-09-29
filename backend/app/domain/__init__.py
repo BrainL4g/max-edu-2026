@@ -12,6 +12,7 @@ class Base(DeclarativeBase):
     """Базовый класс всех ORM-моделей SkillQuest."""
 
 
+from backend.app.domain.api_token import ApiToken  # noqa: E402
 from backend.app.domain.course import Course, CourseSkill  # noqa: E402
 from backend.app.domain.internship import Internship, InternshipSkill  # noqa: E402
 from backend.app.domain.mission import Attempt, Mission, MissionOption  # noqa: E402
@@ -22,6 +23,7 @@ from backend.app.domain.user import User  # noqa: E402
 
 __all__ = [
     "Base",
+    "ApiToken",
     "User",
     "Skill",
     "UserSkill",

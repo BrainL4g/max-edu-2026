@@ -49,7 +49,13 @@ def db_session():
 
 @pytest.fixture()
 def client(db_session):
-    """TestClient с переопределённой зависимостью get_db на тестовую сессию."""
+    """TestClient с переопределённой зависимостью get_db на тестовую сессию.
+
+    Аутентификация по умолчанию подменяется на service-роль, чтобы тесты
+    доменной логики не зависели от токенов; настоящие проверки доступа —
+    в tests/integration/test_auth.py.
+    """
+    from backend.app.api.deps import Principal, get_current_principal, get_optional_principal
     from backend.app.main import app
 
     def override_get_db():
@@ -59,6 +65,8 @@ def client(db_session):
             pass
 
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_current_principal] = lambda: Principal(role="service")
+    app.dependency_overrides[get_optional_principal] = lambda: Principal(role="service")
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()

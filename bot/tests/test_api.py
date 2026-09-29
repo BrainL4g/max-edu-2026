@@ -219,6 +219,21 @@ def test_http_error_raises_api_error(monkeypatch) -> None:
         asyncio.run(api._req("GET", "/boom"))
 
 
+def test_sends_service_token_header(monkeypatch) -> None:
+    captured: dict[str, str | None] = {}
+
+    def handler(request: httpx.Request) -> Response:
+        captured["auth"] = request.headers.get("authorization")
+        return Response(200, json={"id": 1})
+
+    client = httpx.AsyncClient(transport=MockTransport(handler), base_url="http://test")
+    monkeypatch.setattr(api, "_get_client", lambda: client)
+    monkeypatch.setattr(api, "API_TOKEN", "service-secret")
+
+    asyncio.run(api.get_user(5, "Имя"))
+    assert captured["auth"] == "Bearer service-secret"
+
+
 def test_unknown_route_raises_api_error(monkeypatch) -> None:
     client = _client({})
     monkeypatch.setattr(api, "_get_client", lambda: client)

@@ -7,6 +7,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, File, UploadFile
 from sqlalchemy.orm import Session
 
+from backend.app.api.deps import Principal, require_access, require_resume_owner
 from backend.app.core.exceptions import NotFoundError
 from backend.app.database.session import get_db
 from backend.app.domain import Resume
@@ -19,7 +20,12 @@ router = APIRouter(tags=["resumes"])
 
 
 @router.post("/users/{user_id}/resumes", response_model=ResumeOut, status_code=201)
-def create_resume(user_id: int, payload: ResumeCreate, db: Session = Depends(get_db)) -> Resume:
+def create_resume(
+    user_id: int,
+    payload: ResumeCreate,
+    db: Session = Depends(get_db),
+    principal: Principal = Depends(require_access),
+) -> Resume:
     """Загрузка резюме текстом."""
     UserRepository(db).get(user_id)
     return ResumeRepository(db).create(user_id, payload.text, payload.filename)
@@ -27,7 +33,10 @@ def create_resume(user_id: int, payload: ResumeCreate, db: Session = Depends(get
 
 @router.post("/users/{user_id}/resumes/upload", response_model=ResumeOut, status_code=201)
 async def upload_resume(
-    user_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)
+    user_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    principal: Principal = Depends(require_access),
 ) -> Resume:
     """Загрузка резюме файлом (txt/md и др. текстовые форматы)."""
     UserRepository(db).get(user_id)
@@ -37,25 +46,41 @@ async def upload_resume(
 
 
 @router.get("/users/{user_id}/resumes", response_model=list[ResumeOut])
-def list_resumes(user_id: int, db: Session = Depends(get_db)) -> list[Resume]:
+def list_resumes(
+    user_id: int,
+    db: Session = Depends(get_db),
+    principal: Principal = Depends(require_access),
+) -> list[Resume]:
     """Резюме пользователя."""
     return ResumeRepository(db).list_by_user(user_id)
 
 
 @router.get("/resumes/{resume_id}", response_model=ResumeOut)
-def get_resume(resume_id: int, db: Session = Depends(get_db)) -> Resume:
+def get_resume(
+    resume_id: int,
+    db: Session = Depends(get_db),
+    principal: Principal = Depends(require_resume_owner),
+) -> Resume:
     """Резюме по id."""
     return ResumeRepository(db).get(resume_id)
 
 
 @router.post("/resumes/{resume_id}/analyze", response_model=ResumeAnalysisOut)
-def analyze_resume(resume_id: int, db: Session = Depends(get_db)) -> dict[str, Any]:
+def analyze_resume(
+    resume_id: int,
+    db: Session = Depends(get_db),
+    principal: Principal = Depends(require_resume_owner),
+) -> dict[str, Any]:
     """Запуск анализа резюме."""
     return ResumeAnalysisService(db).analyze(resume_id)
 
 
 @router.get("/resumes/{resume_id}/analysis", response_model=ResumeAnalysisOut)
-def get_analysis(resume_id: int, db: Session = Depends(get_db)) -> dict[str, Any]:
+def get_analysis(
+    resume_id: int,
+    db: Session = Depends(get_db),
+    principal: Principal = Depends(require_resume_owner),
+) -> dict[str, Any]:
     """Результат анализа резюме."""
     analysis = ResumeRepository(db).get_analysis(resume_id)
     if analysis is None or not analysis.result:

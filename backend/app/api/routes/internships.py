@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
+from backend.app.api.deps import Principal, require_access
 from backend.app.database.session import get_db
 from backend.app.domain import Internship
 from backend.app.repositories.internship_repository import InternshipRepository
@@ -55,6 +56,7 @@ def recommended_internships(
     remote: bool | None = None,
     format: str | None = Query(None, alias="format"),
     db: Session = Depends(get_db),
+    principal: Principal = Depends(require_access),
 ) -> list[Internship]:
     """Рекомендации стажировок: совпадение направления и навыков."""
     return RecommendationService(db).recommend_internships(

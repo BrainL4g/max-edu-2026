@@ -12,6 +12,7 @@ from typing import Any, cast
 import httpx
 
 BASE_URL = os.getenv("SKILLQUEST_API", "http://127.0.0.1:8000")
+API_TOKEN = os.getenv("SKILLQUEST_API_TOKEN") or ""
 TIMEOUT = 15.0
 
 _client: httpx.AsyncClient | None = None
@@ -19,6 +20,11 @@ _client: httpx.AsyncClient | None = None
 
 class ApiError(Exception):
     """Запрос к API SkillQuest завершился ошибкой."""
+
+
+def _headers() -> dict[str, str]:
+    """Заголовки по умолчанию: Bearer-токен сервисного аккаунта (бот)."""
+    return {"Authorization": f"Bearer {API_TOKEN}"} if API_TOKEN else {}
 
 
 def _get_client() -> httpx.AsyncClient:
@@ -33,7 +39,9 @@ def _get_client() -> httpx.AsyncClient:
 
 
 async def _req(method: str, path: str, **kwargs: Any) -> Any:
-    response = await _get_client().request(method, path, **kwargs)
+    headers = dict(kwargs.pop("headers", None) or {})
+    headers.update(_headers())
+    response = await _get_client().request(method, path, headers=headers, **kwargs)
     if response.status_code >= 400:
         raise ApiError(f"{method} {path} -> {response.status_code}")
     if response.status_code == 204:
