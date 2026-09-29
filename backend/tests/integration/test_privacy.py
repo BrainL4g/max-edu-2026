@@ -186,6 +186,63 @@ def test_data_export_returns_profile(client, db_session) -> None:
     assert "consent_given" in exported
 
 
+def test_delete_single_resume_keeps_profile(client, db_session) -> None:
+    """Удаление одного резюме не трогает профиль, навыки и прогресс (152-ФЗ ст. 18)."""
+    seed_database(db_session)
+    user = client.post("/users/by-max", json={"max_user_id": 656565}).json()
+    uid = user["id"]
+    client.post(f"/users/{uid}/resumes", json={"text": "Резюме"})
+    created = client.get(f"/users/{uid}/resumes").json()
+    assert created
+    resume_id = created[0]["id"]
+    client.post(f"/resumes/{resume_id}/analyze")
+
+    assert client.delete(f"/resumes/{resume_id}").status_code == 204
+    assert client.get(f"/users/{uid}/resumes").json() == []
+    assert client.get(f"/resumes/{resume_id}").status_code == 404
+    assert client.get(f"/users/{uid}").status_code == 200
+
+
+def test_delete_resume_requires_owner(auth_client, db_session) -> None:
+    """Чужое резюме удалить нельзя."""
+    seed_database(db_session)
+    _make_student(db_session, token="alice-token", name="Алиса")
+    bob_id = _make_student(db_session, token="bob-token", name="Борис")
+    response = auth_client.post(
+        f"/users/{bob_id}/resumes", json={"text": "Резюме Бориса"}, headers=_auth("bob-token")
+    )
+    resume_id = response.json()["id"]
+
+    assert (
+        auth_client.delete(f"/resumes/{resume_id}", headers=_auth("alice-token")).status_code == 403
+    )
+    assert auth_client.delete(f"/resumes/{resume_id}").status_code == 401
+    assert (
+        auth_client.delete(f"/resumes/{resume_id}", headers=_auth("bob-token")).status_code == 204
+    )
+
+
+def test_delete_resume_removes_analysis(client, db_session) -> None:
+    """Результат анализа удаляется вместе с резюме."""
+    seed_database(db_session)
+    user = client.post("/users/by-max", json={"max_user_id": 676767}).json()
+    created = client.post(
+        f"/users/{user['id']}/resumes", json={"text": "Опыт: 3 года Python"}
+    ).json()
+    client.post(f"/resumes/{created['id']}/analyze")
+    assert client.get(f"/resumes/{created['id']}/analysis").status_code == 200
+
+    client.delete(f"/resumes/{created['id']}")
+
+    assert (
+        db_session.execute(
+            text("SELECT count(*) FROM resume_analysis WHERE resume_id = :i"),
+            {"i": created["id"]},
+        ).scalar()
+        == 0
+    )
+
+
 def test_delete_data_removes_personal_records(client, db_session) -> None:
     """Удаление стирает профиль, навыки, попытки, резюме и токены (право на забвение)."""
     seed_database(db_session)

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from backend.app.core.exceptions import NotFoundError
@@ -51,3 +51,15 @@ class ResumeRepository:
 
     def get_analysis(self, resume_id: int) -> ResumeAnalysis | None:
         return self.db.scalar(select(ResumeAnalysis).where(ResumeAnalysis.resume_id == resume_id))
+
+    def delete(self, resume_id: int) -> None:
+        """Удалить резюме вместе с результатом анализа (152-ФЗ ст. 18).
+
+        Анализ удаляется явно: внешний ключ объявлен с ``ON DELETE CASCADE``,
+        но SQLite не включает проверку внешних ключ по умолчанию, поэтому
+        каскад здесь не сработает.
+        """
+        resume = self.get(resume_id)
+        self.db.execute(delete(ResumeAnalysis).where(ResumeAnalysis.resume_id == resume_id))
+        self.db.delete(resume)
+        self.db.commit()

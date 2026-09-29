@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from backend.app.api.deps import Principal, require_access, require_resume_owner
@@ -88,6 +89,24 @@ def get_resume(
 ) -> Resume:
     """Резюме по id."""
     return ResumeRepository(db).get(resume_id)
+
+
+@router.delete("/resumes/{resume_id}", status_code=204, responses=OWN_ERRORS)
+def delete_resume(
+    resume_id: int,
+    db: Session = Depends(get_db),
+    principal: Principal = Depends(require_resume_owner),
+) -> Response:
+    """Удалить резюме вместе с результатом анализа (152-ФЗ ст. 18)."""
+    log_access(
+        action="delete",
+        resource="resume",
+        resource_id=resume_id,
+        principal_role=principal.role,
+        principal_user_id=principal.user_id,
+    )
+    ResumeRepository(db).delete(resume_id)
+    return Response(status_code=204)
 
 
 @router.post("/resumes/{resume_id}/analyze", response_model=ResumeAnalysisOut, responses=OWN_ERRORS)
