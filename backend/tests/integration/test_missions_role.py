@@ -119,15 +119,20 @@ def test_answered_mission_path(client, db_session):
 def test_role_with_no_missions_is_all_done(client, db_session):
     """Роль без миссий по своим навыкам — сразу all_done (пустое множество)."""
     seed_database(db_session)
-    html_css = db_session.scalar(select(Skill).where(Skill.name == "HTML/CSS"))
-    assert html_css is not None
-    role = Role(name="Вёрстка", direction="frontend", level="junior", description="Только HTML/CSS")
+    soft = db_session.scalar(select(Skill).where(Skill.name == "Тайм-менеджмент"))
+    assert soft is not None
+    role = Role(
+        name="Софт-навыки",
+        direction="soft",
+        level="junior",
+        description="Только софт-скиллы",
+    )
     db_session.add(role)
     db_session.commit()
     db_session.add(
         RoleSkill(
             role_id=role.id,
-            skill_id=html_css.id,
+            skill_id=soft.id,
             required_level=3,
             importance=0.9,
             is_mandatory=True,
@@ -135,7 +140,7 @@ def test_role_with_no_missions_is_all_done(client, db_session):
     )
     db_session.commit()
 
-    user = client.post("/users", json={"name": "Верстальщик"}).json()
+    user = client.post("/users", json={"name": "Организатор"}).json()
     assert (
         client.put(f"/users/{user['id']}/goal", json={"target_role_id": role.id}).status_code == 200
     )

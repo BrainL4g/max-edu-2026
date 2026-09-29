@@ -115,3 +115,8 @@ def test_menu_with_links() -> None:
 def test_menu_with_links_clips_long_title() -> None:
     buttons = buttons_from([kbs.menu_with_links([("д" * 100, "https://x.ru")])])
     assert buttons[0].text == "д" * (kbs.TEXT_LIMIT - 1) + "…"
+
+
+def test_resume_cancel_kb_payload() -> None:
+    buttons = buttons_from([kbs.resume_cancel_kb()])
+    assert _payloads(buttons) == ["rs:cancel"]

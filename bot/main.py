@@ -12,6 +12,7 @@ from maxapi.types import BotCommand, ErrorEvent
 
 from handlers import (
     assessment,
+    fallback,
     goal,
     missions,
     recommend,
@@ -37,6 +38,7 @@ dp.include_routers(
     skillmap.router,
     recommend.router,
     resume.router,
+    fallback.router,
 )
 
 

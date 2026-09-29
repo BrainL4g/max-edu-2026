@@ -118,3 +118,10 @@ def menu_with_links(links: list[tuple[str, str]]) -> AttachmentButton:
         builder.row(LinkButton(text=_clip(title), url=url))
     builder.row(CallbackButton(text="🏠 Меню", payload="menu:main"))
     return builder.as_markup()
+
+
+def resume_cancel_kb() -> AttachmentButton:
+    """Кнопка «Отмена» во время ожидания текста резюме."""
+    builder = InlineKeyboardBuilder()  # type: ignore[no-untyped-call]
+    builder.row(CallbackButton(text="❌ Отмена", payload="rs:cancel"))
+    return builder.as_markup()

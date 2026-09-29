@@ -8,7 +8,16 @@ from typing import Any
 
 import api
 import sessions
-from handlers import assessment, goal, missions, recommend, resume, skillmap, start
+from handlers import (
+    assessment,
+    fallback,
+    goal,
+    missions,
+    recommend,
+    resume,
+    skillmap,
+    start,
+)
 from tests.fakes import (
     FakeBotStartedEvent,
     FakeCallbackEvent,
@@ -474,9 +483,18 @@ def test_ask_resume_sets_waiting_flag() -> None:
     _run(resume.ask_resume(event))
     assert sessions.session_for(USER_ID)["resume"] is True
     assert "Пришли текст резюме" in event.edits[0][0]
+    assert "rs:cancel" in _payloads(buttons_from(event.edits[0][1]))
 
 
-def test_capture_resume_text_analyzes(monkeypatch) -> None:
+def test_cancel_resume_callback_edits_menu() -> None:
+    sessions.session_for(USER_ID)["resume"] = True
+    event = FakeCallbackEvent("rs:cancel")
+    _run(resume.cancel_resume(event))
+    assert sessions.session_for(USER_ID)["resume"] is False
+    assert event.edits[0][0] == "Отменил 🙌"
+
+
+def test_on_text_resume_mode_analyzes(monkeypatch) -> None:
     _fake_user(monkeypatch)
     item = sessions.session_for(USER_ID)
     item["resume"] = True
@@ -493,23 +511,35 @@ def test_capture_resume_text_analyzes(monkeypatch) -> None:
     monkeypatch.setattr(api, "analyze_resume", _async_result(analysis))
 
     event = FakeMessageCreatedEvent(USER_ID, "Ваня", "Моё резюме...")
-    _run(resume.capture_resume_text(event))
+    _run(fallback.on_text(event))
     assert len(event.answers) == 1
     text, _ = event.answers[0]
     assert "75%" in text
     assert sessions.session_for(USER_ID)["resume"] is False
 
 
-def test_capture_resume_text_ignores_when_not_waiting() -> None:
+def test_on_text_resume_mode_cancels_by_word(monkeypatch) -> None:
+    sessions.session_for(USER_ID)["resume"] = True
+    event = FakeMessageCreatedEvent(USER_ID, "Ваня", "Отмена")
+    _run(fallback.on_text(event))
+    assert sessions.session_for(USER_ID)["resume"] is False
+    assert "Отменил" in event.answers[0][0]
+    assert "help:show" in _payloads(buttons_from(event.answers[0][1]))
+
+
+def test_on_text_fallback_replies_menu() -> None:
     event = FakeMessageCreatedEvent(USER_ID, "Ваня", "просто текст")
-    _run(resume.capture_resume_text(event))
-    assert event.answers == []
+    _run(fallback.on_text(event))
+    assert len(event.answers) == 1
+    text, attachments = event.answers[0]
+    assert "кнопки меню" in text
+    assert "help:show" in _payloads(buttons_from(attachments))
 
 
-def test_capture_resume_text_skips_without_sender() -> None:
+def test_on_text_skips_without_sender() -> None:
     event = FakeMessageCreatedEvent(USER_ID, "Ваня", "текст")
     event.message.sender = None
-    _run(resume.capture_resume_text(event))
+    _run(fallback.on_text(event))
     assert event.answers == []
 
 
