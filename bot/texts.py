@@ -278,6 +278,11 @@ def privacy_policy_text() -> str:
     )
 
 
+def resume_cancelled_text() -> str:
+    """Отмена ожидания резюме по кнопке."""
+    return "Отменил 🙌 Возвращаемся в меню."
+
+
 def resume_file_error_text(reason: str) -> str:
     """Ошибка приёма резюме."""
     return (

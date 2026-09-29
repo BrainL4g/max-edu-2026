@@ -25,6 +25,26 @@
 
 ---
 
+## Документация
+
+| Документ | О чём |
+|---|---|
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | бот → API → SQLite, Caddy, слой шифрования, границы ответственности, где живёт состояние |
+| [docs/DATA_MODEL.md](docs/DATA_MODEL.md) | ER-диаграмма, назначение таблиц, шифрованные колонки, индексы, миграции |
+| [docs/SECURITY.md](docs/SECURITY.md) | роли, хранение и ротация токенов и ключа, аудит, куда сообщать об уязвимости |
+| [SECURITY.md](SECURITY.md) | краткая политика раскрытия уязвимостей |
+| [docs/PRIVACY.md](docs/PRIVACY.md) | 152-ФЗ: карта данных, шифрование, права субъекта, действия при утечке |
+| [docs/RESUME_ANALYSIS.md](docs/RESUME_ANALYSIS.md) | как работает разбор резюме, что уходит в GigaChat |
+| [docs/BOT.md](docs/BOT.md) | карта экранов, callback payload, состояния, тон, ограничения MAX |
+| [docs/SCORING.md](docs/SCORING.md) | формулы XP, уровни, match_percent, выбор миссии, ранжирование |
+| [docs/CONTENT.md](docs/CONTENT.md) | формат контента, критерии миссии, шкала сложности, обновление базы |
+| [docs/TESTING.md](docs/TESTING.md) | автотесты, контракт DATA-API, ручной чек-лист в живом MAX |
+| [docs/DEPLOY.md](docs/DEPLOY.md) | runbook: запуск, домен, миграции, бэкап, восстановление, откат |
+| [docs/PRODUCT.md](docs/PRODUCT.md) | ЦА, гипотезы, метрики, что не вошло, отличие от конкурентов |
+| [docs/API.md](docs/API.md) | все эндпоинты, схемы и примеры запросов |
+
+---
+
 ## 1. Что такое SkillQuest
 
 **SkillQuest** — игровое приложение, которое помогает студентам:

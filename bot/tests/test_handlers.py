@@ -782,7 +782,19 @@ def test_ask_resume_sets_waiting_flag() -> None:
     text, attachments = event.edits[0]
     assert "Пришли резюме" in text
     buttons = buttons_from(attachments)
-    assert [b.payload for b in buttons] == ["rs:consent:revoke", "menu:main"]
+    assert [b.payload for b in buttons] == [
+        "rs:cancel",
+        "rs:consent:revoke",
+        "menu:main",
+    ]
+
+
+def test_cancel_resume_clears_waiting_flag() -> None:
+    sessions.session_for(USER_ID)["resume"] = True
+    event = FakeCallbackEvent("rs:cancel")
+    _run(resume.cancel_resume(event))
+    assert sessions.session_for(USER_ID)["resume"] is False
+    assert "Отменил" in event.edits[0][0]
 
 
 def test_ask_resume_asks_consent_first() -> None:

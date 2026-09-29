@@ -92,6 +92,14 @@ async def revoke_consent(event: MessageCallback) -> None:
     await event.edit(texts.consent_revoked_text(), attachments=[kbs.main_menu()])
 
 
+@router.message_callback(F.callback.payload == "rs:cancel")
+async def cancel_resume(event: MessageCallback) -> None:
+    """Пользователь передумал: снимаем ожидание резюме."""
+    item = sessions.session_for(event.callback.user.user_id)
+    item["resume"] = False
+    await event.edit(texts.resume_cancelled_text(), attachments=[kbs.main_menu()])
+
+
 def _first_file(attachments: list[Any] | None) -> Any | None:
     """Первое файловое вложение сообщения (PDF, DOCX, TXT)."""
     for attachment in attachments or []:

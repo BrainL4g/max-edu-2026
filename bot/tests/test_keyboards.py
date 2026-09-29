@@ -124,10 +124,23 @@ def test_resume_report_kb_buttons() -> None:
     assert [b.payload for b in buttons] == ["rs:start", "menu:main"]
 
 
-def test_resume_cancel_kb_button() -> None:
-    buttons = buttons_from([kbs.resume_cancel_kb()])
-    assert [b.text for b in buttons] == ["❌ Отмена"]
-    assert [b.payload for b in buttons] == ["rs:cancel"]
+def test_resume_prompt_kb_has_cancel_and_revoke() -> None:
+    buttons = buttons_from([kbs.resume_prompt_kb()])
+    assert [b.payload for b in buttons] == [
+        "rs:cancel",
+        "rs:consent:revoke",
+        "menu:main",
+    ]
+
+
+def test_resume_consent_kb_buttons() -> None:
+    buttons = buttons_from([kbs.resume_consent_kb()])
+    assert [b.payload for b in buttons] == [
+        "rs:consent:yes",
+        "rs:consent:no",
+        "rs:policy",
+        "menu:main",
+    ]
 
 
 def test_menu_with_links_clips_long_title() -> None:

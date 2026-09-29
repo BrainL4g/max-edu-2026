@@ -43,8 +43,9 @@ def resume_kb() -> AttachmentButton:
 
 
 def resume_prompt_kb() -> AttachmentButton:
-    """Ожидание резюме: отмена ожидания, отзыв согласия, возврат в меню."""
+    """Ожидание резюме: отмена, отзыв согласия, возврат в меню."""
     builder = InlineKeyboardBuilder()  # type: ignore[no-untyped-call]
+    builder.row(CallbackButton(text="❌ Отмена", payload="rs:cancel"))
     builder.row(
         CallbackButton(text="🚫 Отозвать согласие", payload="rs:consent:revoke")
     )
@@ -241,11 +242,4 @@ def internships_pagination_kb(
 
     builder.row(CallbackButton(text="⬅️ Направления", payload="in:rec"))
     builder.row(CallbackButton(text="🏠 Меню", payload="menu:main"))
-    return builder.as_markup()
-
-
-def resume_cancel_kb() -> AttachmentButton:
-    """Кнопка «Отмена» во время ожидания текста резюме."""
-    builder = InlineKeyboardBuilder()  # type: ignore[no-untyped-call]
-    builder.row(CallbackButton(text="❌ Отмена", payload="rs:cancel"))
     return builder.as_markup()
