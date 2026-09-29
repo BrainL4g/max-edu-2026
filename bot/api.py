@@ -6,10 +6,13 @@
 
 from __future__ import annotations
 
+import logging
 import os
 from typing import Any, cast
 
 import httpx
+
+logger = logging.getLogger(__name__)
 
 BASE_URL = os.getenv("SKILLQUEST_API", "http://127.0.0.1:8000")
 API_TOKEN = os.getenv("SKILLQUEST_API_TOKEN") or "skillquest-service-token"
@@ -147,6 +150,30 @@ async def give_consent(user_id: int) -> dict[str, Any]:
 async def revoke_consent(user_id: int) -> dict[str, Any]:
     """Отозвать согласие на обработку персональных данных (152-ФЗ ст. 9)."""
     return _obj(await _req("DELETE", f"/users/{user_id}/consent"))
+
+
+_ai_enabled: bool | None = None
+
+
+async def ai_assessment_enabled() -> bool:
+    """Передаётся ли резюме в GigaChat (спрашивается один раз и кэшируется).
+
+    Нужен, чтобы текст согласия утверждал факт, а не возможность. Если API
+    недоступен, возвращается True: недопустимо занижать объём раскрытия
+    из-за сбоя сети.
+    """
+    global _ai_enabled
+    if _ai_enabled is None:
+        try:
+            _ai_enabled = bool(
+                (await _req("GET", "/consent/policy"))["ai_assessment_enabled"]
+            )
+        except (ApiError, KeyError, TypeError, httpx.HTTPError):
+            logger.warning(
+                "Не удалось узнать статус AI-оценки, раскрываем по максимуму"
+            )
+            _ai_enabled = True
+    return _ai_enabled
 
 
 async def upload_resume(user_id: int, text: str) -> dict[str, Any]:

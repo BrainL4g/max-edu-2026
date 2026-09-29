@@ -29,6 +29,34 @@ def test_get_user(monkeypatch: pytest.MonkeyPatch) -> None:
     assert asyncio.run(api.get_user(5, "Имя")) == {"id": 1}
 
 
+def test_ai_assessment_enabled_is_cached(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Статус AI-оценки спрашивается один раз и кэшируется."""
+    calls: list[str] = []
+
+    def handler(request: httpx.Request) -> Response:
+        calls.append(request.url.path)
+        return Response(200, json={"ai_assessment_enabled": True})
+
+    client = httpx.AsyncClient(transport=MockTransport(handler), base_url="http://test")
+    monkeypatch.setattr(api, "_get_client", lambda: client)
+    monkeypatch.setattr(api, "_ai_enabled", None)
+
+    assert asyncio.run(api.ai_assessment_enabled()) is True
+    assert asyncio.run(api.ai_assessment_enabled()) is True
+    assert calls == ["/consent/policy"]
+
+
+def test_ai_assessment_falls_back_to_full_disclosure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Если статус узнать не удалось, раскрываем по максимуму, а не минимуму."""
+    client = _client({})
+    monkeypatch.setattr(api, "_get_client", lambda: client)
+    monkeypatch.setattr(api, "_ai_enabled", None)
+
+    assert asyncio.run(api.ai_assessment_enabled()) is True
+
+
 def test_questions_and_mission_flows(monkeypatch: pytest.MonkeyPatch) -> None:
     routes = {
         ("GET", "/assessment/questions"): Response(

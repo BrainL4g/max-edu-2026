@@ -797,8 +797,18 @@ def test_cancel_resume_clears_waiting_flag() -> None:
     assert "Отменил" in event.edits[0][0]
 
 
-def test_ask_resume_asks_consent_first() -> None:
+def _stub_ai(enabled: bool):
+    """Заглушка проверки статуса AI-оценки: всегда заданный ответ."""
+
+    async def _fake() -> bool:
+        return enabled
+
+    return _fake
+
+
+def test_ask_resume_asks_consent_first(monkeypatch) -> None:
     """Без согласия резюме не принимаем — показываем экран согласия (152-ФЗ ст. 9)."""
+    monkeypatch.setattr(api, "ai_assessment_enabled", _stub_ai(enabled=True))
     event = FakeCallbackEvent("rs:start")
     _run(resume.ask_resume(event))
 
@@ -812,6 +822,31 @@ def test_ask_resume_asks_consent_first() -> None:
         "rs:policy",
         "menu:main",
     ]
+
+
+def test_consent_text_states_gigachat_transfer_as_fact(monkeypatch) -> None:
+    """При включённой AI-оценке согласие утверждает передачу, а не возможность."""
+    monkeypatch.setattr(api, "ai_assessment_enabled", _stub_ai(enabled=True))
+    event = FakeCallbackEvent("rs:start")
+    _run(resume.ask_resume(event))
+
+    text = event.edits[0][0]
+    assert "GigaChat" in text
+    assert "ПАО Сбербанк" in text
+    assert "8000" in text
+    assert "Если" not in text
+
+
+def test_consent_text_without_ai_says_no_transfer(monkeypatch) -> None:
+    """Без AI-оценки согласие прямо говорит, что текст не передаётся."""
+    monkeypatch.setattr(api, "ai_assessment_enabled", _stub_ai(enabled=False))
+    event = FakeCallbackEvent("rs:start")
+    _run(resume.ask_resume(event))
+
+    text = event.edits[0][0]
+    assert "не подключена" in text
+    assert "никуда не уходит" in text
+    assert "GigaChat" not in text
 
 
 def test_accept_consent_records_and_asks_resume(monkeypatch) -> None:
@@ -880,7 +915,8 @@ def test_decline_consent_blocks_resume() -> None:
     assert "обрабатывать не буду" in event.edits[0][0]
 
 
-def test_show_policy_lists_rights() -> None:
+def test_show_policy_lists_rights(monkeypatch) -> None:
+    monkeypatch.setattr(api, "ai_assessment_enabled", _stub_ai(enabled=True))
     event = FakeCallbackEvent("rs:policy")
     _run(resume.show_policy(event))
 
@@ -888,6 +924,18 @@ def test_show_policy_lists_rights() -> None:
     assert "Политика обработки персональных данных" in text
     assert "Роскомнадзоре" in text
     assert "отозвать согласие" in text
+    assert "GigaChat" in text
+    assert "8000" in text
+
+
+def test_show_policy_without_ai_has_no_gigachat(monkeypatch) -> None:
+    monkeypatch.setattr(api, "ai_assessment_enabled", _stub_ai(enabled=False))
+    event = FakeCallbackEvent("rs:policy")
+    _run(resume.show_policy(event))
+
+    text = event.edits[0][0]
+    assert "не подключена" in text
+    assert "GigaChat" not in text
 
 
 def test_revoke_consent_clears_flag_and_calls_api(monkeypatch) -> None:

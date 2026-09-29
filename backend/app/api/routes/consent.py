@@ -9,10 +9,10 @@ from backend.app.api.deps import Principal, require_access
 from backend.app.api.responses import OWN_ERRORS
 from backend.app.core.audit import log_access
 from backend.app.core.consent import (
-    POLICY_TEXT,
     POLICY_VERSION,
     ai_assessment_enabled,
     consent_timestamp,
+    policy_text,
 )
 from backend.app.database.session import get_db
 from backend.app.repositories.user_repository import UserRepository
@@ -24,10 +24,11 @@ router = APIRouter(tags=["privacy"])
 @router.get("/consent/policy", response_model=ConsentPolicyOut, openapi_extra={"security": []})
 def get_policy() -> ConsentPolicyOut:
     """Текст политики обработки персональных данных (публичный доступ)."""
+    enabled = ai_assessment_enabled()
     return ConsentPolicyOut(
-        text=POLICY_TEXT,
+        text=policy_text(enabled),
         version=POLICY_VERSION,
-        ai_assessment_enabled=ai_assessment_enabled(),
+        ai_assessment_enabled=enabled,
     )
 
 

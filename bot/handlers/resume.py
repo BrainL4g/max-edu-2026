@@ -31,7 +31,8 @@ async def ask_resume(event: MessageCallback) -> None:
     item = sessions.session_for(event.callback.user.user_id)
     if not item["consent"]:
         await event.edit(
-            texts.resume_consent_text(), attachments=[kbs.resume_consent_kb()]
+            texts.resume_consent_text(await api.ai_assessment_enabled()),
+            attachments=[kbs.resume_consent_kb()],
         )
         return
     item["resume"] = True
@@ -75,7 +76,10 @@ async def decline_consent(event: MessageCallback) -> None:
 @router.message_callback(F.callback.payload == "rs:policy")
 async def show_policy(event: MessageCallback) -> None:
     """Текст политики обработки персональных данных."""
-    await event.edit(texts.privacy_policy_text(), attachments=[kbs.resume_consent_kb()])
+    await event.edit(
+        texts.privacy_policy_text(await api.ai_assessment_enabled()),
+        attachments=[kbs.resume_consent_kb()],
+    )
 
 
 @router.message_callback(F.callback.payload == "rs:consent:revoke")

@@ -128,11 +128,38 @@ def test_consent_policy_is_public(client) -> None:
     assert "Права пользователя" in body["text"]
 
 
-def test_consent_policy_discloses_third_party_transfer(client) -> None:
-    """Передача резюме в GigaChat раскрыта в тексте политики (152-ФЗ ст. 12)."""
+def test_consent_policy_discloses_third_party_transfer(
+    client, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """При включённой AI-оценке передача резюме в GigaChat раскрыта (152-ФЗ ст. 12)."""
+    monkeypatch.setattr(settings, "gigachat_credentials", "basic-key")
     body = client.get("/consent/policy").json()
     assert "GigaChat" in body["text"]
     assert "8000" in body["text"]
+
+
+def test_consent_policy_states_transfer_as_fact_when_ai_on(
+    client, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """С GigaChat политика утверждает, что передача происходит, без «может»."""
+    monkeypatch.setattr(settings, "gigachat_credentials", "basic-key")
+    body = client.get("/consent/policy").json()
+    section = body["text"].split("6. Передача третьим лицам")[1].split("Прочая")[0]
+    assert "GigaChat" in section
+    assert "может подключаться" not in body["text"]
+    assert "8000" in section
+
+
+def test_consent_policy_states_no_transfer_when_ai_off(
+    client, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Без GigaChat политика прямо говорит, что текст не передаётся."""
+    monkeypatch.setattr(settings, "gigachat_credentials", "")
+    monkeypatch.setattr(settings, "gigachat_access_token", "")
+    body = client.get("/consent/policy").json()
+    section = body["text"].split("6. Передача третьим лицам")[1].split("Прочая")[0]
+    assert "не подключена" in section
+    assert "GigaChat" not in section
 
 
 def test_consent_policy_reports_ai_flag_off_without_credentials(client) -> None:
