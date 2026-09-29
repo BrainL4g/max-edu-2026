@@ -181,7 +181,6 @@ SEED_MISSIONS: list[dict[str, Any]] = [
             ("requirements.txt", False),
             ("package.json", False),
             ("Dockerfile", True),
-            ("README.md", False),
         ],
         "explanation": "Dockerfile описывает шаги сборки образа.",
         "reward_xp": 30,
