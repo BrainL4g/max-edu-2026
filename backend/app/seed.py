@@ -505,7 +505,7 @@ SEED_MISSIONS: list[dict[str, Any]] = [
             ("df.where(age > 18)", False),
             ("df.filter(age > 18)", False),
         ],
-        "explanation": "Булева маска df[\"age\"] > 18 отбирает нужные строки.",
+        "explanation": 'Булева маска df["age"] > 18 отбирает нужные строки.',
         "reward_xp": 20,
     },
     {
