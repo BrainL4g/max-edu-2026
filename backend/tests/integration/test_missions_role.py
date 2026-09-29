@@ -8,7 +8,14 @@ from backend.app.domain import MissionOption, Role, RoleSkill, Skill
 from backend.app.seed import seed_database
 
 ROLE_SKILLS = {
-    "Backend Junior": {"Python", "SQL", "FastAPI", "Git", "Docker"},
+    "Backend Junior": {
+        "Python",
+        "SQL",
+        "FastAPI",
+        "Git",
+        "Docker",
+        "Алгоритмы и структуры данных",
+    },
     "Frontend Junior": {"JavaScript", "HTML/CSS", "React", "Git"},
 }
 
