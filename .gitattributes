@@ -1,5 +1,3 @@
-# Файлы, которые собираются и исполняются в Linux-контейнерах, должны иметь
-# LF: CRLF ломает `set -eu` в dash (backend/entrypoint.sh) и конфиги Docker.
 *.sh text eol=lf
 Dockerfile text eol=lf
 *.yml text eol=lf
