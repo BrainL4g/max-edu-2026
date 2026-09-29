@@ -169,10 +169,9 @@ def resume_report(analysis: dict[str, Any]) -> str:
     score = analysis.get("ai_score")
     summary = analysis.get("ai_summary")
     lines = [
-        f"📄 Соответствие направлению: {round(analysis.get('direction_match', 0))}%"
     ]
     if score is not None:
-        lines.append(f"🤖 Оценка GigaChat: {round(float(score))}/100")
+        lines.append(f"🤖 Оценка: {round(float(score))}/100")
     if summary:
         lines.append(str(summary))
     lines += ["", f"✅ Найдено: {found}", f"➕ Не хватает: {missing}"]
