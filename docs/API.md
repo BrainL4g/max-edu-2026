@@ -4,18 +4,85 @@
 рекомендации курсов и стажировок → анализ резюме.
 
 - **Базовый URL** (локально): `http://localhost:8000`
+- **Публичный URL**: `PUBLIC_BASE_URL` из `.env` (см. раздел «Деплой»)
 - **Интерактивная документация**: `/docs` (Swagger UI)
-- **OpenAPI-спецификация**: `/openapi.json`
+- **OpenAPI-спецификация**: `/openapi.json`, закоммиченные `openapi.yaml` / `openapi.json`
+- **Контракт приёмки**: `DATA-API.yaml` (см. раздел «Обязательные проверки»)
+
+---
+
+## Служебные операции
+
+### Health-check
+
+`GET /health` — публичная операция, проверка живости сервиса.
+
+```json
+// response
+{ "status": "ok", "app": "SkillQuest", "env": "prod" }
+```
+
+### Корневая страница
+
+`GET /` — публичная операция, ссылки на документацию.
+
+```json
+// response
+{ "app": "SkillQuest", "docs": "/docs", "health": "/health" }
+```
 
 ---
 
 ## Общие сведения
 
+### Аутентификация
+
+Защищённые операции требуют заголовок `Authorization: Bearer <токен>`.
+Токены ролей `student` и `admin` хранятся в БД **только в виде хэша (SHA-256)**
+— открытый текст выдаётся один раз при создании учётной записи.
+
+| Роль      | Что умеет                                                             |
+|-----------|-----------------------------------------------------------------------|
+| `student` | Только свои ресурсы (`user_id` в пути обязан совпадать с владельцем токена) |
+| `service` | Доступ к любому пользователю (бот MAX, `POST /users/by-max`)          |
+| `admin`   | Чтение пользователей и `POST /admin/test-users/reset`                 |
+
+| Код | Когда |
+|-----|-------|
+| `401 Unauthorized` | Заголовок `Authorization` отсутствует или токен невалиден |
+| `403 Forbidden` | Токен валиден, но роль не даёт доступ к этому ресурсу |
+
+### Публичные (без токена) операции
+
+Токен **не требуется** для:
+
+- `GET /health`, `GET /`
+- `GET /roles`, `GET /skills`, `GET /skills/{skill_id}`
+- `GET /courses`, `GET /courses/{course_id}`
+- `GET /internships`, `GET /internships/{internship_id}`
+- `GET /assessment/questions` **без** параметра `user_id` (с `user_id` — 401/403)
+
+Токен **обязателен** для всех остальных операций, включая персональные
+выдачи `GET /courses/recommended` и `GET /internships/recommended`
+(принимают `user_id` и подбирают курсы под пробелы навыков).
+
+### Два вида ошибки 422
+
+| Вид | Формат тела | Когда |
+|-----|-------------|-------|
+| **Ошибка валидации pydantic** | `{"detail": [ {"loc": [...], "msg": "...", "type": "..."} ]}` | Тело или query не совпадает со схемой (`text` не строка, `answers` не список, `option_index` вне диапазона) |
+| **Доменная ошибка** (`InvalidDataError`) | `{"detail": "Текст ошибки"}` | Данные формально валидны, но нарушают правила предметной области (например, ответ на вопрос, которого нет в диагностике) |
+
+Код ответа в обоих случаях `422`, но тело различается: список объектов
+против строки. Остальные доменные ошибки мапятся отдельно:
+`NotFoundError` → `404`, `ConflictError` → `409`.
+
 ### CORS
 
 API разрешает кросс-доменные запросы из браузера. Настройка —
 `CORS_ORIGINS` в окружении: список origins через запятую, `*` — разрешить все
-(значение по умолчанию).
+(значение по умолчанию разработки). В деплое перечислите origins явно,
+например `CORS_ORIGINS=https://bot.example.com,https://app.example.com`.
 
 ### Формат ошибок
 
@@ -28,11 +95,20 @@ API разрешает кросс-доменные запросы из брау�
 | Код | Когда |
 |-----|-------|
 | `404 Not Found` | ресурс не найден (пользователь, миссия, роль и т.д.); анализ ещё не выполнен |
-| `422 Unprocessable Entity` | некорректные входные данные |
+| `422 Unprocessable Entity` | некорректные входные данные (см. «Два вида ошибки 422») |
 | `409 Conflict` | конфликт данных (например, дубликат) |
+| `401 Unauthorized` | нет валидного Bearer-токена |
+| `403 Forbidden` | роль не даёт доступ |
 
-Ошибки валидации pydantic возвращаются стандартным для FastAPI форматом
-(`422` со списком `detail`).
+### Идемпотентность
+
+| Операция | Поведение при повторе |
+|----------|---------------------|
+| `POST /users/by-max` | Возвращает **тот же** пользователь по `max_user_id`, ничего не создаёт |
+| `POST /users` | Всегда создаёт нового пользователя (`201`) |
+| `POST /admin/test-users/reset` | Всегда возвращает `200`; очищает учебные данные независимо от состояния |
+| `POST /missions/{id}/answer` | Повторная сдача решённой миссии: `already_solved=true`, `xp_earned=0`, новой попытки не создаётся |
+| `POST /resumes/{id}/analyze` | Всегда пересчитывает и **обновляет** результат анализа |
 
 ### Уровни навыков и XP
 
@@ -469,37 +545,122 @@ Multipart-форма, поле `file` (текстовые форматы: txt/md
 
 ---
 
+## Администрирование
+
+### Сброс тестовых данных
+
+`POST /admin/test-users/reset` — только роль `admin`
+(`401` без токена, `403` для `student`/`service`).
+
+Очищает `Attempt`, `Skill Map`, `Resume`, `ResumeAnalysis` и сбрасывает
+`target_role_id` у тест-студентов (`is_test=true`). `user_id` и токены
+**не меняются**, поэтому сценарий можно повторять без пересева.
+
+```json
+// response 200
+{ "reset": true, "students_affected": 1, "message": "Учебные данные тест-студентов сброшены" }
+```
+
+---
+
+## Тестовые аккаунты
+
+### Создание / пересоздание
+
+```bash
+# из корня репозитория
+python -X utf8 scripts/seed_test_accounts.py           # создать (однократно, ConflictError при повторе)
+python -X utf8 scripts/seed_test_accounts.py --reset   # удалить и пересоздать (новые id + токены)
+```
+
+Скрипт печатает `user_id` и Bearer-токены **один раз** (в БД хранится только хэш):
+
+```
+student: user_id=1 token=<случайный>
+admin:   user_id=2 token=<случайный>
+```
+
+| Роль | Учётная запись |
+|------|---------------|
+| `student` | `is_test=True`; все учебные данные сбрасываются через `/admin/test-users/reset` |
+| `admin` | `is_test=False`; `POST /admin/test-users/reset` |
+
+### Сброс учебных данных
+
+`POST /admin/test-users/reset` — требует роль `admin`. Очищает
+`Attempt`, `Skill Map`, `Resume`, `ResumeAnalysis` и сбрасывает
+`target_role_id` у тест-студентов. `user_id` и токены **не меняются**.
+
+```json
+// response
+{ "reset": true, "students_affected": 1, "message": "Учебные данные тест-студентов сброшены" }
+```
+
+---
+
+## Обязательные проверки (DATA-API)
+
+Файл `DATA-API.yaml` в корне репозитория описывает полный набор проверок
+приёмки. Каждая проверка содержит ровно 9 полей: `name`, `description`,
+`method`, `path`, `params`, `role`, `expected_status`, `content_type`,
+`required_fields`. Ключи (токены) вынесены в раздел `keys`.
+
+### Локальный прогон (через `TestClient`)
+
+```bash
+cd backend
+python -m pytest tests/contract/test_data_api.py::test_all_data_api_checks_pass -v
+```
+
+### Публичный адрес
+
+```bash
+python -X utf8 scripts/run_data_api.py --base-url https://<домен> --token-role student:<токен> --token-role admin:<токен>
+```
+
+---
+
 ## Полный сценарий
 
 ```bash
 BASE=http://localhost:8000
+TOKEN=<токен тест-студента>   # из scripts/seed_test_accounts.py
+AUTH="Authorization: Bearer $TOKEN"
+JSON="Content-Type: application/json"
+
+# 0. Сброс учебных данных (роль admin) — делает прогон воспроизводимым
+curl -s -X POST $BASE/admin/test-users/reset -H "Authorization: Bearer <токен admin>"
 
 # 1. Создание пользователя
-curl -s -X POST $BASE/users -H "Content-Type: application/json" \
+curl -s -X POST $BASE/users -H "$AUTH" -H "$JSON" \
   -d '{"name":"Студент","direction":"backend"}'
 
 # 2. Выбор целевой роли
-curl -s -X PUT $BASE/users/1/goal -H "Content-Type: application/json" \
+curl -s -X PUT $BASE/users/1/goal -H "$AUTH" -H "$JSON" \
   -d '{"target_role_id":1}'
 
 # 3. Диагностика (банк вопросов → ответы → Skill Map)
-curl -s "$BASE/assessment/questions?user_id=1"
-curl -s -X POST $BASE/users/1/assessment -H "Content-Type: application/json" \
+curl -s "$BASE/assessment/questions?user_id=1" -H "$AUTH"
+curl -s -X POST $BASE/users/1/assessment -H "$AUTH" -H "$JSON" \
   -d '{"answers":[{"question_id":1,"option_index":2}]}'
 
 # 4. Миссия строго по цели → ответ → результат
-curl -s "$BASE/missions/next?user_id=1"
-curl -s -X POST $BASE/missions/4/answer -H "Content-Type: application/json" \
+curl -s "$BASE/missions/next?user_id=1" -H "$AUTH"
+curl -s -X POST $BASE/missions/4/answer -H "$AUTH" -H "$JSON" \
   -d '{"user_id":1,"option_id":7}'
 
 # 5. Прогресс и рекомендации
-curl -s $BASE/users/1/progress
-curl -s "$BASE/courses/recommended?user_id=1"
-curl -s "$BASE/internships/recommended?user_id=1"
+curl -s $BASE/users/1/progress -H "$AUTH"
+curl -s "$BASE/courses/recommended?user_id=1" -H "$AUTH"
+curl -s "$BASE/internships/recommended?user_id=1" -H "$AUTH"
 
 # 6. Резюме и анализ
-curl -s -X POST $BASE/users/1/resumes -H "Content-Type: application/json" \
+curl -s -X POST $BASE/users/1/resumes -H "$AUTH" -H "$JSON" \
   -d '{"text":"Python, SQL. Образование: МГТУ."}'
-curl -s -X POST $BASE/resumes/1/analyze
-curl -s $BASE/resumes/1/analysis
+curl -s -X POST $BASE/resumes/1/analyze -H "$AUTH"
+curl -s $BASE/resumes/1/analysis -H "$AUTH"
+
+# 7. Проверки доступа: 401 без токена, 403 на чужой ресурс
+curl -s -o /dev/null -w "%{http_code}\n" $BASE/users/1            # 401
+curl -s -o /dev/null -w "%{http_code}\n" $BASE/users/2 -H "$AUTH" # 403
 ```
