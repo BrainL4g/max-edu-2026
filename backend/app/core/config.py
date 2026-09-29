@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     gigachat_credentials: str = ""  # Authorization key (base64 client_id:client_secret)
     gigachat_access_token: str = ""  # готовый access token (альтернатива OAuth)
     gigachat_scope: str = "GIGACHAT_API_PERS"
-    gigachat_model: str = "GigaChat"
+    gigachat_model: str = "GigaChat-3-Lightning"
     gigachat_auth_url: str = "https://ngw.devices.sberbank.ru:9443/api/v2/oauth"
     gigachat_base_url: str = "https://api.giga.chat/v1"
     gigachat_verify_ssl: bool = True

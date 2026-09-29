@@ -25,6 +25,10 @@ from backend.app.domain import Base
 # Тесты никогда не трогают реальную БД и не сидируют её при старте app.
 settings.auto_create_tables = False
 settings.seed_on_startup = False
+# Тесты не ходят во внешние сервисы: AI-анализ резюме выключен, анализ остаётся
+# эвристическим. Ключ GigaChat в тестах подставляет только test_gigachat.py.
+settings.gigachat_credentials = ""
+settings.gigachat_access_token = ""
 
 
 @pytest.fixture()
