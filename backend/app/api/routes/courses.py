@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from backend.app.api.deps import Principal, require_access
 from backend.app.api.responses import OWN_ERRORS
+from backend.app.core.audit import log_access
 from backend.app.database.session import get_db
 from backend.app.domain import Course
 from backend.app.repositories.course_repository import CourseRepository
@@ -60,6 +61,13 @@ def recommended_courses(
     principal: Principal = Depends(require_access),
 ) -> list[Course]:
     """Рекомендации курсов на основе пробелов в навыках пользователя."""
+    log_access(
+        action="read",
+        resource="course_recommendations",
+        resource_id=user_id,
+        principal_role=principal.role,
+        principal_user_id=principal.user_id,
+    )
     return RecommendationService(db).recommend_courses(
         user_id,
         search=search,

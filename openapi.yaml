@@ -385,6 +385,262 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /consent/policy:
+    get:
+      tags:
+      - privacy
+      summary: Get Policy
+      description: Текст политики обработки персональных данных (публичный доступ).
+      operationId: get_policy_consent_policy_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsentPolicyOut'
+      security: []
+  /users/{user_id}/consent:
+    get:
+      tags:
+      - privacy
+      summary: Get Consent
+      description: Текущее состояние согласия пользователя на обработку ПД.
+      operationId: get_consent_users__user_id__consent_get
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsentOut'
+        '401':
+          description: Нет или невалидный Bearer-токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '403':
+          description: 'Доступ запрещён: не свой ресурс или не та роль'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '404':
+          description: Ресурс не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - privacy
+      summary: Give Consent
+      description: Зафиксировать согласие на обработку ПД (152-ФЗ ст. 9).
+      operationId: give_consent_users__user_id__consent_post
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsentOut'
+        '401':
+          description: Нет или невалидный Bearer-токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '403':
+          description: 'Доступ запрещён: не свой ресурс или не та роль'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '404':
+          description: Ресурс не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - privacy
+      summary: Withdraw Consent
+      description: Отозвать согласие на обработку ПД (152-ФЗ ст. 9, п. 6).
+      operationId: withdraw_consent_users__user_id__consent_delete
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsentOut'
+        '401':
+          description: Нет или невалидный Bearer-токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '403':
+          description: 'Доступ запрещён: не свой ресурс или не та роль'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '404':
+          description: Ресурс не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /users/{user_id}/data-export:
+    get:
+      tags:
+      - privacy
+      summary: Export Data
+      description: Экспорт персональных данных пользователя (152-ФЗ ст. 14).
+      operationId: export_data_users__user_id__data_export_get
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataExportOut'
+        '401':
+          description: Нет или невалидный Bearer-токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '403':
+          description: 'Доступ запрещён: не свой ресурс или не та роль'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '404':
+          description: Ресурс не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /users/{user_id}/data:
+    delete:
+      tags:
+      - privacy
+      summary: Delete Data
+      description: 'Удалить все персональные данные пользователя (152-ФЗ ст. 3 п.
+        5).
+
+
+        Профиль, навыки, попытки, резюме с анализом и токены доступа удаляются
+
+        одной транзакцией. Запись в журнал аудита остаётся, но без связки с
+
+        удалённым субъектом.'
+      operationId: delete_data_users__user_id__data_delete
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeletionOut'
+        '401':
+          description: Нет или невалидный Bearer-токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '403':
+          description: 'Доступ запрещён: не свой ресурс или не та роль'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '404':
+          description: Ресурс не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorOut'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /admin/test-users/reset:
     post:
       tags:
@@ -1837,6 +2093,53 @@ components:
       required:
       - file
       title: Body_upload_resume_users__user_id__resumes_upload_post
+    ConsentOut:
+      properties:
+        user_id:
+          type: integer
+          title: User Id
+        consent_given:
+          type: boolean
+          title: Consent Given
+        consent_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Consent At
+        policy_version:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Policy Version
+      type: object
+      required:
+      - user_id
+      - consent_given
+      title: ConsentOut
+      description: Состояние согласия пользователя на обработку ПД.
+      examples:
+      - consent_at: '2026-09-29T10:00:00'
+        consent_given: true
+        policy_version: '1.0'
+        user_id: 1
+    ConsentPolicyOut:
+      properties:
+        text:
+          type: string
+          title: Text
+        version:
+          type: string
+          title: Version
+      type: object
+      required:
+      - text
+      - version
+      title: ConsentPolicyOut
+      description: Публичный текст политики обработки персональных данных.
+      examples:
+      - text: Политика обработки ...
+        version: '1.0'
     CourseOut:
       properties:
         id:
@@ -1901,6 +2204,84 @@ components:
           name: Python
         title: Python для бэкенда
         url: https://stepik.org/course/1
+    DataExportOut:
+      properties:
+        user_id:
+          type: integer
+          title: User Id
+        name:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Name
+        education:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Education
+        direction:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Direction
+        goal:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Goal
+        max_user_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Max User Id
+        target_role_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Target Role Id
+        consent_given:
+          type: boolean
+          title: Consent Given
+          default: false
+        consent_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Consent At
+        consent_policy_version:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Consent Policy Version
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      type: object
+      required:
+      - user_id
+      - created_at
+      title: DataExportOut
+      description: Полный экспорт персональных данных пользователя.
+    DeletionOut:
+      properties:
+        user_id:
+          type: integer
+          title: User Id
+        deleted:
+          type: boolean
+          title: Deleted
+        message:
+          type: string
+          title: Message
+      type: object
+      required:
+      - user_id
+      - deleted
+      - message
+      title: DeletionOut
+      description: Результат удаления данных.
     ErrorOut:
       properties:
         detail:
@@ -2739,3 +3120,6 @@ tags:
   description: 'Стажировки: каталог и рекомендации'
 - name: resumes
   description: 'Резюме: загрузка, анализ, результат'
+- name: privacy
+  description: 'Права субъекта персональных данных (152-ФЗ): согласие на обработку,
+    экспорт и удаление данных'

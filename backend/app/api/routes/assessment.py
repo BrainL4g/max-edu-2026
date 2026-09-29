@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from backend.app.api.deps import Principal, get_optional_principal
 from backend.app.api.responses import FORBIDDEN, NOT_FOUND, UNAUTHORIZED
+from backend.app.core.audit import log_access
 from backend.app.database.session import get_db
 from backend.app.repositories.user_repository import UserRepository
 from backend.app.schemas.skill import AssessmentQuestionOut
@@ -46,6 +47,13 @@ def get_assessment_questions(
                 detail="Нет доступа к ресурсу другого пользователя",
             )
         user = UserRepository(db).get(user_id)
+        log_access(
+            action="read",
+            resource="assessment_questions",
+            resource_id=user_id,
+            principal_role=principal.role,
+            principal_user_id=principal.user_id,
+        )
         target_role = user.target_role
         direction = (target_role.direction if target_role else None) or user.direction
 

@@ -14,6 +14,7 @@ from backend.app.api.deps import (
     require_attempt_owner,
 )
 from backend.app.api.responses import AUTH_ERRORS, MISSING_ERRORS, OWN_ERRORS
+from backend.app.core.audit import log_access
 from backend.app.database.session import get_db
 from backend.app.domain import Attempt, Mission
 from backend.app.schemas.mission import (
@@ -44,6 +45,13 @@ def next_mission(
     principal: Principal = Depends(require_access),
 ) -> dict[str, Any]:
     """Следующее задание строго по целевой роли: статус, прогресс, миссия."""
+    log_access(
+        action="read",
+        resource="mission",
+        resource_id=user_id,
+        principal_role=principal.role,
+        principal_user_id=principal.user_id,
+    )
     return MissionService(db).get_next_mission(user_id)
 
 
@@ -65,6 +73,14 @@ def submit_answer(
     principal: Principal = Depends(get_current_principal),
 ) -> dict[str, Any]:
     """Отправка ответа: проверка, начисление XP, результат."""
+    log_access(
+        action="create",
+        resource="attempt",
+        resource_id=mission_id,
+        principal_role=principal.role,
+        principal_user_id=principal.user_id,
+        details={"user_id": payload.user_id},
+    )
     if principal.role == "student" and principal.user_id != payload.user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

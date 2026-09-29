@@ -19,6 +19,7 @@ from backend.app.domain.mission import Attempt, Mission, MissionOption  # noqa: 
 from backend.app.domain.resume import Resume, ResumeAnalysis  # noqa: E402
 from backend.app.domain.role import Role, RoleSkill  # noqa: E402
 from backend.app.domain.skill import Skill, UserSkill  # noqa: E402
+from backend.app.domain.types import EncryptedString, EncryptedText  # noqa: E402
 from backend.app.domain.user import User  # noqa: E402
 
 __all__ = [
@@ -38,4 +39,6 @@ __all__ = [
     "ResumeAnalysis",
     "Role",
     "RoleSkill",
+    "EncryptedString",
+    "EncryptedText",
 ]

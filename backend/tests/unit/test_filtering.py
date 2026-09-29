@@ -153,3 +153,20 @@ def test_internship_search(db_session):
     _seed_internships(db_session)
     result = InternshipRepository(db_session).list_all(search="удалённо")
     assert [i.company for i in result] == ["Т-Банк"]
+
+
+def test_internship_directions_are_unique_and_sorted(db_session):
+    """Список направлений для фильтра: без пустых, без дублей, по алфавиту."""
+    skill = Skill(name="Python", category="Программирование")
+    db_session.add(skill)
+    db_session.add_all(
+        [
+            Internship(title="A", company="X", level="junior", direction="backend"),
+            Internship(title="B", company="Y", level="junior", direction="backend"),
+            Internship(title="C", company="Z", level="junior", direction="data"),
+            Internship(title="D", company="W", level="junior", direction=None),
+        ]
+    )
+    db_session.commit()
+
+    assert InternshipRepository(db_session).list_directions() == ["backend", "data"]

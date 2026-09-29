@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from backend.app.api.deps import Principal, require_access
 from backend.app.api.responses import OWN_ERRORS
+from backend.app.core.audit import log_access
 from backend.app.database.session import get_db
 from backend.app.domain import Internship
 from backend.app.repositories.internship_repository import InternshipRepository
@@ -70,6 +71,13 @@ def recommended_internships(
     principal: Principal = Depends(require_access),
 ) -> list[Internship]:
     """Рекомендации стажировок: совпадение направления и навыков."""
+    log_access(
+        action="read",
+        resource="internship_recommendations",
+        resource_id=user_id,
+        principal_role=principal.role,
+        principal_user_id=principal.user_id,
+    )
     return RecommendationService(db).recommend_internships(
         user_id,
         search=search,

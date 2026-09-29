@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from backend.app.api.deps import Principal, require_access, require_resume_owner
 from backend.app.api.responses import OWN_ERRORS
+from backend.app.core.audit import log_access
 from backend.app.core.exceptions import NotFoundError
 from backend.app.database.session import get_db
 from backend.app.domain import Resume
@@ -32,6 +33,13 @@ def create_resume(
 ) -> Resume:
     """Загрузка резюме текстом."""
     UserRepository(db).get(user_id)
+    log_access(
+        action="create",
+        resource="resume",
+        resource_id=user_id,
+        principal_role=principal.role,
+        principal_user_id=principal.user_id,
+    )
     return ResumeRepository(db).create(user_id, payload.text, payload.filename)
 
 
@@ -49,6 +57,14 @@ async def upload_resume(
 ) -> Resume:
     """Загрузка резюме файлом (TXT/MD, PDF или DOCX)."""
     UserRepository(db).get(user_id)
+    log_access(
+        action="create",
+        resource="resume",
+        resource_id=user_id,
+        principal_role=principal.role,
+        principal_user_id=principal.user_id,
+        details={"filename": file.filename},
+    )
     content = await file.read()
     text = extract_resume_text(file.filename, content)
     return ResumeRepository(db).create(user_id, text, file.filename)
@@ -81,6 +97,13 @@ def analyze_resume(
     principal: Principal = Depends(require_resume_owner),
 ) -> dict[str, Any]:
     """Запуск анализа резюме."""
+    log_access(
+        action="create",
+        resource="resume_analysis",
+        resource_id=resume_id,
+        principal_role=principal.role,
+        principal_user_id=principal.user_id,
+    )
     return ResumeAnalysisService(db).analyze(resume_id)
 
 
@@ -91,6 +114,13 @@ def get_analysis(
     principal: Principal = Depends(require_resume_owner),
 ) -> dict[str, Any]:
     """Результат анализа резюме."""
+    log_access(
+        action="read",
+        resource="resume_analysis",
+        resource_id=resume_id,
+        principal_role=principal.role,
+        principal_user_id=principal.user_id,
+    )
     analysis = ResumeRepository(db).get_analysis(resume_id)
     if analysis is None or not analysis.result:
         raise NotFoundError(f"Анализ для резюме {resume_id} ещё не выполнен")

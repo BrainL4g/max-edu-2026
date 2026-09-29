@@ -7,7 +7,9 @@ from fastapi import APIRouter
 from backend.app.api.routes import (
     admin,
     assessment,
+    consent,
     courses,
+    gdpr,
     internships,
     missions,
     resumes,
@@ -18,6 +20,8 @@ from backend.app.api.routes import (
 
 api_router = APIRouter()
 api_router.include_router(users.router)
+api_router.include_router(consent.router)
+api_router.include_router(gdpr.router)
 api_router.include_router(admin.router)
 api_router.include_router(skills.router)
 api_router.include_router(roles.router)

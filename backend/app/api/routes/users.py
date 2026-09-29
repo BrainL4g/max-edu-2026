@@ -13,6 +13,7 @@ from backend.app.api.deps import (
     require_service,
 )
 from backend.app.api.responses import AUTH_ERRORS, OWN_ERRORS, UNAUTHORIZED
+from backend.app.core.audit import log_access
 from backend.app.database.session import get_db
 from backend.app.domain import Mission, User
 from backend.app.repositories.role_repository import RoleRepository
@@ -59,7 +60,15 @@ def get_user(
     principal: Principal = Depends(require_access),
 ) -> User:
     """Профиль пользователя."""
-    return UserRepository(db).get(user_id)
+    user = UserRepository(db).get(user_id)
+    log_access(
+        action="read",
+        resource="user",
+        resource_id=user_id,
+        principal_role=principal.role,
+        principal_user_id=principal.user_id,
+    )
+    return user
 
 
 @router.patch("/users/{user_id}", response_model=UserOut, responses=OWN_ERRORS)
@@ -72,6 +81,13 @@ def update_user(
     """Обновление профиля пользователя."""
     repo = UserRepository(db)
     user = repo.get(user_id)
+    log_access(
+        action="update",
+        resource="user",
+        resource_id=user_id,
+        principal_role=principal.role,
+        principal_user_id=principal.user_id,
+    )
     return repo.update(
         user,
         name=payload.name,
@@ -117,6 +133,13 @@ def run_assessment(
 ) -> AssessmentOut:
     """Первичная диагностика: ответы → начальный Skill Map."""
     user = UserRepository(db).get(user_id)
+    log_access(
+        action="create",
+        resource="assessment",
+        resource_id=user_id,
+        principal_role=principal.role,
+        principal_user_id=principal.user_id,
+    )
     result = AssessmentService(db).run(user, [a.model_dump() for a in payload.answers])
     return AssessmentOut(**result)
 

@@ -71,3 +71,59 @@ def test_analyze_issues_and_recommendations(db_session):
     assert isinstance(result["recommendations"], list)
     assert result["strengths"]
     assert result["summary"]
+
+
+def test_analyze_uses_gigachat_verdict(db_session):
+    """Настроенный GigaChat дополняет эвристический отчёт."""
+    _, resume = _seed(db_session)
+    ai = GigaChatClientStub(
+        {
+            "score": 88,
+            "summary": "Сильное резюме",
+            "strengths": ["Петпроекты"],
+            "issues": ["Нет Docker"],
+            "recommendations": ["Добавьте Docker"],
+        }
+    )
+    service = ResumeAnalysisService(db_session, ai=ai)
+
+    result = service.analyze(resume.id)
+
+    assert result["source"] == "gigachat"
+    assert result["ai_score"] == 88
+    assert result["ai_summary"] == "Сильное резюме"
+    assert result["strengths"] == ["Петпроекты"]
+    assert result["recommendations"] == ["Добавьте Docker"]
+
+
+def test_analyze_keeps_heuristics_when_ai_returns_nothing(db_session):
+    """Пустой ответ модели не затирает эвристический отчёт."""
+    _, resume = _seed(db_session)
+    service = ResumeAnalysisService(db_session, ai=GigaChatClientStub(None))
+
+    result = service.analyze(resume.id)
+
+    assert result["source"] == "heuristic"
+    assert result["ai_score"] is None
+
+
+def test_with_ai_ignores_empty_lists() -> None:
+    """Пустые списки от модели не подменяют найденные эвристикой."""
+    base = {"strengths": ["Python"], "issues": ["нет контактов"], "recommendations": ["совет"]}
+    merged = ResumeAnalysisService._with_ai(base, {"score": 10, "strengths": []})  # noqa: SLF001
+
+    assert merged["strengths"] == ["Python"]
+    assert merged["issues"] == ["нет контактов"]
+    assert merged["ai_summary"] is None
+
+
+class GigaChatClientStub:
+    """Заглушка GigaChat: возвращает заранее заданный вердикт."""
+
+    def __init__(self, verdict: dict | None) -> None:
+        self.verdict = verdict
+        self.calls: list[tuple] = []
+
+    def evaluate_resume(self, text, direction=None, found_skills=None, missing_skills=None):
+        self.calls.append((text, direction, found_skills, missing_skills))
+        return self.verdict

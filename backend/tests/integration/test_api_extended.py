@@ -50,6 +50,16 @@ def test_internships_by_id_and_filters(client, db_session):
     assert client.get("/internships", params={"skills": "1,2,abc"}).status_code == 200
 
 
+def test_internship_directions_endpoint(client, db_session):
+    """Список направлений для фильтра отдаётся без токена."""
+    seed_database(db_session)
+
+    response = client.get("/internships/directions")
+
+    assert response.status_code == 200
+    assert "backend" in response.json()
+
+
 def test_missions_full_flow(client, db_session):
     seed_database(db_session)
     user = _create_user(client)

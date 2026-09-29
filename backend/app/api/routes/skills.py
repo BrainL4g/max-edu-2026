@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from backend.app.api.deps import Principal, require_access
 from backend.app.api.responses import OWN_ERRORS
+from backend.app.core.audit import log_access
 from backend.app.database.session import get_db
 from backend.app.domain import Skill
 from backend.app.repositories.skill_repository import SkillRepository
@@ -37,4 +38,11 @@ def user_skill_map(
     principal: Principal = Depends(require_access),
 ) -> list[dict[str, Any]]:
     """Skill Map пользователя: уровень и прогресс по каждому навыку."""
+    log_access(
+        action="read",
+        resource="skill_map",
+        resource_id=user_id,
+        principal_role=principal.role,
+        principal_user_id=principal.user_id,
+    )
     return SkillService(db).get_skill_map(user_id)
