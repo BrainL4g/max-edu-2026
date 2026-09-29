@@ -19,8 +19,9 @@
 10. [Установка](#10-установка)
 11. [Docker запуск](#11-docker-запуск)
 12. [Запуск тестов](#12-запуск-тестов)
-13. [Пошаговая проверка сценария](#13-пошаговая-проверка-сценария)
-14. [Известные ограничения](#14-известные-ограничения)
+13. [Проверка API](#13-проверка-api)
+14. [Пошаговая проверка сценария](#14-пошаговая-проверка-сценария)
+15. [Известные ограничения](#15-известные-ограничения)
 
 ---
 
@@ -35,7 +36,7 @@
 
 Backend реализован на **Python + FastAPI + SQLAlchemy + SQLite**, разворачивается
 в **Docker**. Весь функционал доступен через HTTP API: см.
-[API-документацию](docs/API.md) и [пошаговую проверку](#13-пошаговая-проверка-сценария).
+[API-документацию](docs/API.md) и [проверку API](#13-проверка-api).
 
 ## 2. Проблема
 
@@ -130,6 +131,8 @@ APP_NAME=SkillQuest
 APP_ENV=development
 DATABASE_URL=sqlite:///./skillquest.db
 MAX_BOT_TOKEN=
+PUBLIC_BASE_URL=http://localhost:8000
+SERVICE_API_TOKEN=
 ```
 
 | Переменная | Значение | По умолчанию |
@@ -138,6 +141,8 @@ MAX_BOT_TOKEN=
 | `APP_ENV` | `development` / `testing` / `production` | `development` |
 | `DATABASE_URL` | URL SQLite (или другой БД через SQLAlchemy) | `sqlite:///./skillquest.db` |
 | `MAX_BOT_TOKEN` | Токен бота (для внешней интеграции) | пусто |
+| `PUBLIC_BASE_URL` | Публичный адрес API (попадает в `servers` OpenAPI) | `http://localhost:8000` |
+| `SERVICE_API_TOKEN` | Bearer-токен сервисной роли для MAX-бота | пусто |
 | `AUTO_CREATE_TABLES` | Создавать таблицы при старте (прототип) | `true` |
 | `SEED_ON_STARTUP` | Наполнять базу демо-данными при старте | `true` |
 | `CORS_ORIGINS` | Разрешённые origins через запятую | `*` |
@@ -183,7 +188,10 @@ internships ── internship_skills ── skills
 
 **Миграции.** Схема управляется Alembic (`backend/alembic/`):
 `001_initial_schema.py` (основные таблицы), `002_add_resume_analysis.py`
-(резюме и анализ), `003_add_max_user_id.py` (связка с пользователями MAX).
+(резюме и анализ), `003_add_max_user_id.py` (связка с пользователями MAX),
+`004_add_roles.py` (целевые карьерные роли и их требования),
+`005_add_api_tokens.py` (таблица `api_tokens` — Bearer-токены ролей
+`student` и `admin`).
 Применение (из корня): `alembic -c backend/alembic.ini upgrade head`.
 
 > Если dev-база создана через `create_all` до введения Alembic (в ней нет
@@ -292,11 +300,38 @@ docker compose up --build
 ```text
 backend   FastAPI + SQLite (доступен только по внутренней сети, наружу не торчит)
 bot       MAX-бот (maxapi, httpx); токен и адрес API — из окружения
+caddy     HTTPS-вход (80/443 наружу), reverse_proxy на backend:8000
 ```
 
 - SQLite хранится в volume `skillquest_data` (`/app/data/skillquest.db`);
 - `MAX_BOT_TOKEN` подхватывается из `.env` в корне репозитория;
 - для разработки к `backend` можно вернуть `ports: ["8000:8000"]` в `compose.yaml`.
+
+### Деплой за HTTPS (Caddy + Let's Encrypt)
+
+Единственная точка входа наружу — контейнер `caddy`: он терминирует TLS и
+проксирует запросы на `backend:8000` во внутренней сети Docker. Порт `8000`
+наружу не публикуется, поэтому backend напрямую из интернета недоступен.
+
+```bash
+# 1. Заполнить .env (корень репозитория)
+SITE_ADDRESS=api.example.com             # домен для сертификата
+ACME_EMAIL=dev@example.com               # email для уведомлений Let's Encrypt
+PUBLIC_BASE_URL=https://api.example.com  # попадает в servers OpenAPI
+SERVICE_API_TOKEN=<случайная строка>     # сервисная роль, её использует бот
+CORS_ORIGINS=https://bot.example.com     # явный список origins, без '*'
+
+# 2. Поднять стек
+docker compose up -d --build
+
+# 3. Проверить
+curl -sSf https://api.example.com/health
+curl -sSf -o /dev/null -w '%{http_code}\n' https://api.example.com/docs   # 200
+```
+
+Сертификат выпускается и продлевается автоматически (ACME-челленджи и
+сертификаты — в volume `caddy_data`). Для локальной проверки без домена
+поставьте `SITE_ADDRESS=:80` — тогда Caddy поднимет обычный HTTP на 80.
 
 ## 12. Запуск тестов
 
@@ -343,7 +378,43 @@ python -m ruff check .
 python -m mypy .
 ```
 
-## 13. Пошаговая проверка сценария
+## 13. Проверка API
+
+Полный контракт приёмки — в файле [`DATA-API.yaml`](DATA-API.yaml) (в корне
+репозитория). Каждая проверка описывает 9 полей: `name`, `description`,
+`method`, `path`, `params`, `role`, `expected_status`, `content_type`,
+`required_fields`; токены вынесены в раздел `keys`.
+
+### Локально (через TestClient, без сети)
+
+```bash
+# из backend/ — прогон всех проверок + сверка структуры и OpenAPI
+python -m pytest tests/contract -v
+```
+
+### По публичному адресу
+
+```bash
+# 1. Получить тестовые токены (печатаются один раз)
+python -X utf8 scripts/seed_test_accounts.py
+
+# 2. Прогнать DATA-API по HTTPS
+python -X utf8 scripts/run_data_api.py \
+  --base-url https://<домен> \
+  --token student=<токен> --token admin=<токен> \
+  --user-id 1 --admin-id 2
+```
+
+Сбросить учебные данные тест-студента (роль `admin`) можно в любой момент:
+
+```bash
+curl -s -X POST $BASE/admin/test-users/reset -H "Authorization: Bearer <токен admin>"
+```
+
+Тест-данные для сценариев — [`tests-data/test-data.json`](tests-data/test-data.json)
+(профиль студента, эталонные ответы диагностики, текст резюме без ПДн).
+
+## 14. Пошаговая проверка сценария
 
 Полный пользовательский сценарий можно проверить вручную (curl/Swagger).
 Справочник всех эндпоинтов, схем и примеров — в
@@ -392,7 +463,7 @@ curl -s $BASE/resumes/1/analysis
 Этот же сценарий автоматически проверяется
 в `backend/tests/integration/test_api.py` (см. [12](#12-запуск-тестов)).
 
-## 14. Известные ограничения
+## 15. Известные ограничения
 
 - **Диагностика строится на самооценке.** Уровни навыков в Skill Map берутся из
   ответов пользователя на вопросы диагностики; завышенная самооценка завышает и
@@ -406,8 +477,8 @@ curl -s $BASE/resumes/1/analysis
   понадобится PostgreSQL. Миграции — Alembic.
 - **Сессии бота в памяти.** Состояние (uid, ответы диагностики, флаг резюме)
   живёт в памяти процесса и сбрасывается при рестарте бота.
-- **Авторизации в API нет.** Любой владелец `user_id` может читать или менять
-  профиль. Внутри Docker-сети это приемлемо; при открытом API нужна авторизация.
+- **Роли выдаются скриптом, без UI.** Токены `student`/`admin` создаёт
+  `scripts/seed_test_accounts.py`; отдельной админки и регистрации нет.
 - **Свободный текст.** Бот отвечает кнопками и командами; произвольный текст вне
   режима «Резюме» получает подсказку с главным меню, а не содержательный ответ.
 

@@ -28,7 +28,10 @@ COPY alembic ./backend/alembic
 COPY app ./backend/app
 COPY entrypoint.sh ./backend/entrypoint.sh
 
-RUN chmod +x /app/backend/entrypoint.sh && \
+# Скрипт исполняется через `sh` (dash): CRLF из Windows-рабочей копии ломает
+# `set -eu`, поэтому нормализуем переносы строк на этапе сборки.
+RUN sed -i 's/\r$//' /app/backend/entrypoint.sh && \
+    chmod +x /app/backend/entrypoint.sh && \
     useradd --create-home --uid 10001 appuser && \
     mkdir -p /app/data && \
     chown -R appuser:appuser /app/data /app/backend
