@@ -87,25 +87,41 @@ class GigaChatClient:
         found_skills: list[str],
         missing_skills: list[str],
     ) -> dict[str, Any]:
-        """Запрос к /chat/completions и разбор JSON-ответа модели."""
-        response = self._client().post(
-            f"{settings.gigachat_base_url}/chat/completions",
-            headers={"Authorization": f"Bearer {self._access_token()}"},
-            json={
-                "model": settings.gigachat_model,
-                "temperature": 0.2,
-                "messages": [
-                    {"role": "system", "content": RESUME_SYSTEM_PROMPT},
-                    {
-                        "role": "user",
-                        "content": _user_prompt(text, direction, found_skills, missing_skills),
-                    },
-                ],
-            },
-        )
+        """Запрос к /chat/completions и разбор JSON-ответа модели.
+
+        При ``401`` (токен истёк или отозван раньше срока) кэш сбрасывается,
+        токен запрашивается заново и запрос повторяется один раз.
+        """
+        payload = {
+            "model": settings.gigachat_model,
+            "temperature": 0.2,
+            "messages": [
+                {"role": "system", "content": RESUME_SYSTEM_PROMPT},
+                {
+                    "role": "user",
+                    "content": _user_prompt(text, direction, found_skills, missing_skills),
+                },
+            ],
+        }
+        response = self._post_chat(payload)
+        if response.status_code == 401:
+            self._token = ""
+            self._expires_at = 0.0
+            response = self._post_chat(payload)
         response.raise_for_status()
         content = response.json()["choices"][0]["message"]["content"]
         return _parse_evaluation(str(content))
+
+    def _post_chat(self, payload: dict[str, Any]) -> httpx.Response:
+        """POST /chat/completions с актуальным access token."""
+        return self._client().post(
+            f"{settings.gigachat_base_url}/chat/completions",
+            headers={
+                "Authorization": f"Bearer {self._access_token()}",
+                "Accept": "application/json",
+            },
+            json=payload,
+        )
 
     def _access_token(self) -> str:
         """Готовый токен из окружения либо OAuth-токен с кэшированием."""
@@ -119,6 +135,7 @@ class GigaChatClient:
             headers={
                 "Authorization": f"Basic {settings.gigachat_credentials}",
                 "RqUID": str(uuid.uuid4()),
+                "Accept": "application/json",
                 "Content-Type": "application/x-www-form-urlencoded",
             },
             data={"scope": settings.gigachat_scope},
