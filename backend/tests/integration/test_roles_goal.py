@@ -83,6 +83,7 @@ def test_full_match_gap_analysis(client, db_session):
         ("FastAPI", 2),
         ("Git", 2),
         ("Docker", 1),
+        ("Алгоритмы и структуры данных", 2),
     ]:
         db_session.add(
             UserSkill(
