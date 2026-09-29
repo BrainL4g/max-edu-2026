@@ -23,15 +23,14 @@ def main_menu() -> AttachmentButton:
     builder = InlineKeyboardBuilder()  # type: ignore[no-untyped-call]
     builder.row(CallbackButton(text="🎯 Цель", payload="goal:show"))
     builder.row(CallbackButton(text="🧠 Диагностика", payload="as:start"))
-    builder.row(
-        CallbackButton(text="🎮 Миссия", payload="ms:next"),
-        CallbackButton(text="📊 Skill Map", payload="sm:show"),
-    )
+    builder.row(CallbackButton(text="🎮 Миссия", payload="ms:next"))
+    builder.row(CallbackButton(text="📊 Skill Map", payload="sm:show"))
     builder.row(
         CallbackButton(text="📚 Курсы", payload="cr:rec"),
         CallbackButton(text="💼 Стажировки", payload="in:rec"),
     )
     builder.row(CallbackButton(text="📄 Резюме", payload="rs:start"))
+    builder.row(CallbackButton(text="ℹ️ Инструкция", payload="help:show"))
     return builder.as_markup()
 
 

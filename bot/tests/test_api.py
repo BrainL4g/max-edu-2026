@@ -45,6 +45,34 @@ def test_questions_and_mission_flows(monkeypatch) -> None:
     assert asyncio.run(api.skill_map(1))[0]["level"] == 2
 
 
+def test_assessment_questions_sends_user_id(monkeypatch) -> None:
+    captured: dict[str, str] = {}
+
+    def handler(request: httpx.Request) -> Response:
+        captured["query"] = str(request.url.query)
+        return Response(200, json=[])
+
+    client = httpx.AsyncClient(transport=MockTransport(handler), base_url="http://test")
+    monkeypatch.setattr(api, "_get_client", lambda: client)
+
+    assert asyncio.run(api.assessment_questions(42)) == []
+    assert "user_id=42" in captured["query"]
+
+
+def test_assessment_questions_without_user_id_no_query(monkeypatch) -> None:
+    captured: dict[str, bytes] = {}
+
+    def handler(request: httpx.Request) -> Response:
+        captured["query"] = request.url.query
+        return Response(200, json=[])
+
+    client = httpx.AsyncClient(transport=MockTransport(handler), base_url="http://test")
+    monkeypatch.setattr(api, "_get_client", lambda: client)
+
+    assert asyncio.run(api.assessment_questions()) == []
+    assert captured["query"] == b""
+
+
 def test_next_mission_none_when_empty(monkeypatch) -> None:
     # сервер отвечает JSON-null, когда все миссии пройдены
     client = _client({("GET", "/missions/next"): Response(200, content=b"null")})
@@ -70,6 +98,27 @@ def test_answer_mission_sends_payload(monkeypatch) -> None:
     assert captured["method"] == "POST"
     assert captured["path"] == "/missions/4/answer"
     assert "user_id" in captured["body"]
+
+
+def test_submit_assessment_sends_answers(monkeypatch) -> None:
+    captured: dict[str, object] = {}
+
+    def handler(request: httpx.Request) -> Response:
+        captured["method"] = request.method
+        captured["path"] = str(request.url.path)
+        captured["body"] = request.content.decode()
+        return Response(200, json={"summary": "ok", "evaluated_skills": []})
+
+    client = httpx.AsyncClient(transport=MockTransport(handler), base_url="http://test")
+    monkeypatch.setattr(api, "_get_client", lambda: client)
+
+    result = asyncio.run(
+        api.submit_assessment(9, [{"question_id": 1, "option_index": 2}])
+    )
+    assert result["summary"] == "ok"
+    assert captured["method"] == "POST"
+    assert captured["path"] == "/users/9/assessment"
+    assert "question_id" in captured["body"]
 
 
 def test_recommended_uses_user_id_in_query(monkeypatch) -> None:

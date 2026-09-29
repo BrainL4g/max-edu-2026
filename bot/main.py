@@ -59,6 +59,7 @@ async def register_commands(bot: Bot) -> None:
     """Зарегистрировать команды бота — так в чате появляется кнопка «Старт»."""
     await bot.set_commands(
         BotCommand(name="start", description="Открыть главное меню"),
+        BotCommand(name="help", description="Инструкция по использованию"),
     )
 
 

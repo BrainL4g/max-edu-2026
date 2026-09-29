@@ -24,12 +24,18 @@ async def start_assessment(event: MessageCallback) -> None:
 
 async def _ask(event: MessageCallback, index: int) -> None:
     """Показать вопрос под номером index (0-based)."""
-    questions = await api.assessment_questions()
+    item = sessions.session_for(event.callback.user.user_id)
+    questions = await api.assessment_questions(item["uid"])
     question = questions[index]
     options = question["options"]
     kb = kbs.options_kb(f"asq:{question['id']}", list(enumerate(options)))
+    skill = question.get("skill")
+    header = f"Вопрос {index + 1}/{len(questions)}"
+    # Направленная диагностика: подсказываем, какой навык оценивается.
+    if skill:
+        header = f"{header}\n📌 Навык: {skill}"
     body = (
-        f"Вопрос {index + 1}/{len(questions)}\n\n"
+        f"🧠 Диагностика\n{header}\n\n"
         f"{question['text']}\n\n"
         f"{texts.numbered_options(options)}"
     )
@@ -48,7 +54,7 @@ async def assessment_answer(event: MessageCallback) -> None:
         {"question_id": int(question_id), "option_index": int(option_index)}
     )
 
-    questions = await api.assessment_questions()
+    questions = await api.assessment_questions(item["uid"])
     if len(item["answers"]) < len(questions):
         await _ask(event, len(item["answers"]))
         return

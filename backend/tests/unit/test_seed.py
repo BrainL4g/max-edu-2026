@@ -44,3 +44,13 @@ def test_seed_roles_helper_is_idempotent(db_session):
     """Прямой вызов _seed_roles на уже наполненной базе ничего не создаёт."""
     seed_database(db_session)
     assert seed._seed_roles(db_session, {}) == 0
+
+
+def test_seed_missions_correct_option_not_always_first():
+    """Правильный ответ в миссиях не должен всегда стоять первым."""
+    first_is_correct = [mission["options"][0][1] for mission in seed.SEED_MISSIONS]
+    assert not all(first_is_correct)
+    # каждый вариант ровно один раз: правильный ровно один
+    for mission in seed.SEED_MISSIONS:
+        correct = [option for option in mission["options"] if option[1]]
+        assert len(correct) == 1

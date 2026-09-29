@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from maxapi import F, Router
 from maxapi.types import MessageCallback
 
@@ -13,6 +15,17 @@ import texts
 router = Router()
 
 
+def _display_order(mission: dict[str, Any]) -> list[dict[str, Any]]:
+    """Порядок вариантов для показа: детерминированный сдвиг, чтобы верный
+    ответ не всегда стоял первым. Ответ идёт по option_id, поэтому сдвиг
+    не ломает проверку."""
+    options = mission.get("options") or []
+    if len(options) < 2:
+        return options
+    offset = mission["id"] % (len(options) - 1) + 1
+    return options[offset:] + options[:offset]
+
+
 @router.message_callback(F.callback.payload == "ms:next")
 async def mission_next(event: MessageCallback) -> None:
     """Следующая миссия для пользователя."""
@@ -22,13 +35,16 @@ async def mission_next(event: MessageCallback) -> None:
         await event.edit("Все миссии пройдены! 🏆", attachments=[kbs.main_menu()])
         return
 
+    options = _display_order(mission)
     text = (
         f"🎮 {mission['skill_name']} · {mission['difficulty']} · "
         f"+{mission['reward_xp']} XP\n\n{mission['scenario']}\n\n"
-        f"{texts.numbered_options([option['text'] for option in mission['options']])}"
+        f"{texts.numbered_options([option['text'] for option in options])}"
     )
-    options = [(option["id"], option["text"]) for option in mission["options"]]
-    kb = kbs.options_kb(f"ms:ans:{mission['id']}", options)
+    kb = kbs.options_kb(
+        f"ms:ans:{mission['id']}",
+        [(option["id"], option["text"]) for option in options],
+    )
     await event.edit(text, attachments=[kb])
 
 

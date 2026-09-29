@@ -34,6 +34,7 @@ def test_main_menu_payloads() -> None:
         "cr:rec",
         "in:rec",
         "rs:start",
+        "help:show",
     ):
         assert expected in payloads, payloads
     assert "menu:main" not in payloads

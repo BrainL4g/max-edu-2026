@@ -57,9 +57,10 @@ async def get_user(max_user_id: int, name: str | None = None) -> dict[str, Any]:
     )
 
 
-async def assessment_questions() -> list[dict[str, Any]]:
-    """Банк вопросов диагностики."""
-    return _list(await _req("GET", "/assessment/questions"))
+async def assessment_questions(user_id: int | None = None) -> list[dict[str, Any]]:
+    """Банк вопросов диагностики (по направлению пользователя, если задан)."""
+    params = {"user_id": user_id} if user_id is not None else None
+    return _list(await _req("GET", "/assessment/questions", params=params))
 
 
 async def submit_assessment(

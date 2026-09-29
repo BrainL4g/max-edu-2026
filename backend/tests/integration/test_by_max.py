@@ -58,3 +58,36 @@ def test_user_by_max_can_run_assessment(client, db_session):
     )
     assert response.status_code == 200
     assert response.json()["evaluated_skills"]
+
+
+def test_assessment_questions_filtered_by_user_direction(client, db_session):
+    created = client.post("/users", json={"name": "Аня", "direction": "backend"}).json()
+    response = client.get("/assessment/questions", params={"user_id": created["id"]})
+    assert response.status_code == 200
+    skills = {q["skill"] for q in response.json()}
+    assert "Python" in skills
+    assert "FastAPI" in skills
+    assert "JavaScript" not in skills
+    assert "Figma" not in skills
+
+
+def test_assessment_questions_filtered_by_target_role_direction(client, db_session):
+    seed_database(db_session)
+    created = client.post("/users", json={"name": "Борис"}).json()
+    roles = client.get("/roles").json()
+    frontend = next(role for role in roles if role["direction"] == "frontend")
+    goal_response = client.put(
+        f"/users/{created['id']}/goal", json={"target_role_id": frontend["id"]}
+    )
+    assert goal_response.status_code == 200
+
+    response = client.get("/assessment/questions", params={"user_id": created["id"]})
+    assert response.status_code == 200
+    skills = {q["skill"] for q in response.json()}
+    assert "JavaScript" in skills
+    assert "Python" not in skills
+
+
+def test_assessment_questions_404_for_missing_user(client):
+    response = client.get("/assessment/questions", params={"user_id": 999999})
+    assert response.status_code == 404

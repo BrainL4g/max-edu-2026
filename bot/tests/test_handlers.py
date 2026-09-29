@@ -88,6 +88,24 @@ def test_cmd_start_skips_without_sender(monkeypatch) -> None:
     assert event.answers == []
 
 
+def test_cmd_help_answers_instruction() -> None:
+    event = FakeMessageCreatedEvent(USER_ID, "Ваня")
+    _run(start.cmd_help(event))
+    assert len(event.answers) == 1
+    text, attachments = event.answers[0]
+    assert "Как пользоваться" in text
+    assert attachments
+    assert "help:show" in _payloads(buttons_from(attachments))
+
+
+def test_show_help_edits_instruction() -> None:
+    event = FakeCallbackEvent("help:show")
+    _run(start.show_help(event))
+    text, attachments = event.edits[0]
+    assert "Как пользоваться" in text
+    assert "help:show" in _payloads(buttons_from(attachments))
+
+
 def test_back_to_menu_edits() -> None:
     event = FakeCallbackEvent("menu:main")
     _run(start.back_to_menu(event))
@@ -124,12 +142,35 @@ def test_mission_next_shows_question(monkeypatch) -> None:
     text, attachments = event.edits[0]
     assert "Python" in text
     assert "+25 XP" in text
-    assert "1. продолжить" in text
-    assert "2. прервать" in text
+    # сдвиг вариантов: id=3, len=2 → offset = 3 % 1 + 1 = 1 → порядок сдвинут
+    assert "1. прервать" in text
+    assert "2. продолжить" in text
     payloads = _payloads(buttons_from(attachments))
     assert "ms:ans:3:10" in payloads
     assert "ms:ans:3:11" in payloads
     assert [b.text for b in buttons_from(attachments)[:-1]] == ["①", "②"]
+
+
+def test_mission_display_order_single_option_not_shifted() -> None:
+    options = missions._display_order(
+        {"id": 3, "options": [{"id": 10, "text": "один"}]}
+    )
+    assert [o["id"] for o in options] == [10]
+
+
+def test_mission_display_order_is_deterministic() -> None:
+    mission = {
+        "id": 3,
+        "options": [
+            {"id": 10, "text": "а"},
+            {"id": 11, "text": "б"},
+            {"id": 12, "text": "в"},
+            {"id": 13, "text": "г"},
+        ],
+    }
+    first = missions._display_order(mission)
+    second = missions._display_order(mission)
+    assert [o["id"] for o in first] == [o["id"] for o in second]
 
 
 def test_mission_next_all_done(monkeypatch) -> None:
@@ -178,6 +219,12 @@ def test_mission_answer_wrong_without_skill_name(monkeypatch) -> None:
     assert "Навык «—»" in text
 
 
+def test_mission_answer_ignores_other_payloads() -> None:
+    event = FakeCallbackEvent("ms:other")
+    _run(missions.mission_answer(event))
+    assert event.edits == []
+
+
 def test_start_assessment_shows_first_question(monkeypatch) -> None:
     _fake_user(monkeypatch)
     questions = [
@@ -195,6 +242,27 @@ def test_start_assessment_shows_first_question(monkeypatch) -> None:
     assert "asq:1:0" in _payloads(buttons_from(attachments))
     assert "asq:1:1" in _payloads(buttons_from(attachments))
     assert sessions.session_for(USER_ID)["answers"] == []
+
+
+def test_assessment_question_shows_skill_label(monkeypatch) -> None:
+    _fake_user(monkeypatch)
+    questions = [
+        {"id": 1, "skill": "Python", "text": "Оцените знания", "options": ["Нет", "Да"]}
+    ]
+    monkeypatch.setattr(api, "assessment_questions", _async_result(questions))
+
+    event = FakeCallbackEvent("as:start")
+    _run(assessment.start_assessment(event))
+    text, _ = event.edits[0]
+    assert "Вопрос 1/1" in text
+    assert "📌 Навык: Python" in text
+
+
+def test_assessment_answer_ignores_other_payloads(monkeypatch) -> None:
+    _fake_user(monkeypatch)
+    event = FakeCallbackEvent("as:other")
+    _run(assessment.assessment_answer(event))
+    assert event.edits == []
 
 
 def test_assessment_answer_goes_to_next_question(monkeypatch) -> None:

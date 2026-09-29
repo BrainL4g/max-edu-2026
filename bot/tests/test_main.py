@@ -76,8 +76,8 @@ def test_routers_registered(monkeypatch) -> None:
     assert len(bot_main.dp.routers) >= 6
 
 
-def test_register_commands_sets_start(monkeypatch) -> None:
-    """Кнопка «Старт»: регистрируем /start через set_commands."""
+def test_register_commands_sets_start_and_help(monkeypatch) -> None:
+    """Кнопки «Старт» и «Помощь»: регистрируем /start и /help."""
     monkeypatch.setenv("MAX_BOT_TOKEN", "test-token")
     import main as bot_main
 
@@ -90,4 +90,4 @@ def test_register_commands_sets_start(monkeypatch) -> None:
 
     fake = _FakeBot()
     asyncio.run(bot_main.register_commands(fake))
-    assert [getattr(c, "name", None) for c in fake.commands] == ["start"]
+    assert [getattr(c, "name", None) for c in fake.commands] == ["start", "help"]

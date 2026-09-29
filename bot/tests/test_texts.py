@@ -132,6 +132,16 @@ def test_roles_question_text() -> None:
     assert "Какую цель выбираешь?" in texts.roles_question_text()
 
 
+def test_help_text() -> None:
+    text = texts.help_text()
+    assert "Как пользоваться" in text
+    assert "🎯 Цель" in text
+    assert "🧠 Диагностика" in text
+    assert "🎮 Миссия" in text
+    assert "📊 Skill Map" in text
+    assert "📄 Резюме" in text
+
+
 def _gap_analysis() -> dict[str, Any]:
     return {
         "role": {"id": 1, "name": "Backend Junior"},

@@ -7,6 +7,7 @@ from maxapi.types import BotStarted, Command, MessageCallback, MessageCreated
 
 import keyboards as kbs
 import sessions
+import texts
 
 router = Router()
 
@@ -33,6 +34,18 @@ async def cmd_start(event: MessageCreated) -> None:
         return
     await sessions.ensure_user(sender.user_id, sender.first_name or "")
     await event.message.answer("Что делаем? 🎮", attachments=[kbs.main_menu()])
+
+
+@router.message_created(Command("help"))
+async def cmd_help(event: MessageCreated) -> None:
+    """Команда /help: инструкция по использованию бота."""
+    await event.message.answer(texts.help_text(), attachments=[kbs.main_menu()])
+
+
+@router.message_callback(F.callback.payload == "help:show")
+async def show_help(event: MessageCallback) -> None:
+    """Кнопка «Инструкция» в главном меню."""
+    await event.edit(texts.help_text(), attachments=[kbs.main_menu()])
 
 
 @router.message_callback(F.callback.payload == "menu:main")
