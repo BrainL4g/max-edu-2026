@@ -133,10 +133,12 @@ APP_NAME=SkillQuest
 APP_ENV=development
 DATABASE_URL=sqlite:///./skillquest.db
 MAX_BOT_TOKEN=
-PUBLIC_BASE_URL=http://localhost:8000
-SERVICE_API_TOKEN=
 GIGACHAT_CREDENTIALS=
 ```
+
+Четырёх переменных достаточно: всё остальное имеет рабочие значения по
+умолчанию, в том числе сервисный токен бота (`skillquest-service-token`) —
+`.env` дополнять не нужно.
 
 | Переменная | Значение | По умолчанию |
 |-----------|----------|--------------|
@@ -144,11 +146,17 @@ GIGACHAT_CREDENTIALS=
 | `APP_ENV` | `development` / `testing` / `production` | `development` |
 | `DATABASE_URL` | URL SQLite (или другой БД через SQLAlchemy) | `sqlite:///./skillquest.db` |
 | `MAX_BOT_TOKEN` | Токен бота (для внешней интеграции) | пусто |
-| `PUBLIC_BASE_URL` | Публичный адрес API (попадает в `servers` OpenAPI) | `http://localhost:8000` |
-| `SERVICE_API_TOKEN` | Bearer-токен сервисной роли для MAX-бота | пусто |
+
+Необязательные переменные окружения (в `.env` не нужны):
+
+| Переменная | Значение | По умолчанию |
+|-----------|----------|--------------|
+| `SERVICE_API_TOKEN` | Bearer-токен сервисной роли для MAX-бота | `skillquest-service-token` |
 | `AUTO_CREATE_TABLES` | Создавать таблицы при старте (прототип) | `true` |
 | `SEED_ON_STARTUP` | Наполнять базу демо-данными при старте | `true` |
-| `CORS_ORIGINS` | Разрешённые origins через запятую | `*` |
+| `CORS_ORIGINS` | Разрешённые origins через запятую | пусто (cross-origin запрещён) |
+| `SITE_ADDRESS` | Адрес Caddy (домен для HTTPS либо `:80` локально) | `:80` |
+| `ACME_EMAIL` | Email для уведомлений Let's Encrypt | `hostmaster@example.com` |
 | `GIGACHAT_CREDENTIALS` | Ключ GigaChat для AI-оценки резюме (опционально) | пусто |
 | `GIGACHAT_ACCESS_TOKEN` | OAuth-токен GigaChat (альтернатива ключу) | пусто |
 
@@ -321,12 +329,12 @@ caddy     HTTPS-вход (80/443 наружу), reverse_proxy на backend:8000
 наружу не публикуется, поэтому backend напрямую из интернета недоступен.
 
 ```bash
-# 1. Заполнить .env (корень репозитория)
+# 1. Заполнить .env (корень репозитория) — нужны только эти строки
 SITE_ADDRESS=api.example.com             # домен для сертификата
 ACME_EMAIL=dev@example.com               # email для уведомлений Let's Encrypt
-PUBLIC_BASE_URL=https://api.example.com  # попадает в servers OpenAPI
-SERVICE_API_TOKEN=<случайная строка>     # сервисная роль, её использует бот
-CORS_ORIGINS=https://bot.example.com     # явный список origins, без '*'
+
+# опционально, если дефолтного токена не хватает
+SERVICE_API_TOKEN=<случайная строка>
 
 # 2. Поднять стек
 docker compose up -d --build
@@ -400,15 +408,15 @@ python -m mypy .
 python -m pytest tests/contract -v
 ```
 
-### По публичному адресу
+### По HTTP (через Caddy)
 
 ```bash
 # 1. Получить тестовые токены (печатаются один раз)
 python -X utf8 scripts/seed_test_accounts.py
 
-# 2. Прогнать DATA-API по HTTPS
+# 2. Прогнать DATA-API по HTTP
 python -X utf8 scripts/run_data_api.py \
-  --base-url https://<домен> \
+  --base-url http://localhost \
   --token student=<токен> --token admin=<токен> \
   --user-id 1 --admin-id 2
 ```

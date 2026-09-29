@@ -4,7 +4,6 @@
 рекомендации курсов и стажировок → анализ резюме.
 
 - **Базовый URL** (локально): `http://localhost:8000`
-- **Публичный URL**: `PUBLIC_BASE_URL` из `.env` (см. раздел «Деплой»)
 - **Интерактивная документация**: `/docs` (Swagger UI)
 - **OpenAPI-спецификация**: `/openapi.json`, закоммиченные `openapi.yaml` / `openapi.json`
 - **Контракт приёмки**: `DATA-API.yaml` (см. раздел «Обязательные проверки»)
@@ -616,10 +615,11 @@ cd backend
 python -m pytest tests/contract/test_data_api.py::test_all_data_api_checks_pass -v
 ```
 
-### Публичный адрес
+### Прогон по HTTP (через Caddy)
 
 ```bash
-python -X utf8 scripts/run_data_api.py --base-url https://<домен> --token-role student:<токен> --token-role admin:<токен>
+python -X utf8 scripts/run_data_api.py --base-url http://localhost \
+  --token student:<токен> --token admin:<токен> --token service:<токен>
 ```
 
 ---

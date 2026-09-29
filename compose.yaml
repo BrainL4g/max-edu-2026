@@ -2,19 +2,17 @@ services:
   backend:
     build: ./backend
     container_name: skillquest-backend
-    # Порт наружу не торчим: к API ходит только бот и Caddy по внутренней сети.
-    # Для разработки можно вернуть:  ports: ["8000:8000"]
     environment:
       APP_NAME: SkillQuest
       APP_ENV: production
       DATABASE_URL: sqlite:////app/data/skillquest.db
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8000}
-      SERVICE_API_TOKEN: ${SERVICE_API_TOKEN:-}
       # Явный список CORS-origins: по умолчанию пусто (никакого '*'),
       # боту CORS не нужен — он ходит по внутренней сети.
       CORS_ORIGINS: ${CORS_ORIGINS:-}
       GIGACHAT_CREDENTIALS: ${GIGACHAT_CREDENTIALS:-}
       GIGACHAT_ACCESS_TOKEN: ${GIGACHAT_ACCESS_TOKEN:-}
+      SERVICE_API_TOKEN: ${SERVICE_API_TOKEN:-skillquest-service-token}
     volumes:
       - skillquest_data:/app/data
     restart: unless-stopped
@@ -31,20 +29,17 @@ services:
     environment:
       MAX_BOT_TOKEN: ${MAX_BOT_TOKEN}
       SKILLQUEST_API: http://backend:8000
-      # Бот ходит под сервисной ролью: значение = SERVICE_API_TOKEN из .env.
-      SKILLQUEST_API_TOKEN: ${SERVICE_API_TOKEN:-}
+      SKILLQUEST_API_TOKEN: ${SERVICE_API_TOKEN:-skillquest-service-token}
     depends_on:
       backend:
         condition: service_healthy
     restart: unless-stopped
 
-  # TLS-терминация и единственная точка входа: наружу смотрит только Caddy.
   caddy:
     image: caddy:2-alpine
     container_name: skillquest-caddy
     environment:
       SITE_ADDRESS: ${SITE_ADDRESS:-:80}
-      # Caddy падает без непустого email, поэтому значение по умолчанию задаём здесь.
       ACME_EMAIL: ${ACME_EMAIL:-hostmaster@example.com}
     ports:
       - "80:80"

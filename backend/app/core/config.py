@@ -20,17 +20,20 @@ for candidate in (Path.cwd() / ".env", Path(__file__).resolve().parents[3] / ".e
 class Settings(BaseSettings):
     """Параметры приложения (из окружения / .env).
 
-    ``cors_origins`` — разрешённые CORS-origins через запятую; ``"*"`` —
-    разрешить все.
+    ``service_api_token`` — токен сервисной роли (бот MAX). Значение по
+    умолчанию встроено, поэтому ``.env`` остаётся минимальным; переопределяется
+    переменной ``SERVICE_API_TOKEN``.
+
+    ``cors_origins`` — разрешённые CORS-origins через запятую; по умолчанию
+    пусто (cross-origin запрещён), ``"*"`` — разрешить все.
     """
 
     app_name: str = "SkillQuest"
     app_env: Literal["development", "testing", "production"] = "development"
     database_url: str = "sqlite:///./skillquest.db"
-    public_base_url: str = "http://localhost:8000"
 
     max_bot_token: str = ""
-    service_api_token: str = ""
+    service_api_token: str = "skillquest-service-token"
 
     auto_create_tables: bool = True
     seed_on_startup: bool = True
@@ -47,8 +50,7 @@ class Settings(BaseSettings):
     gigachat_ca_bundle: str = ""  # путь к CA-бандлу Минцифры (если нужен)
     gigachat_timeout: float = 30.0
 
-    # Разрешённые CORS-origins через запятую. "*" — разрешить все.
-    cors_origins: str = "*"
+    cors_origins: str = ""
 
     model_config = SettingsConfigDict(
         env_file=_ENV_PATHS or None,

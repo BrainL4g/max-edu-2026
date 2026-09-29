@@ -20,7 +20,7 @@
 config_version: "1"
 solution: "SkillQuest"
 team_id: "max-edu-2026"
-base_url: "https://api.skillquest.example.com"
+base_url: "http://localhost:8000"
 api_spec: "openapi.yaml"
 keys:
   student: "{{student.token}}"

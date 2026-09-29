@@ -12,7 +12,7 @@ from typing import Any, cast
 import httpx
 
 BASE_URL = os.getenv("SKILLQUEST_API", "http://127.0.0.1:8000")
-API_TOKEN = os.getenv("SKILLQUEST_API_TOKEN") or ""
+API_TOKEN = os.getenv("SKILLQUEST_API_TOKEN") or "skillquest-service-token"
 TIMEOUT = 15.0
 # Анализ резюме может ходить в GigaChat — даём ему больше времени.
 ANALYZE_TIMEOUT = 60.0

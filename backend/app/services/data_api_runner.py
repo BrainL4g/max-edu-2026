@@ -13,7 +13,7 @@
 
 Клиент — любой объект с методом ``request(method, url, **kwargs)``
 (FastAPI TestClient или httpx.Client), поэтому один и тот же файл
-DATA-API.yaml исполняется локально и по публичному адресу.
+DATA-API.yaml исполняется и локально, и по HTTP.
 """
 
 from __future__ import annotations

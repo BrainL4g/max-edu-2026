@@ -1,5 +1,3 @@
-# Production-ready образ бэкенда SkillQuest: multi-stage + non-root.
-# ---- Stage 1: установка зависимостей ----
 FROM python:3.12-slim AS builder
 
 ENV PIP_NO_CACHE_DIR=1 \
@@ -9,7 +7,6 @@ WORKDIR /build
 COPY requirements.txt requirements.txt
 RUN pip install --prefix=/install -r requirements.txt
 
-# ---- Stage 2: рантайм ----
 FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -19,17 +16,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Уже собранные зависимости — без промежуточных слоёв сборки.
 COPY --from=builder /install /usr/local
 
-# Только нужное для рантайма (см. .dockerignore).
 COPY alembic.ini ./backend/alembic.ini
 COPY alembic ./backend/alembic
 COPY app ./backend/app
 COPY entrypoint.sh ./backend/entrypoint.sh
 
-# Скрипт исполняется через `sh` (dash): CRLF из Windows-рабочей копии ломает
-# `set -eu`, поэтому нормализуем переносы строк на этапе сборки.
 RUN sed -i 's/\r$//' /app/backend/entrypoint.sh && \
     chmod +x /app/backend/entrypoint.sh && \
     useradd --create-home --uid 10001 appuser && \

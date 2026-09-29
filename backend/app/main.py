@@ -37,7 +37,7 @@ app = FastAPI(
         "Защищённые операции требуют Bearer-токен (см. security и docs/API.md)."
     ),
     lifespan=lifespan,
-    servers=[{"url": settings.public_base_url, "description": "Публичный API SkillQuest"}],
+    servers=[{"url": "/"}],
     contact={"name": "SkillQuest Team", "url": "https://github.com/BrainL4g/max-edu-2026"},
     openapi_tags=[
         {"name": "users", "description": "Профиль, диагностика, прогресс, целевая роль"},

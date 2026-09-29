@@ -9,8 +9,7 @@ info:
     url: https://github.com/BrainL4g/max-edu-2026
   version: 0.2.0
 servers:
-- url: http://localhost:8000
-  description: Публичный API SkillQuest
+- url: /
 paths:
   /users:
     post:

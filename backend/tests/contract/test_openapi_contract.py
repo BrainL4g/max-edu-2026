@@ -30,7 +30,7 @@ def test_openapi_declares_required_sections() -> None:
     schema = app.openapi()
 
     assert schema["openapi"] in ("3.0.0", "3.0.1", "3.0.2", "3.0.3", "3.1.0")
-    assert schema["servers"][0]["url"]
+    assert schema["servers"][0]["url"] == "/"
     assert schema["info"]["version"]
     assert schema["info"]["description"]
     assert schema["info"]["contact"]["name"]
