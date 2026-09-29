@@ -102,7 +102,17 @@ def test_cmd_start_ensures_user_and_answers(monkeypatch: pytest.MonkeyPatch) -> 
     assert sessions.session_for(USER_ID)["uid"] == 9
 
 
-def test_cmd_start_skips_without_sender(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_cmd_start_skipped_right_after_bot_started(monkeypatch) -> None:
+    _fake_user(monkeypatch, platform_id=9)
+    sessions.session_for(USER_ID)["welcomed"] = True
+    event = FakeMessageCreatedEvent(USER_ID, "Ваня")
+    _run(start.cmd_start(event))
+    assert event.answers == []
+    assert sessions.session_for(USER_ID)["uid"] == 9
+    assert sessions.session_for(USER_ID)["welcomed"] is False
+
+
+def test_cmd_start_skips_without_sender(monkeypatch) -> None:
     _fake_user(monkeypatch)
     event = FakeMessageCreatedEvent(USER_ID, "Ваня")
     event.message.sender = None
@@ -130,11 +140,9 @@ def test_show_help_edits_instruction() -> None:
 
 def test_back_to_menu_edits() -> None:
     event = FakeCallbackEvent("menu:main")
-    sessions.session_for(USER_ID)["resume"] = True
     _run(start.back_to_menu(event))
     assert len(event.edits) == 1
     assert "Главное меню" in event.edits[0][0]
-    assert sessions.session_for(USER_ID)["resume"] is False  # ожидание резюме сброшено
 
 
 def test_show_skill_map(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -234,7 +242,7 @@ def test_mission_next_no_goal(monkeypatch: pytest.MonkeyPatch) -> None:
     assert "goal:show" in payloads
 
 
-def test_mission_answer_correct(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_mission_answer_correct(monkeypatch) -> None:
     _fake_user(monkeypatch)
     result = {
         "is_correct": True,

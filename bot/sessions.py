@@ -20,7 +20,8 @@ sessions: dict[int, dict[str, Any]] = {}
 def session_for(max_user_id: int) -> dict[str, Any]:
     """Состояние пользователя (с гарантированными ключами)."""
     return sessions.setdefault(
-        max_user_id, {"uid": None, "answers": [], "resume": False}
+        max_user_id,
+        {"uid": None, "answers": [], "resume": False, "welcomed": False},
     )
 
 

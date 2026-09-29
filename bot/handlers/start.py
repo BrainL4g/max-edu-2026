@@ -24,15 +24,24 @@ async def on_bot_started(event: BotStarted) -> None:
         text=f"Привет, {first_name}! Я SkillQuest 🎮 Выбирай, что делаем:",
         attachments=[kbs.main_menu()],  # type: ignore[arg-type]  # union-сигнатура maxapi
     )
+    sessions.session_for(event.user.user_id)["welcomed"] = True
 
 
 @router.message_created(Command("start"))
 async def cmd_start(event: MessageCreated) -> None:
-    """Команда /start: связываем пользователя и показываем меню."""
+    """Команда /start: связываем пользователя и показываем меню.
+
+    Приветствие уже отправлено по bot_started, поэтому повторный /start
+    сразу после него не шлёт второе сообщение с меню.
+    """
     sender = event.message.sender
     if sender is None:
         return
     await sessions.ensure_user(sender.user_id, sender.first_name or "")
+    item = sessions.session_for(sender.user_id)
+    if item["welcomed"]:
+        item["welcomed"] = False
+        return
     await event.message.answer("Что делаем? 🎮", attachments=[kbs.main_menu()])
 
 
