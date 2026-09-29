@@ -1,0 +1,311 @@
+# DATA-API.yaml — контракт приёмки API SkillQuest «с собственным API».
+#
+# Каждая проверка (``checks``) описывается ровно 9 полями:
+#   name, description, method, path, params, role,
+#   expected_status, content_type, required_fields
+# Ключи/токены вынесены в одно место — раздел ``keys``.
+#
+# Плейсхолдеры ``{{...}}``:
+#   {{student.user_id}}, {{student.token}}, {{admin.user_id}}, {{admin.token}}
+#     — тестовые учётные записи (seed_test_accounts.py);
+#   {{test-data.<key>}}
+#     — значения из tests-data/test-data.json;
+#   {{capture.<check-name>.<поле.поле>}}
+#     — поле из ответа предыдущей проверки (числовой сегмент = индекс списка).
+#
+# Семантика ``params``: для GET/DELETE — query-параметры, для
+# POST/PUT/PATCH — JSON-тело запроса.
+# ``role``: none (публично), student, admin, service — токен из ``keys``.
+
+config_version: "1"
+solution: "SkillQuest"
+team_id: "max-edu-2026"
+base_url: "https://api.skillquest.example.com"
+api_spec: "openapi.yaml"
+keys:
+  student: "{{student.token}}"
+  admin: "{{admin.token}}"
+  service: "{{service.token}}"
+
+checks:
+  - name: health
+    description: "Health-check доступен без токена."
+    method: GET
+    path: "/health"
+    params: {}
+    role: none
+    expected_status: 200
+    content_type: "application/json"
+    required_fields: [status, app, env]
+
+  - name: root
+    description: "Корневая страница со ссылками на документы."
+    method: GET
+    path: "/"
+    params: {}
+    role: none
+    expected_status: 200
+    content_type: "application/json"
+    required_fields: [app, docs]
+
+  - name: roles
+    description: "Каталог целевых ролей публичен."
+    method: GET
+    path: "/roles"
+    params: {}
+    role: none
+    expected_status: 200
+    content_type: "application/json"
+    required_fields: [id, name, direction, level, requirements]
+
+  - name: skills
+    description: "Каталог навыков публичен."
+    method: GET
+    path: "/skills"
+    params: {}
+    role: none
+    expected_status: 200
+    content_type: "application/json"
+    required_fields: [id, name, category]
+
+  - name: courses
+    description: "Каталог курсов публичен."
+    method: GET
+    path: "/courses"
+    params: {}
+    role: none
+    expected_status: 200
+    content_type: "application/json"
+    required_fields: [id, title, level, category, cost, format, skills]
+
+  - name: internships
+    description: "Каталог стажировок публичен."
+    method: GET
+    path: "/internships"
+    params: {}
+    role: none
+    expected_status: 200
+    content_type: "application/json"
+    required_fields: [id, title, company, level, remote, direction, skills]
+
+  - name: questions-public
+    description: "Банк вопросов диагностики доступен без токена."
+    method: GET
+    path: "/assessment/questions"
+    params: {}
+    role: none
+    expected_status: 200
+    content_type: "application/json"
+    required_fields: [id, skill, text, options]
+
+  - name: admin-reset
+    description: "Администратор сбрасывает учебные данные тест-студента (воспроизводимость прогона)."
+    method: POST
+    path: "/admin/test-users/reset"
+    params: {}
+    role: admin
+    expected_status: 200
+    content_type: "application/json"
+    required_fields: [reset, students_affected, message]
+
+  - name: questions-auth
+    description: "Вопросы по направлению владельца токена (Bearer + user_id)."
+    method: GET
+    path: "/assessment/questions"
+    params:
+      user_id: "{{student.user_id}}"
+    role: student
+    expected_status: 200
+    content_type: "application/json"
+    required_fields: [id, skill, text, options]
+
+  - name: user-profile
+    description: "Профиль тест-студента — доступен только владельцу."
+    method: GET
+    path: "/users/{{student.user_id}}"
+    params: {}
+    role: student
+    expected_status: 200
+    content_type: "application/json"
+    required_fields: [id, name, education, direction, goal, target_role_id, created_at]
+
+  - name: user-update
+    description: "Обновление профиля (имя и цель из тест-данных)."
+    method: PATCH
+    path: "/users/{{student.user_id}}"
+    params:
+      name: "{{test-data.student.name}}"
+      goal: "{{test-data.student.goal}}"
+    role: student
+    expected_status: 200
+    content_type: "application/json"
+    required_fields: [id, name, goal]
+
+  - name: set-goal
+    description: "Выбор целевой роли (необходим для миссий и gap-анализа)."
+    method: PUT
+    path: "/users/{{student.user_id}}/goal"
+    params:
+      target_role_id: "{{test-data.student.target_role_id}}"
+    role: student
+    expected_status: 200
+    content_type: "application/json"
+    required_fields: [id, target_role_id]
+
+  - name: assessment
+    description: "Первичная диагностика: эталонные ответы из тест-данных."
+    method: POST
+    path: "/users/{{student.user_id}}/assessment"
+    params:
+      answers: "{{test-data.assessment.answers}}"
+    role: student
+    expected_status: 200
+    content_type: "application/json"
+    required_fields: [user_id, evaluated_skills, summary]
+
+  - name: gap-analysis
+    description: "Gap-анализ до целевой роли."
+    method: GET
+    path: "/users/{{student.user_id}}/gap-analysis"
+    params: {}
+    role: student
+    expected_status: 200
+    content_type: "application/json"
+    required_fields: [user_id, role, match_percent, items, summary]
+
+  - name: progress
+    description: "Прогресс студента: XP, миссии, Skill Map."
+    method: GET
+    path: "/users/{{student.user_id}}/progress"
+    params: {}
+    role: student
+    expected_status: 200
+    content_type: "application/json"
+    required_fields: [user_id, total_xp, completed_missions, total_missions, skills_count, skill_map]
+
+  - name: list-missions
+    description: "Список всех миссий."
+    method: GET
+    path: "/missions"
+    params: {}
+    role: student
+    expected_status: 200
+    content_type: "application/json"
+    required_fields: [id, skill_name, difficulty, scenario, reward_xp, options]
+
+  - name: next-mission
+    description: "Следующая миссия строго по целевой роли."
+    method: GET
+    path: "/missions/next"
+    params:
+      user_id: "{{student.user_id}}"
+    role: student
+    expected_status: 200
+    content_type: "application/json"
+    required_fields: [status, mission, done, total]
+
+  - name: get-mission
+    description: "Миссия по id из ответа предыдущей проверки."
+    method: GET
+    path: "/missions/{{capture.next-mission.mission.id}}"
+    params: {}
+    role: student
+    expected_status: 200
+    content_type: "application/json"
+    required_fields: [id, skill_name, scenario, options]
+
+  - name: answer-mission
+    description: "Ответ на миссию: проверка, XP, результат."
+    method: POST
+    path: "/missions/{{capture.next-mission.mission.id}}/answer"
+    params:
+      user_id: "{{student.user_id}}"
+      option_id: "{{capture.next-mission.mission.options.0.id}}"
+    role: student
+    expected_status: 200
+    content_type: "application/json"
+    required_fields: [attempt_id, mission_id, is_correct, xp_earned, already_solved]
+
+  - name: create-resume
+    description: "Загрузка резюме текстом (id переиспользуется следующими проверками)."
+    method: POST
+    path: "/users/{{student.user_id}}/resumes"
+    params:
+      text: "{{test-data.resume.text}}"
+      filename: "{{test-data.resume.filename}}"
+    role: student
+    expected_status: 201
+    content_type: "application/json"
+    required_fields: [id, user_id, text, uploaded_at]
+
+  - name: analyze-resume
+    description: "Запуск анализа резюме по id из ответа предыдущей проверки."
+    method: POST
+    path: "/resumes/{{capture.create-resume.id}}/analyze"
+    params: {}
+    role: student
+    expected_status: 200
+    content_type: "application/json"
+    required_fields: [resume_id, found_skills, missing_skills, recommendations, direction_match, summary]
+
+  - name: resume-analysis
+    description: "Результат анализа резюме."
+    method: GET
+    path: "/resumes/{{capture.create-resume.id}}/analysis"
+    params: {}
+    role: student
+    expected_status: 200
+    content_type: "application/json"
+    required_fields: [resume_id, found_skills, strengths, issues, summary]
+
+  - name: attempts
+    description: "История попыток студента."
+    method: GET
+    path: "/users/{{student.user_id}}/attempts"
+    params: {}
+    role: student
+    expected_status: 200
+    content_type: "application/json"
+    required_fields: [id, mission_id, is_correct, xp_earned, status, created_at]
+
+  - name: by-max
+    description: "Связка пользователя MAX (доступно только сервисной роли)."
+    method: POST
+    path: "/users/by-max"
+    params:
+      max_user_id: 424242
+      name: "Пользователь из MAX"
+    role: service
+    expected_status: 200
+    content_type: "application/json"
+    required_fields: [id, max_user_id]
+
+  - name: unauthorized
+    description: "Без токена доступ к приватному ресурсу закрыт (401)."
+    method: GET
+    path: "/users/{{student.user_id}}"
+    params: {}
+    role: none
+    expected_status: 401
+    content_type: "application/json"
+    required_fields: [detail]
+
+  - name: forbidden
+    description: "Студент не читает чужой профиль (403)."
+    method: GET
+    path: "/users/{{admin.user_id}}"
+    params: {}
+    role: student
+    expected_status: 403
+    content_type: "application/json"
+    required_fields: [detail]
+
+  - name: not-found
+    description: "Несуществующий пользователь (404, сервисная роль видит все ресурсы)."
+    method: GET
+    path: "/users/999999"
+    params: {}
+    role: service
+    expected_status: 404
+    content_type: "application/json"
+    required_fields: [detail]
