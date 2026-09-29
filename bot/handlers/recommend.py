@@ -21,13 +21,13 @@ PAGE_SIZE = 5
 def _cards_links(
     items: list[dict[str, Any]],
     card_fn: Callable[[dict[str, Any], int], str],
-    label: str,
+    link_fn: Callable[[dict[str, Any], int], str],
     offset: int = 0,
 ) -> tuple[str, list[tuple[str, str]]]:
-    """Карточки страницы и ссылки-кнопки «{label} N» со сквозной нумерацией."""
+    """Карточки страницы и ссылки-кнопки со сквозной нумерацией."""
     cards = [card_fn(item, offset + index + 1) for index, item in enumerate(items)]
     links = [
-        (f"{label} {offset + index + 1}", item["url"])
+        (link_fn(item, offset + index + 1), item["url"])
         for index, item in enumerate(items)
         if item.get("url")
     ]
@@ -120,7 +120,10 @@ async def _show_internships(
     start_idx = page * PAGE_SIZE
     page_items = internships[start_idx : start_idx + PAGE_SIZE]
     cards, links = _cards_links(
-        page_items, texts.internship_card, "Открыть стажировку", offset=start_idx
+        page_items,
+        texts.internship_card,
+        texts.internship_link_title,
+        offset=start_idx,
     )
 
     header = texts.internships_header(direction, page=page, total_pages=total_pages)

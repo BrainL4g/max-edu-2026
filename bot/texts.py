@@ -107,6 +107,14 @@ def internship_card(item: dict[str, Any], index: int = 0) -> str:
     return "\n".join(lines)
 
 
+def internship_link_title(item: dict[str, Any], index: int) -> str:
+    """Подпись ссылки стажировки: номер карточки, компания и направление."""
+    company = item.get("company") or item.get("title") or "Стажировка"
+    direction = item.get("direction")
+    title = f"{company} · {direction}" if direction else company
+    return f"{index}. {title}"
+
+
 def internship_directions_text() -> str:
     """Текст экрана выбора направления стажировок."""
     return (

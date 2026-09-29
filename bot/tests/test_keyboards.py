@@ -137,15 +137,15 @@ def test_internship_directions_kb_clips_long_code() -> None:
 
 def test_internships_pagination_kb_first_page() -> None:
     links = [
-        ("Открыть стажировку 1", "https://jobs/1"),
-        ("Открыть стажировку 2", "https://jobs/2"),
+        ("1. Яндекс · backend", "https://jobs/1"),
+        ("2. VK · frontend", "https://jobs/2"),
     ]
     buttons = buttons_from(
         [kbs.internships_pagination_kb(links, direction=None, page=0, total_pages=2)]
     )
     assert [b.text for b in buttons[:2]] == [
-        "Открыть стажировку 1",
-        "Открыть стажировку 2",
+        "1. Яндекс · backend",
+        "2. VK · frontend",
     ]
     assert buttons[0].url == "https://jobs/1"
     assert buttons[2].text == "Следующая страница ➡️"
@@ -176,7 +176,7 @@ def test_internships_pagination_kb_last_page() -> None:
 
 
 def test_internships_pagination_kb_single_page() -> None:
-    links = [("Открыть стажировку 1", "https://jobs/1")]
+    links = [("1. Яндекс · backend", "https://jobs/1")]
     buttons = buttons_from(
         [kbs.internships_pagination_kb(links, direction=None, page=0, total_pages=1)]
     )

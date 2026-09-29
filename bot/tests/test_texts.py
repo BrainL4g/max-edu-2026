@@ -117,6 +117,16 @@ def test_internships_header_with_and_without_direction() -> None:
     assert texts.internships_header(None) == "💼 Рекомендуемые стажировки:"
 
 
+def test_internship_link_title() -> None:
+    assert (
+        texts.internship_link_title({"company": "Яндекс", "direction": "backend"}, 1)
+        == "1. Яндекс · backend"
+    )
+    assert texts.internship_link_title({"company": "Яндекс"}, 3) == "3. Яндекс"
+    assert texts.internship_link_title({"title": "Стажёр"}, 2) == "2. Стажёр"
+    assert texts.internship_link_title({}, 4) == "4. Стажировка"
+
+
 def test_internships_header_with_pagination() -> None:
     assert texts.internships_header(None, page=1, total_pages=2) == (
         "💼 Рекомендуемые стажировки (страница 2 из 2):"

@@ -424,6 +424,8 @@ def test_internships_by_direction_filters(monkeypatch) -> None:
     assert "backend" in text
     assert store["direction"] == "backend"
     buttons = buttons_from(attachments)
+    # Направление не задано — подпись ссылки без направления
+    assert buttons[0].text == "1. Яндекс"
     assert buttons[0].url == "https://ya.ru/vacancy"
     assert _payloads(buttons[1:]) == ["in:rec", "menu:main"]
 
@@ -460,7 +462,7 @@ def test_internships_pagination_next_and_prev(monkeypatch) -> None:
     assert "5. Стажировка 5" in text0
     assert "6. Стажировка 6" not in text0
     buttons0 = buttons_from(att0)
-    assert buttons0[0].text == "Открыть стажировку 1"
+    assert buttons0[0].text == "1. Компания 1 · backend"
     assert buttons0[0].url == "https://jobs/1"
     assert buttons0[5].text == "Следующая страница ➡️"
     assert buttons0[5].payload == "in:dir:any:1"
@@ -476,7 +478,7 @@ def test_internships_pagination_next_and_prev(monkeypatch) -> None:
     assert "6. Стажировка 6 @ Компания 6" in text1
     assert "7. Стажировка 7" in text1
     buttons1 = buttons_from(att1)
-    assert buttons1[0].text == "Открыть стажировку 6"
+    assert buttons1[0].text == "6. Компания 6 · backend"
     assert buttons1[2].text == "⬅️ Предыдущая страница"
     assert buttons1[2].payload == "in:dir:backend:0"
     assert buttons1[3].payload == "in:rec"
@@ -548,19 +550,23 @@ def test_cards_links_numbers_with_offset() -> None:
     def card_fn(item: dict[str, Any], index: int) -> str:
         return f"{index}. {item['title']}"
 
-    cards, links = recommend._cards_links(items, card_fn, "Открыть", offset=5)
+    cards, links = recommend._cards_links(
+        items, card_fn, lambda item, index: f"{index}. {item['title']}", offset=5
+    )
     assert cards.split("\n") == ["6. Курс 0", "7. Курс 1", "8. Курс 2"]
     assert links == [
-        ("Открыть 6", "https://x/0"),
-        ("Открыть 7", "https://x/1"),
-        ("Открыть 8", "https://x/2"),
+        ("6. Курс 0", "https://x/0"),
+        ("7. Курс 1", "https://x/1"),
+        ("8. Курс 2", "https://x/2"),
     ]
 
 
 def test_cards_links_skips_missing_url() -> None:
     items = [{"title": "A", "url": "https://a"}, {"title": "B"}]
-    cards, links = recommend._cards_links(items, lambda item, index: "x", "L")
-    assert len(links) == 1
+    cards, links = recommend._cards_links(
+        items, lambda item, index: "x", lambda item, index: "L"
+    )
+    assert links == [("L", "https://a")]
     assert cards == "x\nx"
 
 
