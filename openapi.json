@@ -11,8 +11,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:8000",
-      "description": "Публичный API SkillQuest"
+      "url": "/"
     }
   ],
   "paths": {

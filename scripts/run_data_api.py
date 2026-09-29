@@ -1,8 +1,8 @@
-"""Прогон проверок DATA-API.yaml по публичному адресу (curl-совместимый клиент).
+"""Прогон проверок DATA-API.yaml по HTTP (curl-совместимый клиент).
 
 Примеры запуска (из корня репозитория):
 
-    python -X utf8 scripts/run_data_api.py --base-url https://api.example.com \\
+    python -X utf8 scripts/run_data_api.py --base-url http://localhost \\
         --token student=<токен> --token admin=<токен> --token service=<токен> \\
         --user-id 1 --admin-id 2
 
@@ -98,7 +98,7 @@ def _load_yaml(path: Path) -> dict[str, Any]:
 def main() -> None:
     """Разобрать аргументы, выполнить все проверки DATA-API и отчитаться."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--base-url", required=True, help="базовый URL публичного API")
+    parser.add_argument("--base-url", required=True, help="базовый URL API (например, http://localhost)")
     parser.add_argument(
         "--token",
         action="append",

@@ -1,8 +1,4 @@
 #!/bin/sh
-# Точка входа backend: миграции (если применимо) → API-сервер.
-# Если база создана старым образом через create_all (без alembic_version),
-# миграции могут не примениться — тогда работаем через create_all+seed,
-# которые выполняет само приложение при старте.
 set -eu
 
 echo "[entrypoint] Applying database migrations..."

@@ -27,7 +27,6 @@ class Settings(BaseSettings):
     app_name: str = "SkillQuest"
     app_env: Literal["development", "testing", "production"] = "development"
     database_url: str = "sqlite:///./skillquest.db"
-    public_base_url: str = "http://localhost:8000"
 
     max_bot_token: str = ""
     service_api_token: str = ""

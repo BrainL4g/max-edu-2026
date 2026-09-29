@@ -6,7 +6,6 @@ services:
       APP_NAME: SkillQuest
       APP_ENV: production
       DATABASE_URL: sqlite:////app/data/skillquest.db
-      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8000}
       SERVICE_API_TOKEN: ${SERVICE_API_TOKEN:-}
       CORS_ORIGINS: ${CORS_ORIGINS:-}
     volumes:
