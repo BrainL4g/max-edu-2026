@@ -45,6 +45,25 @@ def roles_kb(roles: list[dict[str, Any]]) -> AttachmentButton:
     return builder.as_markup()
 
 
+def goal_required_kb() -> AttachmentButton:
+    """Кнопки экрана «сначала выбери цель» (диагностика/миссии без цели)."""
+    builder = InlineKeyboardBuilder()  # type: ignore[no-untyped-call]
+    builder.row(CallbackButton(text="🎯 Выбрать цель", payload="goal:show"))
+    builder.row(CallbackButton(text="🏠 Меню", payload="menu:main"))
+    return builder.as_markup()
+
+
+def missions_done_kb() -> AttachmentButton:
+    """Кнопки после прохождения всех миссий по цели."""
+    builder = InlineKeyboardBuilder()  # type: ignore[no-untyped-call]
+    builder.row(
+        CallbackButton(text="📚 Курсы", payload="cr:rec"),
+        CallbackButton(text="📊 Skill Map", payload="sm:show"),
+    )
+    builder.row(CallbackButton(text="🏠 Меню", payload="menu:main"))
+    return builder.as_markup()
+
+
 _OPTION_NUMBERS = ("①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨", "⑩")
 
 

@@ -60,15 +60,33 @@ def test_missions_full_flow(client, db_session):
     assert client.get(f"/missions/{missions[0]['id']}").status_code == 200
     assert client.get("/missions/999999").status_code == 404
 
+    # Без цели — статус no_goal.
+    no_goal = client.get("/missions/next", params={"user_id": user["id"]}).json()
+    assert no_goal["status"] == "no_goal"
+    assert no_goal["mission"] is None
+
+    # С целью (Backend Junior) — статус ok и миссия по навыкам роли.
+    roles = client.get("/roles").json()
+    backend_role = next(role for role in roles if role["name"] == "Backend Junior")
+    assert (
+        client.put(
+            f"/users/{user['id']}/goal", json={"target_role_id": backend_role["id"]}
+        ).status_code
+        == 200
+    )
     next_mission = client.get("/missions/next", params={"user_id": user["id"]}).json()
-    assert next_mission is not None
+    assert next_mission["status"] == "ok"
+    assert next_mission["mission"] is not None
+    assert next_mission["total"] > 0
+    mission = next_mission["mission"]
 
     answer = client.post(
-        f"/missions/{next_mission['id']}/answer",
-        json={"user_id": user["id"], "option_id": next_mission["options"][0]["id"]},
+        f"/missions/{mission['id']}/answer",
+        json={"user_id": user["id"], "option_id": mission["options"][0]["id"]},
     )
     assert answer.status_code == 200
     assert "xp_earned" in answer.json()
+    assert "already_solved" in answer.json()
 
     attempts = client.get(f"/users/{user['id']}/attempts").json()
     assert len(attempts) == 1

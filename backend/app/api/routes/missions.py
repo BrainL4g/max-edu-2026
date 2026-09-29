@@ -13,6 +13,7 @@ from backend.app.schemas.mission import (
     AttemptHistoryItem,
     AttemptResultOut,
     MissionAnswerIn,
+    MissionNextOut,
     MissionOut,
 )
 from backend.app.services.missions import MissionService
@@ -26,12 +27,12 @@ def list_missions(db: Session = Depends(get_db)) -> list[Mission]:
     return MissionService(db).missions.list_all()
 
 
-@router.get("/missions/next", response_model=MissionOut | None)
+@router.get("/missions/next", response_model=MissionNextOut)
 def next_mission(
     user_id: int = Query(..., description="id пользователя"),
     db: Session = Depends(get_db),
-) -> Mission | None:
-    """Следующее задание: приоритет — слабые навыки пользователя."""
+) -> dict[str, Any]:
+    """Следующее задание строго по целевой роли: статус, прогресс, миссия."""
     return MissionService(db).get_next_mission(user_id)
 
 

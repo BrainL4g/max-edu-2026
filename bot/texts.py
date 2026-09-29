@@ -32,6 +32,20 @@ def help_text() -> str:
     )
 
 
+def need_goal_text() -> str:
+    """Экран «сначала выбери цель» (диагностика и миссии без цели)."""
+    return (
+        "🎯 Сначала выбери цель.\n\n"
+        "От цели зависят вопросы диагностики и подбор миссий. "
+        "Выбери роль — и продолжим!"
+    )
+
+
+def missions_done_text(done: int, total: int) -> str:
+    """Экран «по цели всё пройдено»."""
+    return f"По цели пройдено всё 🏆 ({done}/{total} миссий)."
+
+
 def numbered_options(options: list[str]) -> str:
     """Нумерованный список вариантов ответа (1..N) для текста вопроса."""
     return "\n".join(f"{i + 1}. {text}" for i, text in enumerate(options))

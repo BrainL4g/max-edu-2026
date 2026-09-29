@@ -15,8 +15,12 @@ router = Router()
 
 @router.message_callback(F.callback.payload == "as:start")
 async def start_assessment(event: MessageCallback) -> None:
-    """Начало диагностики: сброс ответов и первый вопрос."""
-    await sessions.ensure_user_from(event.callback.user)
+    """Начало диагностики: сброс ответов и первый вопрос (только с целью)."""
+    user_id = await sessions.ensure_user_from(event.callback.user)
+    profile = await api.get_profile(user_id)
+    if profile.get("target_role_id") is None:
+        await event.edit(texts.need_goal_text(), attachments=[kbs.goal_required_kb()])
+        return
     item = sessions.session_for(event.callback.user.user_id)
     item["answers"] = []
     await _ask(event, 0)

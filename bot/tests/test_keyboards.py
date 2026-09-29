@@ -90,6 +90,22 @@ def test_after_mission_kb() -> None:
     assert "menu:main" in payloads
 
 
+def test_goal_required_kb() -> None:
+    buttons = buttons_from([kbs.goal_required_kb()])
+    payloads = _payloads(buttons)
+    assert "goal:show" in payloads
+    assert "menu:main" in payloads
+    assert "as:start" not in payloads
+
+
+def test_missions_done_kb() -> None:
+    buttons = buttons_from([kbs.missions_done_kb()])
+    payloads = _payloads(buttons)
+    assert "cr:rec" in payloads
+    assert "sm:show" in payloads
+    assert "menu:main" in payloads
+
+
 def test_menu_with_links() -> None:
     buttons = buttons_from([kbs.menu_with_links([("Открыть курс", "https://x.ru")])])
     assert buttons[0].url == "https://x.ru"

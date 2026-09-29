@@ -13,6 +13,23 @@ def test_progress_bar() -> None:
     assert texts.progress_bar(100, 5) == "▓" * 5
 
 
+def test_help_text_mentions_sections() -> None:
+    text = texts.help_text()
+    assert "Как пользоваться" in text
+    assert "Цель" in text
+    assert "Диагностика" in text
+
+
+def test_need_goal_text() -> None:
+    assert "Сначала выбери цель" in texts.need_goal_text()
+
+
+def test_missions_done_text() -> None:
+    text = texts.missions_done_text(4, 4)
+    assert "пройдено всё" in text
+    assert "4/4" in text
+
+
 def test_numbered_options() -> None:
     assert texts.numbered_options(["Нет", "Да"]) == "1. Нет\n2. Да"
 

@@ -73,12 +73,21 @@ def test_assessment_questions_without_user_id_no_query(monkeypatch) -> None:
     assert captured["query"] == b""
 
 
-def test_next_mission_none_when_empty(monkeypatch) -> None:
-    # сервер отвечает JSON-null, когда все миссии пройдены
-    client = _client({("GET", "/missions/next"): Response(200, content=b"null")})
+def test_next_mission_returns_status_payload(monkeypatch) -> None:
+    payload = {"status": "ok", "done": 1, "total": 5, "mission": {"id": 3}}
+    client = _client({("GET", "/missions/next"): Response(200, json=payload)})
     monkeypatch.setattr(api, "_get_client", lambda: client)
 
-    assert asyncio.run(api.next_mission(1)) is None
+    assert asyncio.run(api.next_mission(1)) == payload
+
+
+def test_get_profile(monkeypatch) -> None:
+    client = _client(
+        {("GET", "/users/5"): Response(200, json={"id": 5, "target_role_id": 1})}
+    )
+    monkeypatch.setattr(api, "_get_client", lambda: client)
+
+    assert asyncio.run(api.get_profile(5))["target_role_id"] == 1
 
 
 def test_answer_mission_sends_payload(monkeypatch) -> None:

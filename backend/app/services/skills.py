@@ -60,32 +60,45 @@ class SkillService:
         return user_skill
 
     def apply_mission_result(
-        self, user: User, mission: Mission, is_correct: bool
+        self,
+        user: User,
+        mission: Mission,
+        is_correct: bool,
+        *,
+        commit: bool = True,
     ) -> tuple[int, int, int]:
         """Начислить опыт за миссию.
 
-        Возвращает (полученный опыт, новый уровень, новый суммарный опыт).
+        За верный ответ — награда миссии + бонус за сложность; за неверный —
+        0 XP. Возвращает (полученный опыт, новый уровень, новый суммарный опыт).
+        При ``commit=False`` запись и коммит делает вызывающий код (единая
+        транзакция с другими операциями).
         """
         if is_correct:
             xp_gained = mission.reward_xp + DIFFICULTY_BONUS.get(mission.difficulty, 0)
         else:
-            # За неверный ответ — небольшой опыт «за попытку».
-            xp_gained = max(3, mission.reward_xp // 5)
+            # Честный XP: за неверный ответ опыт не начисляется.
+            xp_gained = 0
 
         user_skill = self._get_or_create_user_skill(user.id, mission.skill_id)
         new_xp = user_skill.experience + xp_gained
         new_level = level_from_xp(new_xp)
         user_skill.experience = new_xp
         user_skill.level = new_level
-        self.db.commit()
+        if commit:
+            self.db.commit()
         return xp_gained, new_level, new_xp
 
     def set_initial_skill(self, user_id: int, skill_id: int, level: int) -> UserSkill:
-        """Начальный уровень навыка по результатам диагностики."""
+        """Начальный уровень навыка по результатам диагностики.
+
+        Повторная диагностика не понижает уже накопленный прогресс: опыт
+        берётся как максимум из текущего и стартового порога уровня.
+        """
         safe_level = min(max(level, 0), MAX_LEVEL)
         user_skill = self._get_or_create_user_skill(user_id, skill_id)
-        user_skill.level = safe_level
-        user_skill.experience = initial_xp_for_level(safe_level)
+        user_skill.experience = max(user_skill.experience or 0, initial_xp_for_level(safe_level))
+        user_skill.level = level_from_xp(user_skill.experience)
         self.db.commit()
         return user_skill
 

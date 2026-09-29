@@ -57,10 +57,17 @@ def test_full_user_journey(client, db_session):
     python_level = next(s["level"] for s in skill_map if s["name"] == "Python")
     assert python_level == 2
 
-    # 5. Следующая миссия.
+    # 5. Цель (Backend Junior) → миссия строго по ней.
+    roles = client.get("/roles").json()
+    backend_role = next(role for role in roles if role["name"] == "Backend Junior")
+    goal = client.put(f"/users/{user_id}/goal", json={"target_role_id": backend_role["id"]})
+    assert goal.status_code == 200
+
     response = client.get("/missions/next", params={"user_id": user_id})
     assert response.status_code == 200
-    mission = response.json()
+    data = response.json()
+    assert data["status"] == "ok"
+    mission = data["mission"]
     assert mission is not None
     chosen = mission["options"][0]
 

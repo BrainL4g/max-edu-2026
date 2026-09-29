@@ -135,11 +135,16 @@ def test_mission_next_shows_question(monkeypatch) -> None:
         "scenario": "Напишите дебаггер.",
         "options": [{"id": 10, "text": "продолжить"}, {"id": 11, "text": "прервать"}],
     }
-    monkeypatch.setattr(api, "next_mission", _async_result(mission))
+    monkeypatch.setattr(
+        api,
+        "next_mission",
+        _async_result({"status": "ok", "done": 2, "total": 7, "mission": mission}),
+    )
 
     event = FakeCallbackEvent("ms:next")
     _run(missions.mission_next(event))
     text, attachments = event.edits[0]
+    assert "Миссия 3/7 по цели" in text
     assert "Python" in text
     assert "+25 XP" in text
     # сдвиг вариантов: id=3, len=2 → offset = 3 % 1 + 1 = 1 → порядок сдвинут
@@ -175,11 +180,35 @@ def test_mission_display_order_is_deterministic() -> None:
 
 def test_mission_next_all_done(monkeypatch) -> None:
     _fake_user(monkeypatch)
-    monkeypatch.setattr(api, "next_mission", _async_result(None))
+    monkeypatch.setattr(
+        api,
+        "next_mission",
+        _async_result({"status": "all_done", "done": 7, "total": 7, "mission": None}),
+    )
 
     event = FakeCallbackEvent("ms:next")
     _run(missions.mission_next(event))
-    assert "Все миссии пройдены" in event.edits[0][0]
+    text, attachments = event.edits[0]
+    assert "пройдено всё" in text
+    payloads = _payloads(buttons_from(attachments))
+    assert "cr:rec" in payloads
+    assert "sm:show" in payloads
+
+
+def test_mission_next_no_goal(monkeypatch) -> None:
+    _fake_user(monkeypatch)
+    monkeypatch.setattr(
+        api,
+        "next_mission",
+        _async_result({"status": "no_goal", "done": 0, "total": 0, "mission": None}),
+    )
+
+    event = FakeCallbackEvent("ms:next")
+    _run(missions.mission_next(event))
+    text, attachments = event.edits[0]
+    assert "Сначала выбери цель" in text
+    payloads = _payloads(buttons_from(attachments))
+    assert "goal:show" in payloads
 
 
 def test_mission_answer_correct(monkeypatch) -> None:
@@ -188,6 +217,7 @@ def test_mission_answer_correct(monkeypatch) -> None:
         "is_correct": True,
         "xp_earned": 25,
         "skill_name": "Python",
+        "skill_level_before": 1,
         "skill_level_after": 2,
         "explanation": "Верно!",
     }
@@ -197,7 +227,9 @@ def test_mission_answer_correct(monkeypatch) -> None:
     _run(missions.mission_answer(event))
     text, _ = event.edits[0]
     assert "✅ Верно!" in text
+    assert "+25 XP" in text
     assert "уровень 2" in text
+    assert "1 → 2" in text
     assert "Верно!" in text
 
 
@@ -207,8 +239,10 @@ def test_mission_answer_wrong_without_skill_name(monkeypatch) -> None:
         "is_correct": False,
         "xp_earned": 0,
         "skill_name": None,
+        "skill_level_before": 0,
         "skill_level_after": 0,
         "explanation": "",
+        "correct_option_text": "Правильный вариант",
     }
     monkeypatch.setattr(api, "answer_mission", _async_result(result))
 
@@ -216,7 +250,29 @@ def test_mission_answer_wrong_without_skill_name(monkeypatch) -> None:
     _run(missions.mission_answer(event))
     text, _ = event.edits[0]
     assert "❌ Не совсем" in text
+    assert "Правильный вариант" in text
     assert "Навык «—»" in text
+
+
+def test_mission_answer_already_solved(monkeypatch) -> None:
+    _fake_user(monkeypatch)
+    result = {
+        "is_correct": True,
+        "xp_earned": 0,
+        "skill_name": "Python",
+        "skill_level_before": 2,
+        "skill_level_after": 2,
+        "already_solved": True,
+        "explanation": "Уже решено",
+    }
+    monkeypatch.setattr(api, "answer_mission", _async_result(result))
+
+    event = FakeCallbackEvent("ms:ans:3:10")
+    _run(missions.mission_answer(event))
+    text, _ = event.edits[0]
+    assert "🔁 Уже решено" in text
+    assert "XP не приносит" in text
+    assert "Навык «Python»: уровень 2" in text
 
 
 def test_mission_answer_ignores_other_payloads() -> None:
@@ -225,8 +281,22 @@ def test_mission_answer_ignores_other_payloads() -> None:
     assert event.edits == []
 
 
+def _stub_profile(target_role_id: int) -> Callable[..., Any]:
+    """Заглушка профиля платформы (цель задана или нет)."""
+
+    async def _fake(user_id: int) -> dict[str, Any]:
+        return {"id": user_id, "target_role_id": target_role_id}
+
+    return _fake
+
+
+def _fake_profile(monkeypatch, target_role_id: int = 1) -> None:
+    monkeypatch.setattr(api, "get_profile", _stub_profile(target_role_id))
+
+
 def test_start_assessment_shows_first_question(monkeypatch) -> None:
     _fake_user(monkeypatch)
+    _fake_profile(monkeypatch)
     questions = [
         {"id": 1, "text": "Python?", "options": ["Нет", "Да"]},
         {"id": 2, "text": "SQL?", "options": ["Нет", "Да"]},
@@ -244,8 +314,21 @@ def test_start_assessment_shows_first_question(monkeypatch) -> None:
     assert sessions.session_for(USER_ID)["answers"] == []
 
 
+def test_start_assessment_without_goal_asks_goal(monkeypatch) -> None:
+    _fake_user(monkeypatch)
+    _fake_profile(monkeypatch, target_role_id=None)
+
+    event = FakeCallbackEvent("as:start")
+    _run(assessment.start_assessment(event))
+    text, attachments = event.edits[0]
+    assert "Сначала выбери цель" in text
+    payloads = _payloads(buttons_from(attachments))
+    assert "goal:show" in payloads
+
+
 def test_assessment_question_shows_skill_label(monkeypatch) -> None:
     _fake_user(monkeypatch)
+    _fake_profile(monkeypatch)
     questions = [
         {"id": 1, "skill": "Python", "text": "Оцените знания", "options": ["Нет", "Да"]}
     ]

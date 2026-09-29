@@ -11,7 +11,7 @@ from backend.app.domain import Mission, User
 from backend.app.repositories.role_repository import RoleRepository
 from backend.app.repositories.user_repository import UserRepository
 from backend.app.schemas.role import GapAnalysisOut, GoalIn
-from backend.app.schemas.skill import AssessmentIn, AssessmentOut
+from backend.app.schemas.skill import AssessmentIn, AssessmentOut, SkillMapItem
 from backend.app.schemas.user import UserByMaxIn, UserCreate, UserOut, UserProgressOut, UserUpdate
 from backend.app.services.assessment import AssessmentService
 from backend.app.services.gap_analysis import GapAnalysisService
@@ -92,7 +92,13 @@ def get_progress(user_id: int, db: Session = Depends(get_db)) -> UserProgressOut
     repo.get(user_id)
     progress = repo.get_progress(user_id)
     total_missions = db.scalar(select(func.count(Mission.id))) or 0
-    skill_map = SkillService(db).get_skill_map(user_id)
+    skill_map = [SkillMapItem(**item) for item in SkillService(db).get_skill_map(user_id)]
     return UserProgressOut(
-        user_id=user_id, total_missions=total_missions, skill_map=skill_map, **progress
+        user_id=user_id,
+        total_missions=total_missions,
+        skill_map=skill_map,
+        total_xp=int(progress["total_xp"]),
+        completed_missions=int(progress["completed_missions"]),
+        skills_count=int(progress["skills_count"]),
+        average_level=float(progress["average_level"]),
     )

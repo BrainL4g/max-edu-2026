@@ -71,6 +71,8 @@ SkillQuest превращает этот процесс в игру: диагн�
 
 - 🧠 **Диагностика** — первичная оценка навыков по категориям.
 - 🎮 **Миссии** — игровые задания с вариантами ответов, XP и уровнями.
+  - Миссии подбираются **строго по целевой роли** (`target_role_id`): без цели бот просит её выбрать, всё пройденное по роли отмечается как «всё пройдено».
+  - **Честный XP**: за неверный ответ опыт не начисляется; верный ответ приносит XP **один раз** — повторная сдача уже решённой миссии не создаёт новых попыток и не добавляет опыта.
 - 📊 **Skill Map** — уровни и прогресс по каждому навыку.
 - 📚 **Курсы** — список, поиск, фильтрация, рекомендации по пробелам.
 - 💼 **Стажировки** — список, фильтрация, рекомендации по направлению и навыкам.
@@ -350,21 +352,25 @@ curl -s -X POST $BASE/users/1/assessment -H "Content-Type: application/json" \
 # 3. Skill Map
 curl -s $BASE/users/1/skills
 
-# 4. Следующая миссия
+# 4. Цель (миссии и диагностика работают по целевой роли)
+curl -s -X PUT $BASE/users/1/goal -H "Content-Type: application/json" -d '{"target_role_id":1}' 
+# → {"id":1,"target_role_id":1,...}
+
+# 5. Следующая миссия → {"status":"ok|no_goal|all_done","done":N,"total":M,"mission":{...}}
 curl -s "$BASE/missions/next?user_id=1"
 
-# 5. Ответ на миссию (option_id из ответа выше)
+# 6. Ответ на миссию (option_id из ответа выше)
 curl -s -X POST $BASE/missions/1/answer -H "Content-Type: application/json" \
   -d '{"user_id":1,"option_id":1}'
 
-# 6. Прогресс пользователя
+# 7. Прогресс пользователя
 curl -s $BASE/users/1/progress
 
-# 7. Рекомендации курсов и стажировок
+# 8. Рекомендации курсов и стажировок
 curl -s "$BASE/courses/recommended?user_id=1"
 curl -s "$BASE/internships/recommended?user_id=1"
 
-# 8. Загрузка резюме и анализ
+# 9. Загрузка резюме и анализ
 curl -s -X POST $BASE/users/1/resumes -H "Content-Type: application/json" \
   -d '{"text":"Python, SQL, git. Образование: МГТУ. https://github.com/ivan"}'
 curl -s -X POST $BASE/resumes/1/analyze

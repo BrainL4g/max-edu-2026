@@ -20,15 +20,15 @@ def get_assessment_questions(
 ) -> list[AssessmentQuestionOut]:
     """Банк вопросов диагностики: текст и варианты ответов.
 
-    Если передан ``user_id``, вопросы фильтруются по направлению пользователя
-    (``user.direction`` или направлению целевой роли), чтобы, например,
-    выбравшему backend не показывались вопросы по фронтенду.
+    Если передан ``user_id``, вопросы фильтруются по направлению целевой
+    роли пользователя (``target_role.direction``, иначе ``user.direction``),
+    чтобы, например, выбравшему backend не показывались вопросы по фронтенду.
     """
     direction: str | None = None
     if user_id is not None:
         user = UserRepository(db).get(user_id)
         target_role = user.target_role
-        direction = user.direction or (target_role.direction if target_role else None)
+        direction = (target_role.direction if target_role else None) or user.direction
 
     return [
         AssessmentQuestionOut(

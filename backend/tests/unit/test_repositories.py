@@ -11,6 +11,7 @@ from backend.app.domain import (
     Course,
     Internship,
     Mission,
+    MissionOption,
     Resume,
     Role,
     RoleSkill,
@@ -192,6 +193,42 @@ def test_mission_repository_attempts(db_session):
     history = repo.list_attempts(user.id)
     assert len(history) == 1
     assert history[0].id == attempt.id
+
+
+def test_mission_repository_create_and_error_queries(db_session):
+    user = _user(db_session)
+    mission = _mission(db_session)
+    repo = MissionRepository(db_session)
+
+    mission.options.append(MissionOption(text="Верно", is_correct=True))
+    mission.options.append(MissionOption(text="Неверно", is_correct=False))
+    db_session.commit()
+
+    created = repo.create_attempt(
+        user_id=user.id,
+        mission_id=mission.id,
+        answer_option_id=mission.options[1].id,
+        is_correct=False,
+        xp_earned=0,
+    )
+    assert created.id is not None
+    # Верный ответ — отдельная запись, чтобы покрыть solved/error-выборки.
+    solved = repo.create_attempt(
+        user_id=user.id,
+        mission_id=mission.id,
+        answer_option_id=mission.options[0].id,
+        is_correct=True,
+        xp_earned=10,
+        commit=False,
+    )
+    db_session.commit()
+    db_session.refresh(solved)
+
+    assert repo.solved_mission_ids(user.id) == {mission.id}
+    assert repo.error_mission_ids(user.id) == {mission.id}
+    latest = repo.latest_correct_attempt(user.id, mission.id)
+    assert latest is not None and latest.id == solved.id
+    assert repo.latest_correct_attempt(user.id, 999999) is None
 
 
 # --- CourseRepository ---------------------------------------------------------

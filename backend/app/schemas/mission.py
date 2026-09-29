@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
@@ -31,6 +32,21 @@ class MissionOut(BaseModel):
     options: list[MissionOptionOut] = []
 
 
+class MissionNextOut(BaseModel):
+    """Следующая миссия по цели: статус, прогресс и сама миссия.
+
+    ``status``:
+    - ``ok`` — миссия доступна (поле ``mission`` заполнено);
+    - ``no_goal`` — у пользователя нет целевой роли;
+    - ``all_done`` — все миссии роли пройдены.
+    """
+
+    status: Literal["ok", "no_goal", "all_done"]
+    mission: MissionOut | None = None
+    done: int = 0
+    total: int = 0
+
+
 class MissionAnswerIn(BaseModel):
     """Отправка ответа на миссию."""
 
@@ -47,9 +63,12 @@ class AttemptResultOut(BaseModel):
     xp_earned: int
     explanation: str | None = None
     correct_option_id: int | None = None
+    correct_option_text: str | None = None
     skill_id: int | None = None
     skill_name: str | None = None
+    skill_level_before: int | None = None
     skill_level_after: int | None = None
+    already_solved: bool = False
 
 
 class AttemptHistoryItem(BaseModel):

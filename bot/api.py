@@ -77,10 +77,14 @@ async def skill_map(user_id: int) -> list[dict[str, Any]]:
     return _list(await _req("GET", f"/users/{user_id}/skills"))
 
 
-async def next_mission(user_id: int) -> dict[str, Any] | None:
-    """Следующая миссия или None, если все пройдены."""
-    mission = await _req("GET", "/missions/next", params={"user_id": user_id})
-    return _obj(mission) if mission else None
+async def get_profile(user_id: int) -> dict[str, Any]:
+    """Профиль пользователя платформы (цель, направление)."""
+    return _obj(await _req("GET", f"/users/{user_id}"))
+
+
+async def next_mission(user_id: int) -> dict[str, Any]:
+    """Следующая миссия по цели: status (ok/no_goal/all_done), прогресс, миссия."""
+    return _obj(await _req("GET", "/missions/next", params={"user_id": user_id}))
 
 
 async def answer_mission(

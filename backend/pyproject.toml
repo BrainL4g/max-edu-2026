@@ -43,6 +43,7 @@ target-version = ["py311"]
 [tool.isort]
 profile = "black"
 line_length = 100
+skip_glob = ["alembic/env.py"]
 
 [tool.mypy]
 python_version = "3.11"
