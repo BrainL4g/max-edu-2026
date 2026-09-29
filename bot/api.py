@@ -20,7 +20,12 @@ class ApiError(Exception):
 def _get_client() -> httpx.AsyncClient:
     global _client
     if _client is None or _client.is_closed:
-        _client = httpx.AsyncClient(base_url=BASE_URL, timeout=TIMEOUT)
+        _client = httpx.AsyncClient(
+            base_url=BASE_URL,
+            timeout=TIMEOUT,
+            # Переиспользуемый пул соединений (дефолтные лимиты httpx — 100/20).
+            limits=httpx.Limits(max_connections=10, max_keepalive_connections=5),
+        )
     return _client
 
 

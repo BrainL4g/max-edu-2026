@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import Any
 
 from sqlalchemy import select
@@ -19,25 +20,26 @@ from backend.app.repositories.user_repository import UserRepository
 from backend.app.services.skills import level_from_xp
 
 
-def _role_dict(role: Any) -> dict[str, Any]:
-    """ORM-роль → dict для схемы (требования подтягивают имя навыка)."""
+def _role_dict(role: Any, rows: Sequence[Any]) -> dict[str, Any]:
+    """ORM-роль → dict для схемы; требования берутся из уже загруженных строк."""
+    requirements = [
+        {
+            "skill_id": skill.id,
+            "name": skill.name,
+            "category": skill.category,
+            "required_level": role_skill.required_level,
+            "importance": role_skill.importance,
+            "is_mandatory": role_skill.is_mandatory,
+        }
+        for role_skill, skill in rows
+    ]
     return {
         "id": role.id,
         "name": role.name,
         "direction": role.direction,
         "level": role.level,
         "description": role.description,
-        "requirements": [
-            {
-                "skill_id": item.skill.id,
-                "name": item.skill.name,
-                "category": item.skill.category,
-                "required_level": item.required_level,
-                "importance": item.importance,
-                "is_mandatory": item.is_mandatory,
-            }
-            for item in role.requirements
-        ],
+        "requirements": requirements,
     }
 
 
@@ -112,7 +114,7 @@ class GapAnalysisService:
 
         return {
             "user_id": user.id,
-            "role": _role_dict(role),
+            "role": _role_dict(role, rows),
             "match_percent": match_percent,
             "items": items,
             "summary": summary,
