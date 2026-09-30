@@ -18,7 +18,7 @@ def test_session_for_creates_defaults() -> None:
         "uid": None,
         "answers": [],
         "resume": False,
-        "welcomed": False,
+        "greeted_at": None,
         "consent": False,
     }
     assert sessions.session_for(7) is item

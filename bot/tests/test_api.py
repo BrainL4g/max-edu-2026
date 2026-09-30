@@ -269,6 +269,24 @@ def test_analyze_resume_uses_extended_timeout(monkeypatch: pytest.MonkeyPatch) -
     assert timeout["read"] == api.ANALYZE_TIMEOUT
 
 
+def test_consent_and_resume_delete_api(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Права субъекта и удаление резюме ходят по верным маршрутам."""
+    client = _client(
+        {
+            ("POST", "/users/7/consent"): Response(200, json={"consent_given": True}),
+            ("DELETE", "/users/7/consent"): Response(
+                200, json={"consent_given": False}
+            ),
+            ("DELETE", "/resumes/12"): Response(204),
+        }
+    )
+    monkeypatch.setattr(api, "_get_client", lambda: client)
+
+    assert asyncio.run(api.give_consent(7)) == {"consent_given": True}
+    assert asyncio.run(api.revoke_consent(7)) == {"consent_given": False}
+    assert asyncio.run(api.delete_resume(12)) is None
+
+
 def test_roles_and_goal_api(monkeypatch: pytest.MonkeyPatch) -> None:
     roles = [
         {

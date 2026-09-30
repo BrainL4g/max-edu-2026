@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import time
+
 from maxapi import F, Router
 from maxapi.types import BotStarted, Command, MessageCallback, MessageCreated
 
@@ -11,12 +13,40 @@ import texts
 
 router = Router()
 
+GREET_WINDOW_SECONDS = 15.0
+"""Сколько секунд приветствие считается «только что отправленным».
+
+MAX при добавлении бота присылает и `bot_started`, и сообщение `/start`,
+причём в любом порядке. Если бы каждый хендлер просто запоминал флаг, то
+дубль появлялся бы в половине случаев — при `/start` раньше `bot_started`.
+Общая отметка времени снимает зависимость от порядка: кто пришёл вторым,
+тот молчит.
+"""
+
+
+def greeted_recently(max_user_id: int) -> bool:
+    """Приветствие уже уходило недавно — второй раз слать не нужно."""
+    stamp: float | None = sessions.session_for(max_user_id)["greeted_at"]
+    if stamp is None:
+        return False
+    return (time.monotonic() - stamp) < GREET_WINDOW_SECONDS
+
+
+def _mark_greeted(max_user_id: int) -> None:
+    """Отметить, что приветствие только что отправлено."""
+    sessions.session_for(max_user_id)["greeted_at"] = time.monotonic()
+
 
 @router.bot_started()
 async def on_bot_started(event: BotStarted) -> None:
-    """Бот добавлен пользователем: приветствие сразу с главным меню."""
+    """Бот добавлен пользователем: приветствие сразу с главным меню.
+
+    Молчит, если приветствие уже было — например, `/start` успел раньше.
+    """
     bot = event.bot
     if bot is None:
+        return
+    if greeted_recently(event.user.user_id):
         return
     first_name = event.user.first_name or "друг"
     await bot.send_message(
@@ -24,24 +54,23 @@ async def on_bot_started(event: BotStarted) -> None:
         text=f"Привет, {first_name}! Я SkillQuest 🎮 Выбирай, что делаем:",
         attachments=[kbs.main_menu()],  # type: ignore[arg-type]  # union-сигнатура maxapi
     )
-    sessions.session_for(event.user.user_id)["welcomed"] = True
+    _mark_greeted(event.user.user_id)
 
 
 @router.message_created(Command("start"))
 async def cmd_start(event: MessageCreated) -> None:
     """Команда /start: связываем пользователя и показываем меню.
 
-    Приветствие уже отправлено по bot_started, поэтому повторный /start
-    сразу после него не шлёт второе сообщение с меню.
+    Сразу после добавления бота приветствие уже показано, поэтому `/start`
+    в этом окне молчит — иначе пользователь видит меню дважды подряд.
     """
     sender = event.message.sender
     if sender is None:
         return
     await sessions.ensure_user(sender.user_id, sender.first_name or "")
-    item = sessions.session_for(sender.user_id)
-    if item["welcomed"]:
-        item["welcomed"] = False
+    if greeted_recently(sender.user_id):
         return
+    _mark_greeted(sender.user_id)
     await event.message.answer("Что делаем? 🎮", attachments=[kbs.main_menu()])
 
 

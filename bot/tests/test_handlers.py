@@ -103,13 +103,49 @@ def test_cmd_start_ensures_user_and_answers(monkeypatch: pytest.MonkeyPatch) -> 
 
 
 def test_cmd_start_skipped_right_after_bot_started(monkeypatch) -> None:
+    """Приветствие уже показано — /start не дублирует меню."""
     _fake_user(monkeypatch, platform_id=9)
-    sessions.session_for(USER_ID)["welcomed"] = True
+    _run(start.on_bot_started(FakeBotStartedEvent(USER_ID, "Аня")))
     event = FakeMessageCreatedEvent(USER_ID, "Ваня")
     _run(start.cmd_start(event))
     assert event.answers == []
     assert sessions.session_for(USER_ID)["uid"] == 9
-    assert sessions.session_for(USER_ID)["welcomed"] is False
+
+
+def test_bot_started_skipped_when_start_came_first(monkeypatch) -> None:
+    """Обратный порядок: /start раньше bot_started — тоже одно сообщение."""
+    _fake_user(monkeypatch, platform_id=9)
+    started = FakeMessageCreatedEvent(USER_ID, "Ваня")
+    _run(start.cmd_start(started))
+    assert len(started.answers) == 1
+
+    event = FakeBotStartedEvent(USER_ID, "Аня")
+    _run(start.on_bot_started(event))
+
+    assert event.bot.sent == []
+    assert start.greeted_recently(USER_ID) is True
+
+
+def test_cmd_start_answers_after_greeting_window(monkeypatch) -> None:
+    """Осознанный /start позже приветствия — обычный ответ с меню."""
+    _fake_user(monkeypatch, platform_id=9)
+    _run(start.on_bot_started(FakeBotStartedEvent(USER_ID, "Аня")))
+    sessions.session_for(USER_ID)["greeted_at"] -= start.GREET_WINDOW_SECONDS + 1
+
+    event = FakeMessageCreatedEvent(USER_ID, "Ваня")
+    _run(start.cmd_start(event))
+
+    assert len(event.answers) == 1
+    assert "Что делаем?" in event.answers[0][0]
+
+
+def test_greeted_recently_window_edges() -> None:
+    """Границы окна: ровно на пороге — уже недавнее, за порогом — нет."""
+    assert start.greeted_recently(USER_ID) is False
+    start._mark_greeted(USER_ID)
+    assert start.greeted_recently(USER_ID) is True
+    sessions.session_for(USER_ID)["greeted_at"] -= start.GREET_WINDOW_SECONDS
+    assert start.greeted_recently(USER_ID) is False
 
 
 def test_cmd_start_skips_without_sender(monkeypatch) -> None:
